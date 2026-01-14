@@ -1,0 +1,139 @@
+
+{% load tags %}
+<form id="setSignatoriesForm">
+{% csrf_token %}
+<div class="modal-body">
+
+    <!-- SELF APPROVAL -->
+    <div class="mb-3">
+        <label>Self Approval (Requester):</label>
+        {% if self_approval %}
+            <input type="text" class="form-control filter_employee_signatories_to" name="self_approval"
+                   value="[{{ self_approval.emp.id_number }}] {{ self_approval.emp.pi.user.get_fullname }}"
+                   required {% if type != 1 %}readonly{% endif %}>
+        {% else %}
+            {% getemployeebyempid request.session.emp_id as requester %}
+            <input type="text" class="form-control filter_employee_signatories_to" name="self_approval"
+                   value="[{{ requester.id_number }}] {{ requester.pi.user.get_fullname }}"
+                   required {% if type != 1 %}readonly{% endif %}>
+        {% endif %}
+        <small>Status:
+            {% if self_approval %}
+                {% if self_approval.status == 1 %}
+                    <span class="text-success">Approved</span>
+                {% elif self_approval.status == 2 %}
+                    <span class="text-danger">Disapproved</span>
+                {% else %}Pending{% endif %}
+            {% else %}Pending{% endif %}
+        </small>
+    </div>
+
+    <!-- REQUESTED BY (Hidden if Division AA Request) -->
+    {% if not is_division_request %}
+        <div class="mb-3">
+            <label>Requested By (Section Head):</label>
+            {% if requested_by %}
+                <input type="text" class="form-control filter_employee_signatories_to" name="requested_by"
+                       value="[{{ requested_by.emp.id_number }}] {{ requested_by.emp.pi.user.get_fullname }}"
+                       required {% if type != 1 %}readonly{% endif %}>
+            {% else %}
+                {% getemployeebyempid section_head.sec_head_id as section_head_emp %}
+                <input type="text" class="form-control filter_employee_signatories_to" name="requested_by"
+                       value="[{{ section_head_emp.id_number }}] {{ section_head_emp.pi.user.get_fullname }}"
+                       required {% if type != 1 %}readonly{% endif %}>
+            {% endif %}
+            <small>Status:
+                {% if requested_by %}
+                    {% if requested_by.status == 1 %}
+                        <span class="text-success">Approved</span>
+                    {% elif requested_by.status == 2 %}
+                        <span class="text-danger">Disapproved</span>
+                    {% else %}Pending{% endif %}
+                {% else %}Pending{% endif %}
+            </small>
+        </div>
+    {% else %}
+        <input type="hidden" name="requested_by" value="">
+    {% endif %}
+
+    <!-- NOTED BY -->
+    <div class="mb-3">
+        <label>Noted By (Division Chief):</label>
+        {% if noted_by %}
+            <input type="text" class="form-control filter_employee_signatories_to" name="noted_by"
+                   value="[{{ noted_by.emp.id_number }}] {{ noted_by.emp.pi.user.get_fullname }}"
+                   required {% if type != 1 %}readonly{% endif %}>
+        {% else %}
+            {% getemployeebyempid division_head.div_chief_id as div_chief %}
+            <input type="text" class="form-control filter_employee_signatories_to" name="noted_by"
+                   value="[{{ div_chief.id_number }}] {{ div_chief.pi.user.get_fullname }}"
+                   required {% if type != 1 %}readonly{% endif %}>
+        {% endif %}
+        <small>Status:
+            {% if noted_by %}
+                {% if noted_by.status == 1 %}
+                    <span class="text-success">Approved</span>
+                {% elif noted_by.status == 2 %}
+                    <span class="text-danger">Disapproved</span>
+                {% else %}Pending{% endif %}
+            {% else %}Pending{% endif %}
+        </small>
+    </div>
+
+    <!-- APPROVED BY (Regional Director) -->
+    <div class="mb-3">
+        <label>Approved By (Regional Director):</label>
+        {% if approved_by %}
+            <input type="text" class="form-control filter_employee_signatories_to" name="approved_by"
+                   value="[{{ approved_by.emp.id_number }}] {{ approved_by.emp.pi.user.get_fullname }}"
+                   required {% if type != 1 %}readonly{% endif %}>
+        {% else %}
+            {% getemployeebyempid designation.emp_id as reg_dir %}
+            <input type="text" class="form-control filter_employee_signatories_to" name="approved_by"
+                   value="[{{ reg_dir.id_number }}] {{ reg_dir.pi.user.get_fullname }}"
+                   required {% if type != 1 %}readonly{% endif %}>
+        {% endif %}
+        <small>Status:
+            {% if approved_by %}
+                {% if approved_by.status == 1 %}
+                    <span class="text-success">Approved</span>
+                {% elif approved_by.status == 2 %}
+                    <span class="text-danger">Disapproved</span>
+                {% else %}Pending{% endif %}
+            {% else %}Pending{% endif %}
+        </small>
+    </div>
+
+    <!-- RAMS APPROVAL -->
+    <div class="mb-3">
+        <label>RAMS Approval:</label>
+        {% if rams_approval %}
+            <input type="text" class="form-control filter_employee_signatories_to" name="rams_approval"
+                   value="[{{ rams_approval.emp.id_number }}] {{ rams_approval.emp.pi.user.get_fullname }}"
+                   required {% if type != 1 %}readonly{% endif %}>
+        {% else %}
+            {% if rams %}
+                <input type="text" class="form-control filter_employee_signatories_to" name="rams_approval"
+                       value="[{{ rams.id_number }}] {{ rams.pi.user.get_fullname }}"
+                       required {% if type != 1 %}readonly{% endif %}>
+            {% endif %}
+        {% endif %}
+        <small>Status:
+            {% if rams_approval %}
+                {% if rams_approval.status == 1 %}
+                    <span class="text-success">Approved</span>
+                {% elif rams_approval.status == 2 %}
+                    <span class="text-danger">Disapproved</span>
+                {% else %}Pending{% endif %}
+            {% else %}Pending{% endif %}
+        </small>
+    </div>
+
+</div>
+
+{% if type == 1 %}
+<div class="modal-footer">
+    <button type="submit" class="btn btn-info" id="btn-set-signatories-save-changes">Save Changes</button>
+</div>
+{% endif %}
+</form>

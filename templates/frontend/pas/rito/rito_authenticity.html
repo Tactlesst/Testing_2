@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src *; style-src * 'unsafe-inline'; script-src * 'unsafe-inline';">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/png" href="{% static 'image/logo.ico' %}"/>
+    <title>DSWD My PORTAL | Special Order | Certificate Authenticity</title>
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'font-awesome/css/font-awesome.css' %}" rel="stylesheet">
+    <link href="{% static 'css/animate.css' %}" rel="stylesheet">
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .approver-card { margin-bottom: 15px; }
+        .tracking-number { font-size: 0.9rem;}
+        .RSO-number {
+        font-size: 0.7rem;
+        font-weight: bold;
+        border-bottom:1px solid black;
+        padding: 5px;
+        width: 50%;
+        margin: 0 auto; 
+    
+        }
+        .certification-title { font-size: 1.8rem; color: white; background: #DAA520; padding: 10px; border-radius: 5px; }
+        .status-approved { color: #28a745; font-weight: bold; }
+        .status-disapproved { color: #dc3545; font-weight: bold; }
+        .status-pending { color: #ffc107; font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container py-4">
+    <div class="text-center mb-4">
+        <img loading="lazy" src="{% static 'image/dswd_logo_3.png' %}" width="120px"> &nbsp;
+        <img loading="lazy" src="{% static 'image/bagong_pilipinas.png' %}" width="40px" style="margin: 0px 10px 20px -10px;">
+    </div>
+
+    <!-- <small> <div class="tracking-number">{{ rito.tracking_no }}</div> -->
+</small>
+    <div class="text-center mb-3">
+        {% if workflow_count == total_signatories %}
+            <div class="certification-title mb-2">Complete</div>
+           
+            <div class="RSO-number">RSO No.series: <u style="color:rgb(4, 111, 193);">1020</u></div>
+
+            <p class="mt-2">This document is a <strong>verified</strong> and <strong>officially approved Regional Special Order</strong>.</p>
+        {% else %}
+            <div class="tracking-number">{{ rito.tracking_no }}</div>
+            <p class="mt-2"><u>Not yet approved</u>, <b>{{ workflow_count }}</b> of <b>{{ total_signatories }}</b> approvers have approved. Please wait for the remaining approvals.</p>
+        {% endif %}
+
+    </div>
+    <hr>
+<h4 class="mb-3 text-center fw-bold">Approval Authorities</h4>
+    <div class="row justify-content-center">
+        {% for sig in signatories %}
+        <div class="col-12 col-md-8">
+            <div class="card approver-card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-2">
+                        {% if sig.signatory_type == "0" %} Self Approval
+                        {% elif sig.signatory_type == "1" %} Requested By
+                        {% elif sig.signatory_type == "2" %} Noted By
+                        {% elif sig.signatory_type == "3" %} Approved By
+                        {% elif sig.signatory_type == "4" %} RAMS Approval
+                        {% endif %}
+                    </h5>
+                <p class="mb-1"><strong>{{ sig.emp.pi.user.get_fullname }}</strong>{% if sig.emp.designation %} ({{ sig.emp.designation }}){% endif %}</p>
+                    <p class="mb-1">
+                        Status: 
+                        {% if sig.status == 1 %}
+                            <span class="status-approved">Approved</span>
+                        {% elif sig.status == 2 %}
+                            <span class="status-disapproved">Disapproved</span>
+                        {% else %}
+                            <span class="status-pending">Pending</span>
+                        {% endif %}
+                    </p>
+                    {% if sig.date %}
+                        <p class="mb-0 text-muted" style="font-size: 0.9rem;">
+                            Date Approved: {{ sig.date|date:"M d, Y h:i A" }}
+                        </p>  
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center"><em>No approvers yet.</em></div>
+        {% endfor %}
+
+        </div>
+
+        <div class="text-center mt-4">
+            <img src="{% static 'image/logo.ico' %}" alt="HRPEAR Logo" style="width: 80px; height: auto;">
+        </div>
+
+
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src *; style-src * 'unsafe-inline'; script-src * 'unsafe-inline';" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" type="image/png" href="{% static 'image/hrpearlogo_192.png' %}" />
+    <title>DSWD CDO HR Pears | Login</title>
+    <link href="{% static 'css/adminlte.min.css' %}" rel="stylesheet">
+    <link href="{% static 'font-awesome/css/all.min.css' %}" rel="stylesheet">
+    <link href="{% static 'font-awesome/css/font-awesome.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/style_new.css' %}" rel="stylesheet">
+    <link href="{% static 'css/plugins/textSpinners/spinners.css' %}" rel="stylesheet">
+    <style>
+        .invalid-feedback{
+            color:#fb4347;
+        }
+
+        .loading{
+            overflow: hidden;
+        }
+
+        th {
+            vertical-align: middle !important;
+        }
+
+        li.nav-item.active {
+            border-bottom: 1px solid white;
+        }input[type="checkbox"]#data_privacy_act:checked {
+        accent-color: #28a745; 
+    }
+    </style>
+    {% block style %}{% endblock %}
+</head>
+<body class="login-page" style="min-height: 466px;">
+    <div class="login-box">
+        <div class="card card-outline card-info">
+            <div class="card-header text-center py-3">
+                <a href="{% url 'home' %}" class="h1 font-weight-bolder text-dark">
+                    <img loading="lazy" src="{% static 'image/dswd_logo_4.png' %}" style="width: 150px;">
+                    <br>
+                    <img src="{% static 'image/hrpearlogo_ls.png' %}" width="250px">
+                </a>
+            </div>
+            <div class="card-body">
+                <div id="alertDiv"></div>
+                <p class="login-box-msg">Sign in to start your</p>
+                <form id="loginForm">
+                    {% csrf_token %}
+                    <div class="input-group mb-3">
+                        <input type="text" id="username" name="username" class="form-control" autocomplete="off" required placeholder="Username">
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="password" id="password" name="password" class="form-control" autocomplete="off" required placeholder="Password">
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-lock"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-5">
+                        <div class="col-12 d-flex align-items-center " style="gap: 20px;" aria-required="true">
+                            <div class="icheck-primary ms-4">
+                                <input type="checkbox" id="data_privacy_act" name="data_privacy_act">
+                                <label for="data_privacy_act"> Privacy Notice </label>
+                            </div>
+                            <div class="icheck-primary me-3"> 
+                                <input type="checkbox" id="remember_me">
+                                <label for="remember_me"> Remember Me </label>
+                            </div>
+                        </div>
+                        <div class="col-12 mt-3">
+                            <button id="submitBtn" type="submit" class="btn btn-info btn-block w-100">Sign In</button>
+                        </div>
+                    </div>     
+                </form>
+                <p class="mb-1 mt-3">
+                    <a href="{% url 'forgot_password' %}">I forgot my password</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="modal fade" id="privacyModal" tabindex="-1" aria-labelledby="privacyModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content" style="border-top:3px solid #17a2b8 ;">
+                <div class="modal-header">
+                    <h3 class="modal-title text-info" id="privacyModalLabel">PRIVACY NOTICE</h3>
+                </div>
+                <div class="modal-body" style="text-align: justify">
+                    <p> By accessing and using the <b>HR-PEARS</b>, employees acknowledge and consent to the collection,
+                        processing, and storage of their personal information in accordance with the <b>Data Privacy Act of
+                        2012 (RA 10173).</b></p>
+                        <br>
+                    <p>The <b>DSWD</b> is committed to safeguarding the privacy and security of personal data and will use it exclusively for legitimate business purposes. By ticking the box, employees give their expressed consent to the collection and use of their personal data.</p>
+                        <br>
+                    <p><b>Personal information</b> will not be disclosed to third parties without the employee's consent, unless required by law. Employees have the right to access, correct, or request the deletion of their personal data, in accordance with applicable data protection laws and Agency policies.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="acceptButton" class="btn btn-info">Accept</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="{% static 'js/jquery-3.1.1.min.js' %}"></script>
+    <script src="{% static 'js/plugins/jquery-ui/jquery-ui.min.js' %}"></script>
+    <!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
+    <script>$.widget.bridge('uibutton', $.ui.button)</script>
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'js/adminlte.min.js' %}"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script> -->
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const privacyCheckbox = document.getElementById("data_privacy_act");
+    const modalEl = document.getElementById("privacyModal");
+    const privacyModal = new bootstrap.Modal(modalEl);
+    const acceptButton = document.getElementById("acceptButton");
+
+    privacyCheckbox.addEventListener("click", function () {
+        if (this.checked) {
+            privacyModal.show();
+        }
+    });
+    
+
+    $("#loginForm").on("submit", function (e) {
+        e.preventDefault();
+
+        if (!privacyCheckbox.checked) {
+            privacyModal.show();
+            return;
+        }
+
+        var form = new FormData(this);
+        $.ajax({
+            data: form,
+            url: '{% url "backend-login" %}',
+            type: "POST",
+            beforeSend: function () {
+                $('#submitBtn').addClass('cursor-not-allowed');
+                $("#submitBtn").html('<span class="loading open-circle" style="font-size: 25px;"></span>');
+            },
+            success: function (response) {
+                $('#submitBtn').removeClass('cursor-not-allowed');
+                $("#submitBtn").html("Sign In");
+
+                if (response.data) {
+                    window.location.href = "{% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'home' %}{% endif %}";
+                } else {
+                    if (response.type === 'privacy') {
+                        $("#alertDiv").html(`
+                            <div class="alert alert-warning" role="alert">
+                                <span class="font-weight-bold" style="font-size: 16px;">
+                                    <i class="fas fa-info-circle"></i> ${response.msg}
+                                </span><hr class="my-2">
+                                <p class="text-sm">
+                                    By clicking the Privacy Notice checkbox below.
+                                </p>
+                            </div>
+                        `);
+                    } else if (response.type === 'auth') {
+                        $("#alertDiv").html(`
+                            <div class="alert alert-danger" role="alert">
+                                <span class="font-weight-bold" style="font-size: 16px;">
+                                    <i class="fas fa-info-circle"></i> ${response.msg}
+                                </span><hr class="my-2">
+                                <p class="text-sm">
+                                    Please try again or would you like to reset your password?
+                                    <a href="{% url 'forgot_password' %}">click here</a>
+                                </p>
+                            </div>
+                        `);
+                    }
+                }
+            },
+            cache: false,
+            contentType: false,
+            processData: false,
+        });
+    });
+
+    acceptButton.addEventListener("click", function () {
+        privacyCheckbox.checked = true; 
+        privacyModal.hide();
+    });
+});
+    </script>
+    {% block script %}{% endblock %}
+</body>
+</html>

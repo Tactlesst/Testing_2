@@ -1,0 +1,408 @@
+{% extends 'layout.html' %}
+{% load crispy_forms_tags %}
+{% load frontend_tags %}
+{% load static %}
+{% block style %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/adjustments.css' %}">
+
+<style>
+	#ibox{
+		border: 2px solid !important;
+		justify-content: center;
+		align-items: center;
+		padding: 20px;
+		border-radius: 5px;
+		background-color: white;
+		border-color: rgb(222, 221, 221) !important;
+		border-top: 3px solid #17a2b8 !important; 
+	
+	}.btn-separation{
+		padding:20px !important;
+	}
+</style>
+{% endblock %}
+{% block content %}
+
+
+<!-- 
+
+<div class="row wrapper border-bottom white-bg page-heading">
+    <div class="col-lg-4 ml-4 mr-4 mt-3">
+        <h1 class="bold">Separation Request</h1>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'backend-dashboard' %}">Home</a>
+            </li>
+            <li class="breadcrumb-item active">
+                Employees
+            </li>
+            <li class="breadcrumb-item active">
+                <strong>Separation Request</strong>
+            </li>
+        </ol>
+		<div class="col-lg-12"
+		<div class="pull-right">
+			<a class="btn btn-info" data-toggle="modal" data-target="#deactivation-modal"><i class="fas fa-plus"></i> Separation Request</a>
+</div>
+		</div>
+		
+    </div>
+	
+</div> -->
+
+<div class="container-fluid">
+	<div class="row px-3 pt-3">
+		<div class="col-lg-8">
+			<h1 class="font-weight-bold">Employee Disengagement</h1>
+			<ol class="breadcrumb bg-transparent p-0">
+				<li class="breadcrumb-item">
+					<a href="{% url 'backend-dashboard' %}">Home</a>
+				</li>
+			
+				<li class="breadcrumb-item">
+					Employees
+				</li>
+				<li class="breadcrumb-item active">
+					<strong>Employee Disengagement</strong>
+				</li>
+			</ol>
+		</div>
+		<div class="col-lg-4 pt-3">
+			<div class="float-md-right">
+				<a class="btn btn-info" data-toggle="modal" data-target="#deactivation-modal">
+					<i class="fas fa-plus"></i> Disengagement Request
+				</a>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+
+<div class="content-wrapper p-4 ml-0">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card card-info card-tabs">
+                <div class="card-header p-0 pt-1">
+                    <ul class="nav nav-tabs" id="tabUL">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-toggle="tab" href="#request-view">
+                                Request <span id="total-draft" class="badge rounded-pill bg-primary"></span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-toggle="tab" href="#inactive">
+                                Inactive <span id="total-vacancy" class="badge rounded-pill bg-danger"></span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card-body">
+                    <div class="tab-content">
+                        <div id="request-view" class="tab-pane active">
+                            <table id="separation" class="table table-bordered" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th class="capslock">Action</th>
+                                        <th class="capslock">Name</th>
+                                        <th class="text-center capslock">Position</th>
+                                        <th class="text-center capslock">Employment Status</th>
+                                        <th class="text-center capslock">Program</th>
+                                        <th class="text-center capslock">Type of Separation</th>
+                                        <th class="text-center capslock">Date Requested</th>
+                                        <th class="text-center capslock">Personnel</th>
+                                        <th class="text-right capslock">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if data %}
+                                        {% for row in data %}
+                                            <tr>
+                                                <td>
+                                                    <a href="#" data-role="view" data-id="{{ row.user_id }}" data-rfd-id="{{ row.id }}" class="details-link">Details</a>
+
+                                                <td>
+                                                    {{ row.user.pi.user.first_name|title }} 
+                                                    {{ row.user.pi.user.middle_name|to_middleinitial }} 
+                                                    {{ row.user.pi.user.last_name|title }}
+                                                </td>
+                                                <td class="text-center" title="{{ row.user.position.name }}">
+                                                    {{ row.user.position.acronym }}
+                                                </td>
+                                                <td class="text-center">{{ row.user.empstatus.acronym }}</td>
+                                                <td class="text-center">{{ row.user.fundsource.name }}</td>
+                                                <td class="text-center">{{ row.tfs.name }}</td>
+                                                <td class="text-center">{{ row.date_requested }}</td>
+                                                <td>
+                                                    {% if row.created_by %}
+                                                        {{ row.created_by.pi.user.first_name|title }} 
+                                                        {{ row.created_by.pi.user.last_name|title }}  
+                                                    {% else %}
+                                                        N/A
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-right">
+                                                    {% if row.status == 0 %}
+                                                        <span class="badge bg-primary">Pending</span>
+                                                    {% else %}
+                                                        <span class="badge bg-success" rel="tooltip" data-placement="top" title="{{ row.date_approved }}">
+                                                            Approved
+                                                        </span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td class="text-center" colspan="9">
+                                                <img loading="lazy" src="{% static 'image/no-data.png' %}" class="img-responsive" width="250px;" style="margin: 0 auto;">
+                                                <p class="text-center">There is no data to show you right now.</p>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Vacancies Tab -->
+                        <div id="inactive" class="tab-pane">
+							<div class="table-responsive mt-3">
+								<table id="table-inactive" class="table table-bordered table-hover" style="width: 100%;">
+									<thead>
+										<tr>
+											<th class="text-left">ACTION</th>
+											<th class="text-center">NAME</th>
+											<th class="text-center">POSITION</th>
+											<th class="text-center">EMPLOYMENT STATUS</th>
+											<th class="text-center">PROGRAM</th>
+											<th class="text-center">TYPE OF SEPARATION</th>
+											<th class="text-right">STATUS</th>
+										</tr>
+									</thead>
+									<tbody>
+										{% if inactive_users %}
+											{% for user in inactive_users %}
+												<tr>
+													<td>
+                                                        <a href="#" data-role="view" data-id="{{ user.user_id }}" data-rfd-id="{{ user.id }}" class="details-link">Details</a>
+
+													<td>
+														{{ user.pi.user.first_name|title }} 
+														{{ user.pi.user.middle_name|to_middleinitial }} 
+														{{ user.pi.user.last_name|title }}
+													</td>
+													<td class="text-center">{{ user.position.acronym }}</td>
+													<td class="text-center">{{ user.empstatus.acronym }}</td>
+													<td class="text-center">{{ user.fundsource.name }}</td>
+													<td class="text-center">
+														{% for rfd in user.pasrfd_set.all %}
+															{{ rfd.tfs.name }}
+														{% empty %}
+															No Separation
+														{% endfor %}
+													</td>
+																									
+													<td class="text-right">
+														<span class="badge bg-danger">Inactive</span>
+													</td>
+												</tr>
+											{% endfor %}
+										{% else %}
+											<tr>
+												<td class="text-center" colspan="9">
+													<img loading="lazy" src="{% static 'image/no-data.png' %}" class="img-responsive" width="250px;" style="margin: 0 auto;">
+													<p class="text-center">No inactive users found.</p>
+												</td>
+											</tr>
+										{% endif %}
+									</tbody>
+								</table>
+							</div>
+						</div>
+						
+                    </div> 
+                </div> 
+            </div>
+        </div>
+    </div>
+</div> 
+
+
+
+<div class="modal" id="view-modal" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content animated bounceInDown">
+			<div class="modal-header bg-info d-flex justify-content-between align-items-center">
+				<h3 class="modal-title">Separation Request Detail</h3>
+				<button type="button" class="close text-white" data-dismiss="modal">
+					<span aria-hidden="true">&times;</span>
+					<span class="sr-only">Close</span>
+				</button>
+			</div>
+            <div class="modal-body">
+            </div> 
+        </div>
+    </div>
+</div>
+
+
+
+<div class="modal" id="deactivation-modal" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-info d-flex justify-content-between align-items-center">
+                <h3 class="modal-title mb-0">Separation Request</h3>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span aria-hidden="true">&times;</span>
+                    <span class="sr-only">Close</span>
+                </button>
+            </div> 
+            <form id="submitRFDForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Employees</label>
+                        <input type="text" class="form-control b-r-sm typeahead_2 filter_employee" placeholder="e.g. [16-12345] Juan dela Cruz" name="user_id" autocomplete="off" required>
+                    </div>
+                    <div class="form-group">
+						<label>Type of Employment Separation</label>
+						<select class="form-control b-r-sm" name="tempsep" required>
+							<option value="" disabled selected>Select a type</option>
+							{% for row in tempsep %}
+								<option value="{{ row.id }}">{{ row.name }}</option>
+							{% endfor %}
+						</select>
+					</div>
+					
+                    <div class="form-group">
+                        <label>Date of Effectivity</label>
+                        <input type="date" class="form-control b-r-sm" name="date_effectivity" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Remarks</label>
+                        <textarea class="form-control b-r-sm" name="remarks" placeholder="(Optional)"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer"> 
+                    <button type="submit" class="btn btn-info">Submit</button>
+                </div>  
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}dez
+{% block script %}
+
+<script type="text/javascript">
+	$(document).on('click', 'a[data-role=view]', function () {
+    var userId = $(this).data('id');
+    var rfdId = $(this).data('rfd-id');
+
+    $('#view-modal').modal('show').find('.modal-body').empty();  
+
+    $('#view-modal').modal('show').find('.modal-body').load('/backend/view-resignation-detail/' + userId + '?rfd_id=' + rfdId, function(response, status, xhr) {
+        if (status == "success") {
+            console.log("Modal content reloaded with updated status");
+        } else {
+            $('#view-modal').modal('show').find('.modal-body').load('/backend/view-resignation-detail/' + rfdId, function(response, status, xhr) {
+                if (status == "success") {
+                    console.log("Modal content reloaded with updated status from rfdId");
+                } else {
+                    console.log("Error loading modal content.");
+                }
+            });
+        }
+    });
+});
+
+
+	$(document).ready(function() {
+    $('[data-toggle="tooltip"]').tooltip();  
+});
+
+	new DataTable('#separation');
+
+	$(document).ready(function () {
+    $('#table-inactive').DataTable({
+        "paging": true,
+        "searching": true, 
+        "ordering": true,
+        "info": true,
+        "lengthChange": true, 
+        "pageLength": 10
+    });
+});
+
+
+	$(document).on('click', 'a[data-role=approve]', function(e){
+		if (confirm("Are you sure you want to approve?")){
+			emp_id = $(this).data('id')[1];
+			$.ajax({
+				url: "/backend/view-resignation-detail/" + $(this).data('id')[1],
+				data: {
+					emp_id: $(this).data('id')[1],
+					req_id: $(this).data('id')[0]
+				},
+				type: "POST"
+			}).done(function(data){
+				if (data.data){
+					$('#view-modal').modal('show').find('.modal-body').load("/backend/view-resignation-detail/" + emp_id);
+				}
+			});
+		}
+		e.preventDefault();
+	});
+
+	$(document).on('click', 'a[data-role=delete]', function(e){
+		if (confirm("Are you sure you want to delete?")){
+			emp_id = $(this).data('id')[1];
+			$.ajax({
+				url: "{% url 'delete_compliance' %}",
+				data: {
+					emp_id: $(this).data('id')[1],
+					req_id: $(this).data('id')[0]
+				},
+				type: "POST"
+			}).done(function(data){
+				if (data.data){
+					$('#view-modal').modal('show').find('.modal-body').load("/backend/view-resignation-detail/" + emp_id);
+				}
+			});
+		}
+		e.preventDefault();
+	});
+
+	$('#submitRFDForm').on('submit', function(e){
+        $.ajax({
+            data        : new FormData(this),
+            url         : '{% url "resignation_request" %}',
+            type        : 'POST',
+            cache       : false,
+            contentType : false,
+            processData : false
+        })
+        .done(function(data){
+            if (data.data){
+                window.location.href = "{% url 'resignation_request' %}";
+            }
+        });
+        e.preventDefault();
+    });
+
+	$(".filter_employee").typeahead({
+		source: function(query, process){
+			return $.get({
+				url: '{% url "filter_employee" %}',
+				data: { query: query },
+				datatype: 'json',
+				success: function (data) {
+					return process(data);
+				}
+			});
+		},
+		highlight: true,
+	});
+</script>
+{% endblock %}

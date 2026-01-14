@@ -1,0 +1,631 @@
+<!-- {% load tags %}
+{% load frontend_tags %}
+{% load humanize %}
+
+{% if user|check_permission:'edit_employee' or user|check_permission:'superadmin'%}
+
+<div class="ibox" id="page-workhistory" style="margin-top: -15px;">
+	<div class="ibox-title mb-3">
+		<h3 class="bold m-0">Work History</h3>
+		<small>This work history only validates DSWD work experience.</small>
+	</div>
+	<div class="ibox-content">
+		<div class="table-responsive">
+			<table class="table table-bordered table-hover" id="table-wes" width="100%">
+				<thead>
+					<tr>
+						<th class="capslock" style="width:10%;" rowspan="2">Action</th>
+						<th class="capslock" rowspan="2">Position</th>
+						<th class="capslock text-center" rowspan="2">Employment Status</th>
+						<th class="capslock text-center" rowspan="2">Area of Assignment</th>
+						<th class="capslock text-center" rowspan="2">Salary Rate</th>
+						<th class="capslock text-center" rowspan="2" width="10%">Salary Grade - Step Increment</th>
+						<th class="capslock text-center" colspan="2">Inclusive Dates</th>
+					</tr>
+					<tr>
+						<th class="capslock">FROM</th>
+						<th class="capslock">TO</th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+			</table>
+		</div>
+	</div>
+</div>
+
+{% else %}
+<p>You dont have permission on Work Experience</p>
+{% endif %}
+
+
+<script>
+	$(document).ready(function(){
+		$(document).on('click', 'a[data-role=edit-workhistory]', function(){
+			id = $(this).data('id');
+			$('#edit-workhistory-modal').modal('show').find('.modal-body').load(`/backend/edit-workhistory/${id}`, function() {
+                $.get('{% url "filter-incumbent" %}', function(data){
+                    $(".filter_employee").typeahead({
+                        source:data,
+                        highlight: true
+                    });
+                },'json');
+
+                $('.edit-select').select2({
+                    width: "100%",
+                    allowClear: true,
+                    placeholder: 'Choose',
+                    dropdownParent: $('#edit-workhistory-modal')
+                });
+
+                $('#submitEditWorkForm').on('submit', function(e){
+                    e.preventDefault();
+                    $form = $(this);
+                    $.ajax({
+                        url: `/backend/edit-workhistory/${id}`,
+                        type: "POST",
+                        data: new FormData(this),
+                        success: function (response) {
+                            if (response.data == 'success'){
+                                $('#edit-workhistory-modal').modal('toggle');
+                                Swal.fire({
+                                    title: "Good job!",
+                                    html: "Work History was updated successfully",
+                                    icon: "success",
+                                    confirmButtonColor: "#3498DB",
+                                }).then((result) => {
+                                    if (result.isConfirmed){
+                                        $('#table-wes').DataTable().ajax.reload();
+                                    }
+                                });
+                            }
+                        },
+                        cache: false,
+                        contentType: false,
+                        processData: false
+                    });
+                });
+            });
+		});
+    });
+
+	$('#table-wes').DataTable({
+		'serverSide': true,
+		'processing': true,
+		'deferRender': true,
+		'lengthMenu': [ 25, 50, 100 ],
+		'order': [[ 7, 'desc' ]],
+		'ajax': {
+			'url': '/api/employees/work-experience-sheet/?format=datatables&employee_id='+'{% getHash employee_id as emp_id %}{{ emp_id }}',
+			'type': 'GET',
+			'beforeSend': function (request) {
+				request.setRequestHeader("Authorization", "Token 82b88a7bdac1ea3868361448927035e93b0dc19d")
+			}
+		},
+		'fnCreatedRow': function (row, data, index) {
+			$(row).attr('id', data['id']);
+		},
+		'columns': [
+			{ 'data': 'we_id',
+				'render': function(data, type, row, meta) {
+					return "<a href='javascript:void(0);' data-role='edit-workhistory' data-id='"+ data + "'>Details</a>"
+				}
+			},
+			{ 'data': 'position',
+                'render': function(data, type, row, meta) {
+                    return (data) ? data: '';
+                },
+                'name': 'we.position',
+                'className': 'capslock'
+            },
+			{ 'data': 'employment_status', 'className': 'text-center', 'name': 'we.empstatus.name' },
+			{ 'data': 'aoa',
+                'render': function(data, type, row, meta) {
+                    return (data) ? data: '';
+                },
+                'className': 'text-center',
+                'name': 'aoa.name'
+            },
+			{ 'data': 'salary_rate', 'className': 'text-center', 'name': 'we.salary_rate' },
+			{ 'data': 'sg_step', 'className': 'text-center', 'name': 'we.sg_step' },
+			{ 'data': 'we_from', 'className': 'text-center', 'name': 'we.we_from'},
+			{ 'data': 'we_to', 'className': 'text-center', 'name': 'we.we_to'},
+		],
+	});
+</script> -->
+
+
+
+
+
+{% load tags %}
+{% load frontend_tags %}
+{% load humanize %}
+
+<style>
+  .ibox-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+</style>
+{% if user|check_permission:'edit_employee' or user|check_permission:'superadmin'%}
+
+
+<div class="ibox" id="page-workhistory" style="margin-top: -15px;">
+    <div class="ibox-title d-flex align-items-center justify-content-between">
+        <div>
+            <h3 class="bold m-0">Work History</h3>
+            <small>This work history only validates DSWD work experience.</small>
+        </div>
+        <div class="button-group">
+            <button id="verify-selected" class="btn btn-info">Validate </button>
+            <button id="unverify-selected" class="btn btn-warning">Unvalidate </button>
+        </div>
+    </div>
+</div>
+
+
+<br>
+
+    <div class="ibox-content">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover" id="table-wes" width="100%">
+                <thead>
+                    <tr>
+                        <th class="text-center" style="width:5%;" rowspan="2">
+                            <input type="checkbox" id="select-all">
+                        </th>
+                        <th class="capslock" style="width:10%;" rowspan="2">Action</th>
+                        <th class="capslock" rowspan="2">Position</th>
+                        <th class="capslock text-center" rowspan="2">Employment Status</th>
+                        <th class="capslock text-center" rowspan="2">Area of Assignment</th>
+                        <th class="capslock text-center" rowspan="2">Salary Rate</th>
+                        <th class="capslock text-center" rowspan="2" width="10%">Salary Grade - Step Increment</th>
+                        <th class="capslock text-center" colspan="2">Inclusive Dates</th>
+                        <th class="capslock text-center" rowspan="2">Status</th>
+                    </tr>
+                    <tr>
+                        <th class="capslock">FROM</th>
+                        <th class="capslock">TO</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for work in work_experience %}
+                    <tr>
+                        <td class="text-center">
+                            <input type="checkbox" class="row-select" data-id="{{ work.id }}">
+                        </td>
+                        <td>
+                            {% if work.status %}
+                            <button class="btn btn-sm " data-we-id="{{ work.id }}">Unverify</button>
+                            {% else %}
+                            <button class="btn btn-sm " data-we-id="{{ work.id }}">Verify</button>
+                            {% endif %}
+                        </td>
+                        <td>{{ work.position_name }}</td>
+                        <td>{{ work.employment_status }}</td>
+                        <td>{{ work.aoa }}</td>
+                        <td>{{ work.salary_rate }}</td>
+                        <td>{{ work.sg_step }}</td>
+                        <td>{{ work.we_from }}</td>
+                        <td>
+                            {% if work.we_to %}
+                                {{ work.we_to }}
+                            {% else %}
+                                Present
+                            {% endif %}
+                        </td>
+                                                <td class="text-center">
+                            {% if work.status %}
+                            <span class="badge bg-success">Verified</span>
+                            {% else %}
+                            <span class="badge bg-seconadary">Not Verified</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+</div>
+{% else %}
+<p>You dont have permission on Service Record</p>
+{% endif %}
+
+{% block script %}
+
+
+
+<script>
+
+    {% if user|check_permission:'edit_employee' or user|check_permission:'employee_list' or user|check_permission:'superadmin'%}
+
+    $(document).ready(function () {
+        $(document).on('click', 'a[data-role=edit-workhistory]', function () {
+            id = $(this).data('id');
+            $('#edit-workhistory-modal').modal('show').find('.modal-body').load(`/backend/edit-workhistory/${id}`, function () {
+                $.get('{% url "filter-incumbent" %}', function (data) {
+                    $(".filter_employee").typeahead({
+                        source: data,
+                        highlight: true
+                    });
+                }, 'json');
+
+                $('.edit-select').select2({
+                    width: "100%",
+                    allowClear: true,
+                    placeholder: 'Choose',
+                    dropdownParent: $('#edit-workhistory-modal')
+                });
+
+                $('#submitEditWorkForm').on('submit', function (e) {
+                    e.preventDefault();
+                    $form = $(this);
+                    $.ajax({
+                        url: `/backend/edit-workhistory/${id}`,
+                        type: "POST",
+                        data: new FormData(this),
+                        success: function (response) {
+                            if (response.data == 'success') {
+                                $('#edit-workhistory-modal').modal('toggle');
+                                Swal.fire({
+                                    title: "Good job!",
+                                    html: "Work History was updated successfully",
+                                    icon: "success",
+                                    confirmButtonColor: "#3498DB",
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        $('#table-wes').DataTable().ajax.reload();
+                                    }
+                                });
+                            }
+                        },
+                        cache: false,
+                        contentType: false,
+                        processData: false
+                    });
+                });
+            });
+        });
+
+    $('#table-wes').DataTable({
+    'serverSide': true,
+    'processing': true,
+    'deferRender': true,
+    'lengthMenu': [25, 50, 100],
+    'order': [[9, 'desc']],
+    'ajax': {
+        'url': '/api/employees/work-experience-sheet/?format=datatables&employee_id=' + '{% getHash employee_id as emp_id %}{{ emp_id }}',
+        'type': 'GET',
+        'beforeSend': function (request) {
+            request.setRequestHeader("Authorization", "Token 82b88a7bdac1ea3868361448927035e93b0dc19d");
+        },
+        'dataSrc': function (json) {
+            console.log('DataTable AJAX response:', json);
+            return json.data;
+        }
+    },
+    'rowId': 'we_id',
+    'fnCreatedRow': function (row, data, index) {
+        const verifiedCell = $(row).find('td:eq(9)');
+        if (data['status'] === true) {
+            verifiedCell.html('<span class="badge bg-success">Verified</span>');
+        } else {
+            verifiedCell.html('<span class="badge bg-warning">Not Verified</span>');
+        }
+    },
+    'columns': [
+        {
+            'data': null,
+            'orderable': false,
+            'searchable': false,
+            'className': 'text-center',
+            'render': function (data, type, row, meta) {
+                return `<input type="checkbox" class="row-select" data-id="${row.we_id}">`;
+            }
+        },
+        {
+            'data': 'we_id',
+            'render': function (data, type, row, meta) {
+                const actionButton = row.status
+                ? `<a href="javascript:void(0);" data-role="unverify-workhistory" data-id="${data}" >Unvalidate</a>`
+                : `<a href="javascript:void(0);" data-role="verify-workhistory" data-id="${data}" style="color: green;">Validate</a>`;
+
+                return `
+                    <a href="javascript:void(0);" data-role="edit-workhistory" data-id="${data}">Details</a> | 
+                    ${actionButton}
+                `;
+            }
+        },
+        { 'data': 'position', 'className': 'capslock' },
+        { 'data': 'employment_status', 'className': 'text-center' },
+        { 'data': 'aoa', 'className': 'text-center' },
+        { 'data': 'salary_rate', 'className': 'text-center' },
+        { 'data': 'sg_step', 'className': 'text-center' },
+        { 'data': 'we_from', 'className': 'text-center' },
+        { 
+            'data': 'we_to', 
+            'className': 'text-center',
+            'render': function (data, type, row) {
+                return data ? data : 'Present';
+            }
+        },
+        {
+            'data': 'status',
+            'className': 'text-center',
+            'orderable': false,
+            'searchable': false,
+            'render': function (data, type, row, meta) {
+                return data
+                    ? '<span class="badge bg-success">Verified</span>'
+                    : '<span class="badge bg-warning">Not Verified</span>';
+            }
+        }
+    ]
+});
+{% endif %}
+
+
+
+$('#select-all').on('click', function () {
+    const isChecked = $(this).is(':checked');
+    $('.row-select').prop('checked', isChecked);
+});
+
+$(document).ready(function () {
+    $('#select-all').on('change', function () {
+        const isChecked = $(this).is(':checked');
+        $('.row-select').prop('checked', isChecked);
+        toggleVerifyButton();
+    });
+
+    $(document).on('change', '.row-select', function () {
+        toggleVerifyButton();
+    });
+
+    function toggleVerifyButton() {
+        const selected = $('.row-select:checked').length;
+        $('#verify-selected').prop('disabled', selected === 0);
+    }
+
+
+    $('#verify-selected').on('click', function () {
+        const selectedIds = $('.row-select:checked').map(function () {
+            return $(this).data('id');
+        }).get();
+
+        if (selectedIds.length > 0) {
+            Swal.fire({
+                title: "Are you sure?",
+                text: `You are about to verify ${selectedIds.length} selected work experiences.`,
+                icon: "info",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, verify!"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '/backend/verify-work-experience-group/',
+                        type: 'POST',
+                        data: JSON.stringify({ ids: selectedIds }),
+                        contentType: 'application/json',
+                        success: function (response) {
+                            Swal.fire({
+                                title: "Success!",
+                                text: `${response.verified_count} work experiences were verified successfully!`,
+                                icon: "success",
+                                confirmButtonColor: "#28a745",
+                            });
+
+                            $('#table-wes').DataTable().ajax.reload(null, false);
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("Error details:", xhr.responseText); 
+                            Swal.fire({
+                                title: "Error!",
+                                text: "Verification failed. Please try again.",
+                                icon: "error",
+                                confirmButtonColor: "#d33",
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    });
+});
+
+        $(document).on('click', '[data-role="verify-workhistory"]', function () {
+            const weId = $(this).data('id');
+            const verifyUrl = `/backend/verify-work-experience/${weId}/`;
+
+            Swal.fire({
+                title: "Are you sure?",
+                text: "Do you want to verify this work experience?",
+                icon: "info",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, verify it!"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: verifyUrl,
+                        type: 'POST',
+                        success: function (response) {
+                            Swal.fire({
+                                title: "Success!",
+                                text: "Work experience verified successfully!",
+                                icon: "success",
+                                confirmButtonColor: "#28a745",
+                            });
+
+                            const table = $('#table-wes').DataTable();
+                            table.ajax.reload(null, false);
+                        },
+                        error: function (xhr, status, error) {
+                            Swal.fire({
+                                title: "Error!",
+                                text: "Verification failed!",
+                                icon: "error",
+                                confirmButtonColor: "#d33",
+                            });
+                        }
+                    });
+                }
+            });
+        });
+    });
+
+    $('#unverify-selected').on('click', function () {
+        const selectedIds = getSelectedIds();
+        if (selectedIds.length > 0) {
+            performAction("unverify", selectedIds, "unverify-work-experience-group", "unverified");
+        }
+    });
+
+    function getSelectedIds() {
+        return $('.row-select:checked').map(function () {
+            return $(this).data('id');
+        }).get();
+    }
+
+     function toggleActionButtons() {
+        const selected = $('.row-select:checked').length;
+        $('#verify-selected, #unverify-selected').prop('disabled', selected === 0);
+    }
+
+    function performAction(action, ids, url, successText) {
+        Swal.fire({
+            title: "Are you sure?",
+            text: `You are about to ${action} ${ids.length} selected work experiences.`,
+            icon: "info",
+            showCancelButton: true,
+            confirmButtonColor: action === "verify" ? "#3085d6" : "#ffc107",
+            cancelButtonColor: "#d33",
+            confirmButtonText: `Yes, ${action}!`
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/${url}/`,
+                    type: 'POST',
+                    data: JSON.stringify({ ids }),
+                    contentType: 'application/json',
+                    success: function (response) {
+                        Swal.fire({
+                            title: "Success!",
+                            text: `${response.affected_count} work experiences were ${successText} successfully!`,
+                            icon: "success",
+                            confirmButtonColor: "#28a745",
+                        });
+
+                        $('#table-wes').DataTable().ajax.reload(null, false);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error details:", xhr.responseText);
+                        Swal.fire({
+                            title: "Error!",
+                            text: `${action.charAt(0).toUpperCase() + action.slice(1)} failed. Please try again.`,
+                            icon: "error",
+                            confirmButtonColor: "#d33",
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    $(document).on('click', '[data-role="unverify-workhistory"]', function () {
+    const weId = $(this).data('id');
+    const unverifyUrl = `/backend/unverify-work-experience/${weId}/`;
+
+    Swal.fire({
+        title: "Are you sure?",
+        text: "Do you want to unverify this work experience?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, unverify it!"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: unverifyUrl,
+                type: 'POST',
+                success: function (response) {
+                    Swal.fire({
+                        title: "Success!",
+                        text: "Work experience unverified successfully!",
+                        icon: "success",
+                        confirmButtonColor: "#28a745",
+                    });
+
+                    const table = $('#table-wes').DataTable();
+                    table.ajax.reload(null, false);
+                },
+                error: function (xhr, status, error) {
+                    Swal.fire({
+                        title: "Error!",
+                        text: "Unverification failed!",
+                        icon: "error",
+                        confirmButtonColor: "#d33",
+                    });
+                }
+            });
+        }
+    });
+});
+
+$('#unverify-selected').on('click', function () {
+    const selectedIds = $('.row-select:checked').map(function () {
+        return $(this).data('id');
+    }).get();
+
+    if (selectedIds.length > 0) {
+        Swal.fire({
+            title: "Are you sure?",
+            text: `You are about to unverify ${selectedIds.length} selected work experiences.`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, unverify them!"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/backend/unverify-work-experience-group/',
+                    type: 'POST',
+                    data: JSON.stringify({ ids: selectedIds }),
+                    contentType: 'application/json',
+                    success: function (response) {
+                        Swal.fire({
+                            title: "Success!",
+                            text: `${response.unverified_count} work experiences were unverified successfully!`,
+                            icon: "success",
+                            confirmButtonColor: "#28a745",
+                        });
+
+                        $('#table-wes').DataTable().ajax.reload(null, false);
+                    },
+                    error: function (xhr, status, error) {
+                        Swal.fire({
+                            title: "Error!",
+                            text: "Unverification failed. Please try again.",
+                            icon: "error",
+                            confirmButtonColor: "#d33",
+                        });
+                    }
+                });
+            }
+        });
+    }
+});
+
+
+
+</script>
+{% endblock %}

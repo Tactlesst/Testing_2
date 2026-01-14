@@ -1,0 +1,279 @@
+<!-- <form id="eligibilityForm">
+{% csrf_token %}
+{% if eligibility %}
+	<label>Criteria<span class="asteriskField">*</span></label>
+	{% for row in eligibility %}
+		{% if forloop.first %}
+			<div class="input-group">
+				<input type="text" class="form-control" name="eligibility[]" value="{{ row.eligibility }}" autocomplete="off">
+				<span class="input-group-append">
+					<button type="button" id="btn-add-eligibility" class="btn btn-info"><i class="fas fa-plus"></i></button>
+				</span>
+			</div>
+		{% endif %}
+	{% endfor %}
+	<div id="wrapper-eligibility">
+	{% for row in eligibility %}
+		{% if not forloop.first %}
+			<div class="row">
+				<div class="col-lg-12">
+					<br>
+					<div class="input-group">
+						<input type="text" class="form-control" name="eligibility[]" value="{{ row.eligibility }}" autocomplete="off">
+						<span class="input-group-append">
+							<button type="button" class="btn btn-danger" data-role="remove"><i class="fas fa-minus"></i></button>
+						</span>
+					</div>
+				</div>
+			</div>
+		{% endif %}
+	{% endfor %}
+	</div>
+{% else %}
+	<label>Criteria<span class="asteriskField">*</span></label>
+	<div id="wrapper-eligibility">
+		<div class="row">
+			<div class="col-lg-12">
+				<div class="input-group">
+					<input type="text" class="form-control" name="eligibility[]" autocomplete="off">
+					<span class="input-group-append">
+						<button type="button" id="btn-add-eligibility" class="btn btn-info"><i class="fas fa-plus"></i></button>
+					</span>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endif %}
+<br>
+<button type="submit" class="btn btn-info">Save changes</button>
+</form> -->
+
+
+
+<form id="eligibilityForm">
+    {% csrf_token %}
+    <div class="card-body" style="border:1px solid rgb(224, 224, 224); border-radius: 5px; padding: 15px;">
+        <div id="wrapper-eligibility">
+            {% for row in eligibility %}
+                <div class="row col-sm-12 mb-2 align-items-center">
+                    <div class="col-4" style="padding-left:20px !important;">
+                        <div class="form-group">
+                            {% if forloop.first %}
+                                <label class="control-label requiredField">Criteria<span class="asteriskField">*</span></label>
+                            {% endif %}
+                            <div class="controls">
+                                <input type="text" class="form-control" name="eligibility[]" value="{{ row.eligibility }}" autocomplete="off" placeholder="Enter eligibility" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-5">
+                        <div class="form-group">
+                            {% if forloop.first %}
+                                <label class="control-label requiredField">Description</label>
+                            {% endif %}
+                            <div class="controls">
+                                <input type="text" class="form-control" name="description[]" value="{{ row.description }}" autocomplete="off" placeholder="Enter description">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="form-group">
+                            {% if forloop.first %}
+                                <label class="control-label requiredField">Pctg<span class="asteriskField">*</span></label>
+                            {% endif %}
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="points[]" value="{{ row.points }}" autocomplete="off" placeholder="Enter points" required>
+                                <span class="input-group-append">
+                                    {% if forloop.first %}
+                                        <button type="button" id="btn-add-eligibility" class="btn btn-info"><i class="fas fa-plus"></i></button>
+                                    {% else %}
+                                        <button type="button" class="btn btn-danger remove-eligibility"><i class="fas fa-minus"></i></button>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="row col-sm-12 mb-2 align-items-center">
+                    <div class="col-4" style="padding-left:20px !important;">
+                        <div class="form-group">
+                            <label class="control-label requiredField">Criteria<span class="asteriskField">*</span></label>
+                            <div class="controls">
+                                <input type="text" class="form-control" name="eligibility[]" autocomplete="off" placeholder="Enter eligibility" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-5">
+                        <div class="form-group">
+                            <label class="control-label requiredField">Description</label>
+                            <div class="controls">
+                                <input type="text" class="form-control" name="description[]" autocomplete="off" placeholder="Enter description">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="form-group">
+                            <label class="control-label requiredField">Pctg<span class="asteriskField">*</span></label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="points[]" autocomplete="off" placeholder="Enter points" required>
+                                <span class="input-group-append">
+                                    <button type="button" id="btn-add-eligibility" class="btn btn-info"><i class="fas fa-plus"></i></button>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <br>
+    <button type="submit" class="btn btn-info">Save changes</button>
+</form>
+
+<!-- 
+<script>
+	$('#btn-add-eligibility').on('click', function(){
+		$('#wrapper-eligibility').append(`
+			<div class="row">
+			<div class="col-lg-12">
+				<br>
+				<div class="input-group">
+					<input type="text" class="form-control" name="eligibility[]" autocomplete="off">
+					<span class="input-group-append">
+						<button type="button" class="btn btn-danger" data-role="remove"><i class="fas fa-minus"></i></button>
+					</span>
+				</div>
+			</div>
+			</div>
+		`);
+	});
+
+	$(document).on('click', 'button[data-role=remove]', function(){
+		$(this).closest('.row').remove();
+	});
+
+	$('#eligibilityForm').on('submit', function(e){
+		var form = new FormData(this);
+		Swal.fire({
+			title: "Are you sure?",
+			text: "You want to save this awards eligibility criteria",
+			icon: "info",
+			showCancelButton: true,
+			confirmButtonText: "Yes",
+			confirmButtonColor: "#3498DB",
+			allowOutsideClick: false,
+			showLoaderOnConfirm: true,
+			preConfirm: function (){
+				return $.ajax({
+					data        : form,
+					url         : '{% url "awards_eligibility_criteria" pk %}',
+					type        : 'POST',
+					cache       : false,
+					contentType : false,
+					processData : false,
+				});
+			},
+		}).then(function (response){
+			if (response.value.data == "success"){
+				Swal.fire({
+					title: 'Good job!',
+					html: response.value.msg,
+					icon: "success",
+					confirmButtonColor: "#3498DB",
+					allowOutsideClick: false,
+				}).then((result) => {
+                    if (result.isConfirmed){
+                        $('#eligibility-content').load('{% url "awards_eligibility_criteria" pk %}');
+                    }
+                });
+			}
+		});
+		e.preventDefault();
+	});
+</script>-->
+
+
+{% block script %}
+<script>
+	$(document).ready(function () {
+    $("#btn-add-eligibility").click(function () {
+        let newRow = `
+            <div class="row col-sm-12 mb-2 align-items-center">
+                <div class="col-4" style="padding-left:20px !important;">
+                    <div class="form-group">
+                        <div class="controls">
+                            <input type="text" class="form-control" name="eligibility[]" autocomplete="off" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-5">
+                    <div class="form-group">
+                        <div class="controls">
+                            <input type="text" class="form-control" name="description[]" autocomplete="off" >
+                        </div>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="form-group">
+                        <div class="input-group">
+                            <input type="number" class="form-control" name="points[]" autocomplete="off"  required>
+                            <span class="input-group-append">
+                                <button type="button" class="btn btn-danger remove-eligibility"><i class="fas fa-minus"></i></button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        $("#wrapper-eligibility").append(newRow);
+    });
+
+    $(document).on("click", ".remove-eligibility", function () {
+        $(this).closest(".row").remove();
+    });
+});
+
+
+
+
+	$('#eligibilityForm').on('submit', function(e){
+		var form = new FormData(this);
+		Swal.fire({
+			title: "Are you sure?",
+			text: "You want to save this awards eligibility criteria",
+			icon: "info",
+			showCancelButton: true,
+			confirmButtonText: "Yes",
+			confirmButtonColor: "#3498DB",
+			allowOutsideClick: false,
+			showLoaderOnConfirm: true,
+			preConfirm: function (){
+				return $.ajax({
+					data        : form,
+					url         : '{% url "awards_eligibility_criteria" pk %}',
+					type        : 'POST',
+					cache       : false,
+					contentType : false,
+					processData : false,
+				});
+			},
+		}).then(function (response){
+			if (response.value.data == "success"){
+				Swal.fire({
+					title: 'Good job!',
+					html: response.value.msg,
+					icon: "success",
+					confirmButtonColor: "#3498DB",
+					allowOutsideClick: false,
+				}).then((result) => {
+                    if (result.isConfirmed){
+                        $('#eligibility-content').load('{% url "awards_eligibility_criteria" pk %}');
+                    }
+                });
+			}
+		});
+		e.preventDefault();
+	});
+</script>
+{% endblock %}

@@ -1,0 +1,216 @@
+{% load tags %}
+<form id="setSignatoriesFormLeave">
+    {% csrf_token %}
+    <div class="modal-body">
+        <style>
+            #setSignatoriesForm input.form-control {
+                text-align: left !important;
+            }
+        </style>
+
+        <!-- Requester Approval -->
+        <div class="mb-3">
+            <label>Requester Approval:</label>
+            {% if requested_by %}
+                <input type="text" class="form-control filter_employee_signatories_to"
+                       name="requested_by"
+                       value="[{{ requested_by.emp.id_number }}] {{ requested_by.emp.pi.user.get_fullname }}"
+                       required {% if type != 1 %}readonly{% endif %}>
+            {% else %}
+                {% getemployeebyempid request.session.emp_id as requested_by %}
+                {% if requested_by %}
+                    <input type="text" class="form-control filter_employee_signatories_to"
+                           name="requested_by"
+                           value="[{{ requested_by.id_number }}] {{ requested_by.pi.user.get_fullname }}"
+                           required {% if type != 1 %}readonly{% endif %}>
+                {% else %}
+                    {% getemployeebyempid section_head.sec_head_id as section_head %}
+                    {% if section_head %}
+                        <input type="text" class="form-control filter_employee_signatories_to"
+                               name="requested_by"
+                               value="[{{ section_head.id_number }}] {{ section_head.pi.user.get_fullname }}"
+                               required {% if type != 1 %}readonly{% endif %}>
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+            <small>
+                Status:
+                {% if requested_by %}
+                    {% if requested_by.status == 1 %}
+                        <span class="text-success">Approved </span>
+            
+                        {% if requested_by.date %}
+                              - {{ requested_by.date }}  
+                        {% endif %}
+               
+                    {% elif requested_by.status == 2 %}
+                        <span class="text-danger">Disapproved</span>
+                    {% else %}
+                        Pending
+                    {% endif %}
+                {% else %}
+                    Pending
+                {% endif %}
+            </small>
+        </div>
+
+        <!-- Section Head Approval -->
+        {% if not hide_section_head %}
+            <div class="mb-3">
+                <label>Section Head Approval</label>
+                {% if section_head_approval %}
+                    <input type="text" class="form-control filter_employee_signatories_to"
+                           name="section_head_approval"
+                           value="[{{ section_head_approval.emp.id_number }}] {{ section_head_approval.emp.pi.user.get_fullname }}"
+                           required {% if type != 1 %}readonly{% endif %}>
+                {% else %}
+                    {% getemployeebyempid section_head.sec_head_id as section_head %}
+                    {% if section_head %}
+                        <input type="text" class="form-control filter_employee_signatories_to"
+                               name="section_head_approval"
+                               value="[{{ section_head.id_number }}] {{ section_head.pi.user.get_fullname }}"
+                               required {% if type != 1 %}readonly{% endif %}>
+                    {% endif %}
+                {% endif %}
+                <small>
+                    Status:
+                    {% if section_head_approval %}
+                        {% if section_head_approval.status == 1 %}
+                            <span class="text-success">Approved</span>
+                            {% if section_head_approval.date %}
+                                - {{ section_head_approval.date }} 
+                             {% endif %}
+                        {% elif section_head_approval.status == 2 %}
+                            <span class="text-danger">Disapproved</span>
+                        {% else %}
+                            Pending
+                        {% endif %}
+                    {% else %}
+                        Pending
+                    {% endif %}
+                </small>
+            </div>
+        {% else %}
+            {% getemployeebyempid section_head.sec_head_id as section_head %}
+            <input type="hidden" name="section_head_approval"
+                   value="[{{ section_head.id_number }}] {{ section_head.pi.user.get_fullname }}">
+        {% endif %}
+
+        <!-- Division Chief Approval -->
+        {% if not hide_div_chief %}
+            <div class="mb-3">
+                <label>Division Chief Approval:</label>
+                {% if noted_by %}
+                    <input type="text" class="form-control filter_employee_signatories_to"
+                           name="noted_by"
+                           value="[{{ noted_by.emp.id_number }}] {{ noted_by.emp.pi.user.get_fullname }}"
+                           required {% if type != 1 %}readonly{% endif %}>
+                {% else %}
+                    {% getemployeebyempid division_head.div_chief_id as division_head %}
+                    <input type="text" class="form-control filter_employee_signatories_to"
+                           name="noted_by"
+                           value="[{{ division_head.id_number }}] {{ division_head.pi.user.get_fullname }}"
+                           required {% if type != 1 %}readonly{% endif %}>
+                {% endif %}
+                <small>
+                    Status:
+                    {% if noted_by %}
+                        {% if noted_by.status == 1 %}
+                            <span class="text-success">Approved</span>
+                            {% if noted_by.date %}
+                                - {{ noted_by.date }} 
+                            {% endif %}
+                        {% elif noted_by.status == 2 %}
+                            <span class="text-danger">Disapproved</span>
+                        {% else %}
+                            Pending
+                        {% endif %}
+                    {% else %}
+                        Pending
+                    {% endif %}
+                </small>
+            </div>
+        {% else %}
+            {% getemployeebyempid division_head.div_chief_id as division_head %}
+            <input type="hidden" name="noted_by"
+                   value="[{{ division_head.id_number }}] {{ division_head.pi.user.get_fullname }}">
+        {% endif %}
+
+        <!-- {% if not hide_approve_by %} -->
+
+        <div class="mb-3">
+            <label>Approving Authority</label>
+            {% if approved_by %}
+                    <input type="text" class="form-control filter_employee_signatories_to"
+                        name="approved_by"
+                        value="[{{ approved_by.emp.id_number }}] {{ approved_by.emp.pi.user.get_fullname }}"
+                        required {% if type != 1 %}readonly{% endif %}>
+                {% else %}
+                    {% getemployeebyempid designation.emp_id as designation_head %}
+                    <input type="text" class="form-control filter_employee_signatories_to"
+                        name="approved_by"
+                        value="[{{ designation_head.id_number }}] {{ designation_head.pi.user.get_fullname }}"
+                        required {% if type != 1 %}readonly{% endif %}>
+                {% endif %}
+
+            <small>
+                Status:
+                {% if approved_by %}
+                    {% if approved_by.status == 1 %}
+                        <span class="text-success">Approved</span>
+                        {% if approved_by.date %}
+                              - {{ approved_by.date }} 
+                        {% endif %}
+                    {% elif approved_by.status == 2 %}
+                        <span class="text-danger">Disapproved</span>
+                    {% else %}
+                        Pending
+                    {% endif %}
+                {% else %}
+                    Pending
+                {% endif %}
+            </small>
+        </div>
+
+        <!-- {% endif %} -->
+     
+        <!-- HR Approval -->
+
+        <div class="mb-3">
+            <label>HR Approval</label>
+            {% if hr_pas_head_emp %}
+                <input type="text" class="form-control filter_employee_signatories_to"
+                       name="hr_approval"
+                       value="[{{ hr_pas_head_emp.id_number }}] {{ hr_pas_head_emp.pi.user.get_fullname }}"
+                       required {% if type != 1 %}readonly{% endif %}>
+            {% else %}
+                <p>No valid Section Head employee found.</p>
+            {% endif %}
+            <small>
+                Status:
+                {% if hr_approval %}
+                    {% if hr_approval.status == 1 %}
+                        <span class="text-success">Approved</span>
+                        {% if hr_approval.date %}
+                               - {{ hr_approval.date }} 
+                        {% endif %}
+                    {% elif hr_approval.status == 2 %}
+                        <span class="text-danger">Disapproved</span>
+                    {% else %}
+                        Pending
+                    {% endif %}
+                {% else %}
+                    Pending
+                {% endif %}
+            </small>
+        </div>
+
+
+    </div>
+
+    {% if type == 1 %}
+        <div class="modal-footer">
+            <button type="submit" class="btn btn-info" id="btn-set-signatories-save-changes">Confirm</button>
+        </div>
+    {% endif %}
+</form>

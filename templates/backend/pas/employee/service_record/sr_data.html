@@ -1,0 +1,236 @@
+{% load frontend_tags %}
+<div class="col-lg-12 ">
+  <div class="d-flex justify-content-end mb-3">
+    
+    <button type="button" class="btn btn-info" id="btn-generate-sr">Generate</button>
+  </div>
+
+  <table class="table table-bordered w-100" id="service-record-data-table">
+    <thead>
+      <tr>
+        <th>Action</th>
+        <!-- <th>DRN</th> -->
+        <th class="text-center">Date Added</th>
+        <th class="text-end">Created By</th>
+      </tr>
+    </thead>
+  </table>
+</div>
+
+<div class="modal fade" id="workExperienceModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-lg"> <!-- Larger modal -->
+    <form id="workExperienceForm">
+      <div class="modal-content">
+      <div class="modal-header bg-info">
+          <h3 class="modal-title mb-0">Add Work Experience</h3>
+        </div>
+
+        <div class="modal-body">
+          <input type="hidden" name="sr_id" id="sr_id">
+          <input type="hidden" name="emp_id" id="emp_id">
+
+          <div class="row mb-3">
+            <div class="col-md-12">
+              <label class="form-label">Position</label>
+              <input type="text" name="position_name" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">From Date</label>
+              <input type="date" name="from" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">To Date</label>
+              <input type="date" name="to" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Company</label>
+              <input type="text" name="company" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Employment Status</label>
+              <select name="empstatus" class="form-control" required>
+                <option value="">Select Employment Status</option>
+                {% for emp in empstatus %}
+                <option value="{{ emp.id }}">{{ emp.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Salary Grade</label>
+              <select name="sg_step" class="form-control" required>
+                <option value="">Select Salary Grade</option>
+                {% for sg in sg_step %}
+                <option value="{{ sg.id }}">{{ sg.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Salary Rate</label>
+              <input type="number" name="salary_rate" class="form-control">
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Place of Assignment</label>
+              <input type="text" name="poa" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Branch</label>
+              <select name="branch" class="form-control" required>
+                <option value="0">National</option>
+                <option value="1">City LGU</option>
+                <option value="2">Municipal LGU</option>
+                <option value="3">Barangay LGU</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Date of Separation</label>
+              <input type="date" name="date" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Cause</label>
+              <input type="text" name="cause" class="form-control">
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-12">
+              <label class="form-label">Is Leave Without Pay?</label>
+              <select name="is_leave_wo_pay" class="form-control" required>
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+              </select>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-info">Save</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% block script %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  $('#btn-generate-sr').on('click', function () {
+    callSRPage('{% url "generate_sr_template" employee.id_number %}');
+  });
+//   document.getElementById('workExperienceModal').addEventListener('hidden.bs.modal', function () {
+//   document.getElementById('workExperienceForm').reset();
+// });
+
+
+  $(document).on('click', '.btn-add-work-history', function () {
+    const srId = $(this).data('sr-id');
+    const idNumber = $(this).data('id-number');
+
+    if (srId && idNumber) {
+      $('#sr_id').val(srId);
+      $('#emp_id').val(idNumber);
+      $('#workExperienceModal').modal('show');
+    } else {
+      alert("Missing employee ID number or SR ID.");
+    }
+  });
+
+
+  // Handle form submission
+  $('#workExperienceForm').on('submit', function (e) {
+    e.preventDefault();
+    const id_number = $('#emp_id').val(); // or wherever you get the employee ID number
+    const sr_id = $('#sr_id').val(); // get sr_id value
+
+    $.ajax({
+      url: `/backend/service-record/add/${id_number}/${sr_id}/`,
+      method: 'POST',
+      data: $('#workExperienceForm').serialize(),
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}'
+      },
+      success: function () {
+        $('#workExperienceModal').modal('hide');
+        $('#service-record-data-table').DataTable().ajax.reload();
+        alert('Work experience added successfully.');
+      },
+      error: function () {
+        alert('Error saving data.');
+      }
+    })
+  });
+
+  $(document).on('click', '.btn-edit-work-history', function () {
+    const data = $(this).data(); // assumes data attributes on the button
+
+    $('#modalTitle').text('Update Work Experience');
+    $('#emp_id').val(data.idNumber);
+    $('#sr_id').val(data.srId);
+    $('#wh_id').val(data.whId); // Workhistory ID
+
+    $('#position_name').val(data.position_name);
+    $('#from_date').val(data.from);
+    $('#to_date').val(data.to);
+    $('#branch').val(data.branch);
+    $('#is_leave_wo_pay').val(data.leave === true || data.leave === 'true' ? 'true' : 'false');
+    $('#separation_date').val(data.date);
+    $('#cause').val(data.cause);
+    $('#poa').val(data.poa);
+
+    $('#workExperienceModal').modal('show');
+  });
+
+
+  $('#service-record-data-table').DataTable({
+    serverSide: true,
+    processing: true,
+    deferRender: true,
+    order: [
+      [2, 'desc']
+    ],
+    ajax: {
+      url: '/api/employees/service-record/?format=datatables&pk={{ employee.id }}',
+      type: 'GET',
+    },
+    fnCreatedRow: function (row, data, index) {
+      $(row).attr('id', data['id']);
+    },
+    columns: [{
+        data: 'id',
+        render: function (data, type, row, meta) {
+          return `<a href="/backend/service-record/print/${data}" target="_blank">View |</a>
+          <a href="javascript:void(0);" class="btn-add-work-history" data-sr-id="${data}" data-id-number="{{ employee.id_number }}">Workexperience</a>`;
+        }
+      },
+      // {
+      //   data: 'drn'
+      // },
+      {
+        data: 'date_added',
+        className: 'text-center'
+      },
+      {
+        data: 'created_by',
+        className: 'text-end'
+      },
+    ],
+  });
+</script>
+{% endblock %}

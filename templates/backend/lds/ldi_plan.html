@@ -1,0 +1,119 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h3 class="mb-0">Individual Development Plan (LDI Plan)</h3>
+            <small class="text-muted">{% if plan.id %}Edit your selected plan{% else %}Create a new plan{% endif %}</small>
+        </div>
+        <div>
+            <a class="btn btn-outline-secondary btn-sm" href="{% url 'ldi_list' %}">Back</a>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header bg-info text-white">
+            Create / Edit LDI Plan
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                <!-- Training Category, Quarter, Year -->
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>Training Category <span class="text-danger">*</span></label>
+                        <select class="form-control" name="category" id="category-select" required>
+                            {% for c in categories %}
+                                <option value="{{ c }}" {% if plan.category == c %}selected{% endif %}>{{ c|upper }}</option>
+                            {% endfor %}
+                            <option value="_new">+ Propose New Category</option>
+                        </select>
+                        <input type="text" class="form-control mt-2" name="new_category" id="new-category-input" placeholder="Enter new category (approval required)" style="display:none;">
+                    </div>
+
+                    <div class="form-group col-md-3">
+                        <label>Quarter <span class="text-danger">*</span></label>
+                        <select class="form-control" name="quarter">
+                            <option value="Q1" {% if plan.quarter == "Q1" %}selected{% endif %}>1st Quarter</option>
+                            <option value="Q2" {% if plan.quarter == "Q2" %}selected{% endif %}>2nd Quarter</option>
+                            <option value="Q3" {% if plan.quarter == "Q3" %}selected{% endif %}>3rd Quarter</option>
+                            <option value="Q4" {% if plan.quarter == "Q4" %}selected{% endif %}>4th Quarter</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group col-md-3">
+                        <label>Year <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" name="year" value="{{ plan.year|default:current_year }}" required>
+                    </div>
+                </div>
+
+                <!-- Activities -->
+                <div class="form-group">
+                    <label>Proposed LDI / Activities <span class="text-danger">*</span></label>
+                    <textarea class="form-control" name="activities" rows="3" required>{% if plan.activities %}{% for act in plan.activities %}{{ act }}
+{% endfor %}{% endif %}</textarea>
+                </div>
+
+                <!-- Proposed Date, Participants, Budget -->
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label>Proposed Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" name="proposed_date" value="{{ plan.proposed_date|default:today }}" required>
+                    </div>
+
+                    <div class="form-group col-md-4">
+                        <label>Target Participants <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="participants" value="{{ plan.participants }}" required>
+                    </div>
+
+                    <div class="form-group col-md-4">
+                        <label>Budget <span class="text-danger">*</span></label>
+                        <input type="number" step="0.01" class="form-control" name="budget" value="{{ plan.budget }}" required>
+                    </div>
+                </div>
+
+                <!-- Competencies -->
+                <div class="form-group">
+                    <label>Target Competencies <span class="text-danger">*</span></label>
+                    <textarea class="form-control" name="competencies" rows="3" required>{{ plan.competencies }}</textarea>
+                </div>
+
+                <!-- Aim -->
+                <div class="form-group">
+                    <label>Aim <span class="text-danger">*</span></label>
+                    <textarea class="form-control" name="aim" rows="3" required>{{ plan.aim }}</textarea>
+                </div>
+
+                <div class="text-right">
+                    <button type="submit" class="btn btn-info">Save LDI Plan</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.getElementById('category-select');
+    const newCategoryInput = document.getElementById('new-category-input');
+
+    categorySelect.addEventListener('change', function() {
+        if (this.value === '_new') {
+            newCategoryInput.style.display = 'block';
+            newCategoryInput.required = true;
+        } else {
+            newCategoryInput.style.display = 'none';
+            newCategoryInput.required = false;
+        }
+    });
+});
+</script>
+{% endblock %}

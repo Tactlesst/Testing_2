@@ -1,0 +1,857 @@
+{% extends 'layout.html' %}
+{% load static %}
+{% load frontend_tags %}
+{% load tags %}
+{% block style %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/adjustments.css' %}">
+<style>
+   .list-accomplishments, .list-awards {
+    list-style-type: disc !important;  
+    padding-left: 20px !important;  
+    margin: 0 !important;  
+    text-align: left !important;  
+}
+
+.modal-body .text-center {
+    vertical-align: top !important;  
+    word-wrap: break-word !important;  
+    white-space: normal !important;  
+    text-align: left !important;  
+}
+
+.modal-body .table-cell-content {
+    max-width: 300px !important;  
+    overflow: hidden !important;  
+    text-overflow: ellipsis !important;  
+}
+
+.grade-input {
+    border: none;
+    background-color: transparent;
+    font-size: 13px;
+    text-align: center;
+    box-sizing: border-box;
+    min-width: 250px;
+    max-width: 300px;
+}
+.cal-points-textarea  {
+    width: 100%;
+    min-width: 230px !important;
+    max-width: 300px;
+    min-height: 200px !important;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+    justify-content:flex-start;
+
+
+}.criteria-desc-cell{
+    width: 100%;
+    min-width: 300px !important;
+    max-width: 400px;
+    min-height: 200px; 
+}
+
+.calibration-textarea {
+    padding: 20px;
+    width: 100%;
+    min-width: 230px !important;
+    max-width: 400px;
+    min-height: 200px !important;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+    justify-content:flex-start;
+}
+
+
+
+#generatedtable {
+    table-layout: auto;
+    width: 100%;
+    word-wrap: break-word;
+}
+
+
+
+.td-score {
+    min-width: 200px;
+    max-width: 300px;}
+
+.td-points,
+.td-grade {
+      min-width: 200px;
+    max-width: 300px;
+    
+}
+
+</style>
+{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row px-3 pt-3">
+        <div class="col-lg-8">
+            <h1 class="font-weight-bold">Deliberation</h1>
+            <ol class="breadcrumb bg-transparent p-0">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'backend-dashboard' %}">Home</a>
+                </li>
+                <li class="breadcrumb-item">
+                    Awards
+                </li>
+                <li class="breadcrumb-item active">
+                    <strong>Deliberation</strong>
+                </li>
+            </ol>
+        </div>
+    </div>
+</div>
+<div class="content-wrapper p-5 ml-0">
+	<div class="row">
+        <div class="col-md-12">
+            <div class="card card-info card-outline">
+                <div class="card-body">
+                    <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="filter">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Year</label>
+                                <input type="number" class="form-control" step="1" min="1900" max="{% now 'Y' %}" name="year" id="year" autocomplete="off" value="{% if request.POST.year %}{{ request.POST.year}}{% else %}{% now 'Y' %}{% endif %}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Category</label>
+                                <select class="form-control select" name="category" id="category" required>
+                                    <option></option>
+                                    {% for row in category %}
+                                        <option value="{{ row.id }}">{{ row.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Awards</label>
+                                <select class="form-control select" name="awards" id="awards" required></select>
+                            </div>
+                        </div>
+                        <div class="form-group col-md-2">
+                            <label>&nbsp;</label>
+                            <div class="btn-group form-control p-0 border-0" role="group" aria-label="..">
+                                <button type="submit" class="btn btn-info">
+                                    <span class="loading open-circle" style="display:none;"></span> Generate
+                                </button>
+                                <a href="{% url 'deliberation' %}" type="button" class="btn btn-default">Reset</a>
+                            </div>
+                        </div>
+                    </div>
+                    </form>
+                    
+                    {% if toggle %}
+                    {% if data %}
+                        {% if criteria %}
+                            <form id="saveDeliberationForm">
+                                {% csrf_token %}
+                                <input type="hidden" name="year" value="{{ year }}">
+                                <input type="hidden" name="category" value="{{ ctgy }}">
+                                <input type="hidden" name="awards" value="{{ awrd }}">
+                                <!-- <div class="table-responsive">
+                                    <table class="table table-bordered" id="generatedtable">
+                                        <tr>
+                                            <th class="text-center" rowspan="2">#</th>
+                                            <th class="text-center" rowspan="2">Action</th>
+                                            <th class="text-left capslock" colspan="{% if awards.category.needs_title %}2{% else %}1{% endif %}">
+                                                Nominees for {{ awards.name }}
+                                            </th>
+                                            <th class="text-center capslock" colspan="{{ criteria|length }}">CRITERIA</th>
+                                            <th class="text-center" rowspan="2">REMARKS</th>
+                                        </tr>
+                                        <tr>
+                                            {% if awards.category.needs_title %}
+                                                <th class="text-left">NAME OF {{ awards.category.name|upper }}</th>
+                                                <th class="text-center">TEAM LEADER</th>
+                                            {% else %}
+                                                <th class="text-left">NOMINEE</th>
+                                            {% endif %}
+                                            
+                                            {% for c in criteria %}
+                                                <th class="text-center capslock">{{ c.name }}<br>({{ c.percentage }}%)</th>
+                                            {% endfor %}
+                                        </tr>
+                                        
+                                        
+                                        {% for row in data %}
+                                        <tr>
+                                            <td class="text-center">{{ forloop.counter }}</td>
+                                            <td class="text-center">
+                                                {% if awards.category.needs_title %}
+                                                    <a href="#" class="view-group-details" 
+                                                        data-team-name="{{ row.title }}"
+                                                        data-team-leader="{{ row.nominee.pi.user.first_name|title }} {{ row.nominee.pi.user.middle_name|to_middleinitial|title }} {{ row.nominee.pi.user.last_name|title }}"
+                                                        data-accomplishments="{% for accomplishment in row.list_accomplishment %}{{ accomplishment }}, {% endfor %}"
+                                                        data-awards="{% for award in row.awards_received %}{{ award }}, {% endfor %}">
+                                                        Group Details
+                                                    </a>
+                                                {% else %}
+                                                    <a href="#" class="view-details" 
+                                                        data-name="{{ row.nominee.pi.user.first_name }} {{ row.nominee.pi.user.middle_name|to_middleinitial }} {{ row.nominee.pi.user.last_name }}"
+                                                        data-position="{{ row.nominee.position }}"
+                                                        data-empstatus="{{ row.nominee.empstatus }}"
+                                                        data-years-service="{{ row.years_of_service }}" 
+                                                        data-accomplishments="{% for accomplishment in row.list_accomplishment %}{{ accomplishment }}, {% endfor %}"
+                                                        data-awards="{% for award in row.awards_received %}{{ award }}, {% endfor %}"
+                                                        data-ipcr-ratings='{{ row.ipcr_ratings }}'>
+                                                        Details
+                                                    </a>
+                                                {% endif %}
+                                            </td>
+                                            
+                                            {% if awards.category.needs_title %}
+                                                <td class="text-left">{{ row.title }}</td>  {# GROUP TITLE #}
+                                                <td class="text-left">
+                                                    {{ row.nominee.pi.user.first_name|title }} 
+                                                    {{ row.nominee.pi.user.middle_name|to_middleinitial|title }} 
+                                                    {{ row.nominee.pi.user.last_name|title }}
+                                                </td>  {# TEAM LEADER NAME #}
+                                            {% else %}
+                                                <td class="text-left">
+                                                    {{ row.nominee.pi.user.first_name|title }} 
+                                                    {{ row.nominee.pi.user.middle_name|to_middleinitial|title }} 
+                                                    {{ row.nominee.pi.user.last_name|title }}
+                                                </td>  {# INDIVIDUAL NOMINEE NAME #}
+                                            {% endif %}
+                                        
+                                                {% for c in criteria %}
+                                                <td class="text-center" style="padding:0px; vertical-align:middle;">
+                                                    <input type="hidden" name="criteria_id[]" class="form-control" style="border:none;" value="{{ c.id }}">
+                                                    <input type="hidden" name="nominee_id[]" class="form-control" style="border:none;" value="{{ row.id }}">
+                                                    {% get_grade_of_nominee row.id c.id request.session.emp_id as grd %}
+                                                    <input type="number" step="1" min="0" max="{{ c.percentage }}" name="grade[]" class="form-control text-center" style="border:none; background-color:transparent;" value="{{ grd }}" {% if not awards.status %}readonly title="Award is now inactive. Please contact the Awards Administrator."{% endif %}>
+                                                </td>
+                                            {% endfor %}
+
+                                            <td class="text-center">
+                                                <input type="hidden" name="remarks_nominee_id[]" class="form-control" style="border:none;" value="{{ row.id }}">
+                                                {% get_remarks_of_nominee row.id request.session.emp_id as rmrk %}
+                                                <textarea name="remarks[]" class="form-control" style="border:none; resize: vertical; min-height:50; height:50;">{{ rmrk }}</textarea>
+                                            </td>                                                
+                                            </tr>
+                                            {% endfor %}
+                                    </table>
+                                </div> -->
+
+
+                                <div class="table-responsive">
+                                    <table class="table table-bordered text-center" id="generatedtable">
+                                            <tr>
+                                                <th rowspan="3" class="text-center td-criteria">Criteria</th>
+                                                <th rowspan="3" class="text-center td-calibration">Calibration of Points</th>
+                                                <th rowspan="3" class="text-center td-score">Score</th>
+                                                {% for row in data %}
+                                                        <th class="text-center" colspan="2">Nominee</th>
+                                                    {% endfor %}
+                                                </tr>
+                                                <tr>
+                                                    {% for row in data %}
+                                                    <th class="text-center td-points" colspan="2">
+                                                        {% if awards.category.needs_title %}
+                                                            {{ row.title }}<br>
+                                                            {{ row.nominee.pi.user.first_name|title }} {{ row.nominee.pi.user.middle_name|to_middleinitial|title }} {{ row.nominee.pi.user.last_name|title }}<br>
+                                                            <a href="#" class="view-group-details" 
+                                                            data-team-name="{{ row.title }}"
+                                                            data-team-leader="{{ row.nominee.pi.user.first_name|title }} {{ row.nominee.pi.user.middle_name|to_middleinitial|title }} {{ row.nominee.pi.user.last_name|title }}"
+                                                            data-accomplishments="
+                                                               {% for accomplishment in row.list_accomplishment %}
+                                                                    <b> Title: </b><br>{{ accomplishment }}||<b>Description:</b><br> 
+                                                                    {% if row.list_remarks|length > forloop.counter0 %}
+                                                                        {{ row.list_remarks|index:forloop.counter0 }}
+                                                                    {% else %}
+                                                                        N/A
+                                                                    {% endif %}||
+                                                                {% endfor %} "
+                                                            data-awards="
+                                                                    {% for award in row.awards_received %}
+                                                                    <b>Title:</b><br> {{ award }}||<b>Description:</b><br>
+                                                                    {% if row.awards_received_remarks|length > forloop.counter0 %}
+                                                                        {{ row.awards_received_remarks|index:forloop.counter0 }}
+                                                                    {% else %}
+                                                                        N/A
+                                                                    {% endif %}||
+                                                                {% endfor %}"
+                                                            data-years-service="{{ row.years_of_service }}"
+                                                            data-ipcr-ratings='{{ row.ipcr_ratings }}'
+                                                            data-link="{{ row.supporting_link }}">
+                                                                ( Group Details )
+                                                            </a>
+                                                        {% else %}
+                                                            {{ row.nominee.pi.user.first_name|title }} {{ row.nominee.pi.user.middle_name|to_middleinitial|title }} {{ row.nominee.pi.user.last_name|title }}<br>
+                                                            <a href="#" class="view-details"
+                                                            data-name="{{ row.nominee.pi.user.first_name }} {{ row.nominee.pi.user.middle_name|to_middleinitial }} {{ row.nominee.pi.user.last_name }}"
+                                                            data-position="{{ row.nominee.position }}"
+                                                            data-empstatus="{{ row.nominee.empstatus }}"
+                                                            data-years-service="{{ row.years_of_service }}"
+                                                           
+                                                            data-accomplishments="
+                                                               {% for accomplishment in row.list_accomplishment %}
+                                                                    <b> Title: </b><br>{{ accomplishment }}||<b>Description:</b><br> 
+                                                                    {% if row.list_remarks|length > forloop.counter0 %}
+                                                                        {{ row.list_remarks|index:forloop.counter0 }}
+                                                                    {% else %}
+                                                                        N/A
+                                                                    {% endif %}||
+                                                                {% endfor %} "
+                                                            data-awards="
+                                                                    {% for award in row.awards_received %}
+                                                                    <b>Title:</b><br> {{ award }}||<b>Description:</b><br>
+                                                                    {% if row.awards_received_remarks|length > forloop.counter0 %}
+                                                                        {{ row.awards_received_remarks|index:forloop.counter0 }}
+                                                                    {% else %}
+                                                                        N/A
+                                                                    {% endif %}||
+                                                                {% endfor %}"
+
+                                                            data-ipcr-ratings='{{ row.ipcr_ratings }}'
+                                                            data-link="{{ row.supporting_link }}">
+                                                            ( Details )
+                                                            </a>
+                                                        {% endif %}
+                                                    </th>
+                                                {% endfor %}
+
+                                                </tr>
+                                                
+                                        <tbody>
+                                            {% for c in criteria %}
+                                            <tr>
+                                                <td class="criteria-desc-cell">
+                                                    {{ c.desc }}
+                                                </td>
+                                                                                 
+                                                    <td style="padding: 0px; vertical-align: middle; height: 100px;">
+                                                    <input type="hidden" name="calibration_criteria_id[]" value="{{ c.id }}">
+                                                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; width: 100%;">
+                                                        <textarea  
+                                                            name="calibration_desc_{{ c.id }}" 
+                                                            class="form-control calibration-textarea"
+                                                            style="border: none; background-color: transparent;">
+                                                            {% for cal in c.calibration_set.all %}{{ cal.desc }}{% endfor %}
+                                                        </textarea>
+                                                    </div>
+                                                </td>
+                                
+                                                <td class="text-center" style="padding:0px; vertical-align:middle; width: 5vh; font-size: 13px;">
+                                                    {{ c.percentage }}
+                                                </td> 
+                                                
+                                                {% for row in data %}
+                                                <td class="cal-points-textarea" style="padding:0px; vertical-align:middle;">
+                                                    <input type="hidden" name="calibration_nominee_id[]" value="{{ row.id }}">
+                                                    <input type="hidden" name="calibration_desc[]" value="{{ c.desc }}">
+                                                    
+                                                
+                                                {% if user|check_permission:'superadmin' or user|check_permission:'awards' %}
+                                                    {% get_points_cal row.id c.id as points_cal %}
+                                                    <textarea 
+                                                        name="calibration_points_{{ row.id }}_{{ c.id }}" 
+                                                        class="form-control cal-points-textarea"
+                                                        style="border: none; background-color: transparent;">{{ points_cal }}</textarea>
+
+                                                {% elif user|check_permission:'awards_deliberators' %}
+                                                    {% get_points_cal row.id c.id as points_cal %}
+                                                    <textarea 
+                                                        class="form-control cal-points-textarea"
+                                                        style="border: none; background-color: transparent;" 
+                                                        readonly>{{ points_cal }}</textarea>
+
+                                                {% else %}
+                                                    <div class="alert alert-warning text-center" style="font-weight: bold;font-size: 12px;">
+                                                        You don't have any permission to access this area.
+                                                    </div>
+                                                {% endif %}
+
+                                                </td>
+                                                
+                                
+                                                <td class="text-center" style="padding:0px; vertical-align:middle;">
+                                                <input type="hidden" name="criteria_id[]" value="{{ c.id }}">
+                                                <input type="hidden" name="nominee_id[]" value="{{ row.id }}">
+                                                {% get_grade_of_nominee row.id c.id request.session.emp_id as grd %}
+                                                <input type="number" step="0.01" min="0" max="{{ c.percentage }}" 
+                                                    name="grade[]" 
+                                                    class="form-control grade-input"
+                                                    value="{{ grd }}"
+                                                    {% if not awards.status %}readonly title="Award is now inactive. Please contact the Awards Administrator."{% endif %}>
+                                            </td>
+                                                {% endfor %}
+                                
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <br>
+
+
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-info">Save</button>
+                                </div>
+                            </form>
+                        {% else %}
+                            <span class="text-danger"><i class="fas fa-exclamation-circle"></i> Deliberation is not possible because there were no criteria set for this award.</span>
+                        {% endif %}
+                    {% else %}
+                            {% if not notpost %}
+                            <span class="text-danger"><i class="fas fa-exclamation-circle"></i> Deliberation is not possible because there were no nominees for this award.</span>
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        {% if data %}
+                            {% if graders %}
+                                <form action="{% url 'print_deliberation_results' %}" method="POST" target="_blank">
+                                {% csrf_token %}
+                                    <input type="hidden" name="year" value="{{ year }}">
+                                    <input type="hidden" name="category" value="{{ ctgy }}">
+                                    <input type="hidden" name="awards" value="{{ awrd }}">
+                                    <div class="table-responsive">
+                                    <table class="table table-bordered" id="table-top-three">
+                                        <tr>
+                                            <th class="text-center" style="width:5% !important; overflow:hidden; text-overflow:ellipsis; vertical-align:middle;" rowspan="2">#</th>
+                                            <th class="text-left capslock" style="vertical-align:middle;" colspan="{% if awards.category.needs_title %}2{% else %}1{% endif %}">Nominees for {{ awards.name }}</th>
+                                            <th class="text-center" style="width:5% !important; overflow:hidden; text-overflow:ellipsis; vertical-align:middle;" rowspan="2">AVERAGE SCORE</th>
+                                        </tr>
+                                        <tr>
+                                            {% if awards.category.needs_title %}
+                                                <th class="text-left" style="width:20%; vertical-align:middle;">NAME OF {{ awards.category.name|upper }}</th>
+                                                <th class="text-center" style="width:20%; vertical-align:middle;">TEAM LEADER</th>
+                                            {% else %}
+                                                <th class="text-left" style="width:20%; vertical-align:middle;">NOMINEE</th>
+                                            {% endif %}
+                                        </tr>
+                                        <tr>
+                                            {% if awardee.nomiee.pi %}
+                                            <th class="text-center" style="width: 10%;vertical-align: center;">Awardee Name</th>
+                                            <th class="text-center" style="width: 20%;vertical-align: center;">Special award</th>
+                                            {% endif %}
+                                        </tr>
+                                    {% get_top_three_for_consolidation data as top_three %}
+                                    {% for row in data %}
+                                        {% get_average_grade_for_consolidation row.id as avescore %}
+                                        {% if avescore in top_three %}
+                                            <tr>
+                                                <td class="text-center">{{ forloop.counter }}</td>
+                                                {% if awards.category.needs_title %}
+                                                    <td class="text-left">{{ row.title }}</td>
+                                                    <td class="text-center">{{ row.nominee.pi.user.first_name|title }} {{ row.nominee.pi.user.middle_name|to_middleinitial|title }} {{ row.nominee.pi.user.last_name|title }}</td>
+                                                {% else %}
+                                                    <td class="text-left">{{ row.nominee.pi.user.first_name|title }} {{ row.nominee.pi.user.middle_name|to_middleinitial|title }} {{ row.nominee.pi.user.last_name|title }}</td>
+                                                {% endif %}
+
+                                                <td class="text-center bold" style="vertical-align:middle;">
+                                                    {{ avescore }}
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                    </table>
+                                    </div>
+                                </form>
+                            {% else%}
+                                <span class="text-danger"><i class="fas fa-exclamation-circle"></i> Deliberation is not possible because there were no criteria set for this award.</span>
+                            {% endif %}
+                        {% else%}
+                            {% if not notpost %}
+                            <span class="text-danger"><i class="fas fa-exclamation-circle"></i> Deliberation is not possible because there were no nominees for this award.</span>
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+</div>
+
+
+<div class="modal fade" id="groupDetailsModal" tabindex="-1" aria-labelledby="groupDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info d-flex justify-content-between align-items-center">
+                <h3 class="modal-title" id="groupDetailsModalLabel">Group Nominee Details</h3>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered">
+                    <tr>
+                        <th>Name of Group</th>
+                        <td id="modalTeamName"></td>
+                    </tr>
+                    <tr>
+                        <th>Team Leader</th>
+                        <td id="modalTeamLeader"></td>
+                    </tr>
+                    <tr>
+                        <th>Accomplishments</th>
+                        <td>
+                            <ul id="modalGroupAccomplishments" class="list-accomplishments"></ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Awards</th>
+                        <td>
+                            <ul id="modalGroupAwards" class="list-awards"></ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Years of Service</th>
+                        <td>
+                            <ul id="modalgroupservice" class="Years-awards"></ul>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <th>Link for Soft Copies of awards and commendations</th>
+                        <td>
+                            <div id="group_link_awards" style="word-break: break-word;"></div>
+                        </td>
+                    </tr>
+                <h4 class="mt-4">IPCR Ratings (Last 3 Years)</h5>
+                    <table class="table table-bordered text-center">
+                        <thead class="text-center">
+                        <tr>
+                            <th>Year</th>
+                            <th>Semester</th>
+                            <th>IPCR Rating</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalgroupIpcrRatings">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info d-flex justify-content-between align-items-center">
+                <h3 class="modal-title" id="detailsModalLabel">Nominee Details</h3>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered">
+                    <tr>
+                        <th>Name</th>
+                        <td id="modalName"></td>
+                    </tr>
+                    <tr>
+                        <th>Position</th>
+                        <td id="modalPosition"></td>
+                    </tr>
+                    <tr>
+                        <th>Employment Status</th>
+                        <td id="modalEmpStatus"></td>
+                    </tr>
+                    <tr>
+                        <th>Accomplishments</th>
+                        <td>
+                            <ul id="modalAccomplishments" class="list-accomplishments"></ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Awards</th>
+                        <td>
+                            <ul id="modalAwards" class="list-awards"></ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Years of Service</th>
+                        <td>
+                            <ul id="modalYearsService" class="Years-awards"></ul>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Link for Soft Copies of awards and commendations</th>
+                        <td>
+                            <div id="link_awards" style="word-break: break-word;"></div>
+                        </td>
+                    </tr>
+                    
+                </table>
+
+                <h4 class="mt-4">IPCR Ratings (Last 3 Years)</h5>
+                    <table class="table table-bordered text-center">
+                        <thead class="text-center">
+                        <tr>
+                            <th>Year</th>
+                            <th>Semester</th>
+                            <th>IPCR Rating</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalIpcrRatings">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock %}
+{% block script %}
+
+
+<script type="application/json" id="ipcr_{{ row.nominee.id }}">
+    {{ row.ipcr_ratings|safe }}
+</script>
+<script>
+
+   function sortTable() { 
+    var table = document.getElementById("table-top-three");
+    var switching = true;
+
+    while (switching) {
+        switching = false;
+        var rows = table.rows;
+
+        for (var i = 2; i < rows.length - 1; i++) {
+            var shouldSwitch = false;
+            var colIndex = {% if awards.category.needs_title %}3{% else %}2{% endif %};
+            var x = parseFloat(rows[i].getElementsByTagName("TD")[colIndex].innerHTML) || 0;
+            var y = parseFloat(rows[i + 1].getElementsByTagName("TD")[colIndex].innerHTML) || 0;
+
+            if (x < y) {
+                shouldSwitch = true;
+                break;
+            }
+        }
+        if (shouldSwitch) {
+            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            switching = true;
+        }
+    }
+}
+
+$(document).ready(function(){
+    {% if not notpost %}
+        sortTable();
+    {% endif %}
+});
+
+$('#category, #year').on('change input', function(){
+    $.ajax({
+        url: "{% url 'check_awards' %}",
+        type: "POST",
+        data: {
+            category: $('#category').val(),
+            year: $('#year').val()
+        },
+        success: function(response){
+            if (response.data) {
+                var $awards = $('#awards').empty();
+                $.each(response.data, function(index, item){
+                    $awards.append(new Option(item.awards_name, item.id));
+                });
+
+                var selectedAward = '{{ request.POST.awards|default:"" }}';
+                $('#awards').val(selectedAward).trigger('change');
+            }
+        },
+        error: function(xhr){
+            console.error("Error fetching awards:", xhr.responseText);
+        }
+    });
+});
+
+
+$(document).on("click", ".view-details", function () {
+    let name = $(this).data("name");
+    let position = $(this).data("position");
+    let empStatus = $(this).data("empstatus");
+    let yearsService = $(this).attr("data-years-service") || "N/A";
+    let accomplishmentsRaw = $(this).attr("data-accomplishments") || "";
+    let awardsRaw = $(this).attr("data-awards") || "";
+    let ipcrData = $(this).attr("data-ipcr-ratings");
+    let supporting_link = $(this).data("link");
+
+
+
+    $("#modalName").text(name);
+    $("#modalPosition").text(position);
+    $("#modalEmpStatus").text(empStatus);
+    $("#modalYearsService").text(yearsService);
+
+    // Utility function to split '||' and render items in a container
+    let populateList = (rawData, element, emptyMsg) => {
+        let list = $(element).empty();
+        let items = rawData.split("||").map(i => i.trim()).filter(Boolean);
+        if(items.length > 0) {
+            items.forEach(item => list.append(`<div class="mb-2">${item}</div>`));
+        } else {
+            list.append(`<div>${emptyMsg}</div>`);
+        }
+    };
+
+    populateList(accomplishmentsRaw, "#modalAccomplishments", "No accomplishments available.");
+    populateList(awardsRaw, "#modalAwards", "No awards received.");
+
+    let linkElement = $("#link_awards").empty();
+    if (supporting_link) {
+        linkElement.append(`<a href="${supporting_link}" target="_blank">View Support File</a>`);
+    } else {
+        linkElement.append("<div>No supporting link provided.</div>");
+    }
+
+    let ipcrTable = $("#modalIpcrRatings").empty();
+    if (ipcrData) {
+        try {
+            let ipcrRatings = JSON.parse(ipcrData);
+            if (Array.isArray(ipcrRatings) && ipcrRatings.length > 0) {
+                $.each(ipcrRatings, function(_, rating){
+                    ipcrTable.append(`
+                        <tr>
+                            <td>${rating.year}</td>
+                            <td>${rating.semester}</td>
+                            <td>${rating.ipcr}</td>
+                        </tr>
+                    `);
+                });
+            } else {
+                ipcrTable.append(`<tr><td colspan="3" class="text-center">No IPCR ratings available.</td></tr>`);
+            }
+        } catch (error) {
+            console.error("Error parsing IPCR ratings:", error);
+            ipcrTable.append(`<tr><td colspan="3" class="text-center">Invalid IPCR data.</td></tr>`);
+        }
+    } else {
+        ipcrTable.append(`<tr><td colspan="3" class="text-center">No IPCR ratings available.</td></tr>`);
+    }
+
+    $("#detailsModal").modal("show");
+});
+
+
+
+$(document).on("click", ".view-group-details", function () {
+    let teamName = $(this).data("team-name");
+    let teamLeader = $(this).data("team-leader");
+    let accomplishments = $(this).data("accomplishments");
+    let awards = $(this).data("awards");
+    let supporting_link = $(this).data("link");
+    let yearsService = $(this).attr("data-years-service") || "N/A";
+    let ipcrData = $(this).attr("data-ipcr-ratings");
+
+
+    $("#modalTeamName").text(teamName);
+    $("#modalTeamLeader").text(teamLeader);
+    $("#modalgroupservice").text(yearsService);
+
+
+
+    let populateList = (data, element, emptyMsg) => {
+        let list = $(element).empty();
+        if (data) {
+            let items = data.split("||").map(item => item.trim()).filter(Boolean);
+        list.append(items.length ? items.map(item => `<div class="mb-2">${item}</div>`).join('') : `<div>${emptyMsg}</div>`);
+        } else {
+            list.append(`<li>${emptyMsg}</li>`);
+        }
+    };
+
+
+    if (supporting_link) {
+        $("#group_link_awards").html(`<a href="${supporting_link}" target="_blank" style="word-break: break-word;">View Supporting File</a>`);
+    } else {
+        $("#group_link_awards").text("No supporting link provided.");
+    }
+
+    populateList(accomplishments, "#modalGroupAccomplishments", "No accomplishments available.");
+    populateList(awards, "#modalGroupAwards", "No awards received.");
+
+    let ipcrTable = $("#modalgroupIpcrRatings").empty();
+    if (ipcrData) {
+        try {
+            let ipcrRatings = JSON.parse(ipcrData);
+            if (Array.isArray(ipcrRatings) && ipcrRatings.length > 0) {
+                $.each(ipcrRatings, function(_, rating){
+                    ipcrTable.append(`
+                        <tr>
+                            <td>${rating.year}</td>
+                            <td>${rating.semester}</td>
+                            <td>${rating.ipcr}</td>
+                        </tr>
+                    `);
+                });
+            } else {
+                ipcrTable.append(`<tr><td colspan="3" class="text-center">No IPCR ratings available.</td></tr>`);
+            }
+        } catch (error) {
+            console.error("Error parsing IPCR ratings:", error);
+            ipcrTable.append(`<tr><td colspan="3" class="text-center">Invalid IPCR data.</td></tr>`);
+        }
+    } else {
+        ipcrTable.append(`<tr><td colspan="3" class="text-center">No IPCR ratings available.</td></tr>`);
+    }
+
+    $("#groupDetailsModal").modal("show");
+});
+
+
+$('#saveDeliberationForm').on('submit', function(e){
+    e.preventDefault();
+    var form = new FormData(this);
+
+    Swal.fire({
+        title: "Are you sure?",
+        text: "You want to save this changes?",
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonText: "Yes",
+        confirmButtonColor: "#3498DB",
+        allowOutsideClick: false,
+        showLoaderOnConfirm: true,
+        preConfirm: function (){
+            return $.ajax({
+                url: '{% url "save_deliberation" %}',
+                type: 'POST',
+                data: form,
+                cache: false,
+                contentType: false,
+                processData: false,
+            });
+        },
+    }).then(function (data){
+        if (data.value && data.value.data === "success"){
+            Swal.fire({
+                title: "Good job!",
+                html: "You have successfully saved your changes.",
+                icon: "success",
+                confirmButtonColor: "#3498DB",
+            });
+        }
+    });
+});
+
+{% if request.POST.category %}
+    $('#category').val('{{ request.POST.category }}').trigger('change').trigger('select2:select');
+{% else %}
+    $('#category').val('').trigger('change');
+{% endif %}
+
+</script>
+{% endblock %}

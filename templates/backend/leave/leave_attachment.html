@@ -1,0 +1,85 @@
+{% load crispy_forms_tags %}
+<form id="uploadLeaveAttachmentForm" enctype="multipart/form-data">
+{% csrf_token %}
+<div class="modal-body">
+    <div class="form-group">
+        {{ form.file|as_crispy_field }}
+    </div>
+</div>
+<div class="modal-footer">
+    <button type="submit" class="btn btn-info"> Upload </button>
+</div>
+</form>
+{% block script %}
+
+<script>
+
+$('#uploadLeaveAttachmentForm').on('submit', function(e) {
+    e.preventDefault();
+
+    var form = new FormData(this);
+    var fileInput = $(this).find('input[type="file"]')[0];
+    if (fileInput.files.length === 0) {
+        Swal.fire({
+            title: "No File Selected",
+            text: "Please select a file to upload.",
+            icon: "warning",
+            confirmButtonColor: "#3498DB",
+        });
+        return;
+    }
+    var fileName = fileInput.files[0].name; 
+    console.log("File being uploaded:", fileName);
+
+    Swal.fire({
+        title: "Are you sure?",
+        text: "You want to upload this leave attachment?",
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonColor: "#3498DB",
+        confirmButtonText: "Yes",
+        allowOutsideClick: false,
+        showLoaderOnConfirm: true,
+        preConfirm: function() {
+            return $.ajax({
+                data: form,
+                url: "{% url 'leave_attachment' pk %}",
+                type: 'POST',
+                cache: false,
+                contentType: false,
+                processData: false
+            }).then(function(response) {
+                if (response.data !== "success") {
+                    throw new Error(response.msg || 'File upload failed.');
+                }
+                return response;
+            }).catch(function(error) {
+                Swal.fire({
+                    title: "Error!",
+                    text: error.message,
+                    icon: "error",
+                    confirmButtonColor: "#3498DB",
+                });
+            });
+        },
+    }).then(function(response) {
+        if (response.isConfirmed && response.value.data === "success") {
+            Swal.fire({
+                title: "Good job!",
+                text: response.value.msg,
+                icon: "success",
+                confirmButtonColor: "#3498DB",
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $('#leave-table').DataTable().ajax.reload(null, false); 
+
+                    $('#leave-attachment-modal').modal('hide');
+                }
+            });
+        }
+    });
+});
+
+
+</script>
+{% endblock %}

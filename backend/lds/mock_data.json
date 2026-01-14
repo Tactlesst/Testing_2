@@ -1,0 +1,33 @@
+[
+    {
+        "id": "LDI-2026-00001",
+        "title": "Supervisory Development Program",
+        "category": "Leadership Development",
+        "quarter": "Q2",
+        "year": "2026",
+        "activities": [
+            "Team Building Workshop",
+            "Coaching & Mentoring Session"
+        ],
+        "proposed_date": "2026-05-15",
+        "participants": "Section Chiefs, Supervisors (approx. 25 pax)",
+        "budget": 50000.0,
+        "competencies": "Leadership and Management\nCommunication\nProblem Solving",
+        "aim": "Improve supervisory effectiveness and strengthen leadership pipeline."
+    },
+    {
+        "id": "LDI-2026-00002",
+        "title": "",
+        "category": "Leadership Development",
+        "quarter": "Q1",
+        "year": 2026,
+        "activities": [
+            "testing"
+        ],
+        "proposed_date": "2026-01-14",
+        "participants": "Managers (approx. 20 pax)",
+        "budget": 5000.0,
+        "competencies": "20",
+        "aim": "managers "
+    }
+]

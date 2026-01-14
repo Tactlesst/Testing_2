@@ -1,0 +1,346 @@
+<!-- {% load tags %}
+{% load frontend_tags %}
+<div class="row resignation">
+	<div class="col-sm-5">
+		<h3>Main Information</h3>
+		<p>Name <br><strong>{{ emp.pi.user.first_name }} {{ emp.pi.user.middle_name|to_middleinitial }} {{ emp.pi.user.last_name }}</strong></p>
+		<p>Sex <br><strong>{% if emp.pi.gender == 1 %}Male{% else %}Female{% endif %}</strong></p>
+		<p>Position <br><strong>{{ emp.position.name }}</strong></p>
+		<p>Employment Status <br><strong>{{ emp.empstatus.name }}</strong></p>
+		<p>Program <br><strong>{{ emp.project.name }}</strong></p>
+		<p>Salary Rate <br><strong>{{ emp.salary_rate }} SG{{ emp.salary_grade }} - {{ emp.step_inc }}</strong></p>
+		<p>Type of employment separation <br><strong>{{ rfd.tfs.name }}</strong></p>
+		<p>Remarks <br><strong>{{ rfd.remarks }}</strong></p>
+		<p>Date Requested <br><strong>{{ rfd.date_requested }}</strong></p>
+		<p>Date of Effectivity <br><strong>{{ rfd.date_effectivity|date:'M d, Y' }}</strong></p>
+		{% if req.count == total_compliance %}
+			{% if not rfd.date_approved %}
+			<form action="{% url 'deactivate_user' %}" method="POST">
+				{% csrf_token %}
+				<input type="hidden" name="user_id" value="{{ emp.pi.user_id }}">
+				<input type="hidden" name="emp_id" value="{{ emp.id }}">
+				<button type="submit" class="btn btn-info">Deactivate</button>
+			</form>
+			{% endif %}
+		{% elif rfd.tfs.name == 'End of Contract' %}
+			<form action="{% url 'deactivate_user' %}" method="POST">
+				{% csrf_token %}
+				<input type="hidden" name="user_id" value="{{ emp.pi.user_id }}">
+				<input type="hidden" name="emp_id" value="{{ emp.id }}">
+				<button type="submit" class="btn btn-info">Deactivate</button>
+			</form>
+		{% endif %}
+	</div>
+	<div class="col-sm-7">
+		<h3>{{ emp.empstatus.name }} requirements</h3>
+		<ul class="list-group">
+			{% for row in req %}
+			<li class="list-group-item">
+				{{ row.name }}
+				{% getcompliance emp.id row.id as compliance %}
+				{% if compliance %}
+				<span class="pull-right">
+					{{ compliance.datetime }} <a data-role="delete" data-id="[{{ row.id }}, {{ emp.id }}]" class="text-danger"><i class="fa fa-times"></i></a>
+				</span> 
+				{% else %}
+				<span class="pull-right">
+					<a data-role="approve" data-id="[{{ row.id }}, {{ emp.id }}]">Approve</a>
+				</span>
+				{% endif %}
+			</li>
+			{% endfor %}
+		</ul>
+		<br>
+	</div>
+</div> -->
+<!-- 
+
+{% load tags %}
+{% load frontend_tags %}
+<div class="row resignation">
+    <div class="col-sm-12">
+        <h3>Main Information</h3>
+        <table class="table table-bordered">
+            <tbody>
+                <tr>
+                    <td>Name</td>
+                    <td><strong>{{ emp.pi.user.first_name }} {{ emp.pi.user.middle_name|to_middleinitial }} {{ emp.pi.user.last_name }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Sex</td>
+                    <td><strong>{% if emp.pi.gender == 1 %}Male{% else %}Female{% endif %}</strong></td>
+                </tr>
+                <tr>
+                    <td>Position</td>
+                    <td><strong>{{ emp.position.name }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Employment Status</td>
+                    <td><strong>{{ emp.empstatus.name }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Program</td>
+                    <td><strong>{{ emp.project.name }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Salary Rate</td>
+                    <td><strong>{{ emp.salary_rate }} SG{{ emp.salary_grade }} - {{ emp.step_inc }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Type of Employment Separation</td>
+                    <td><strong>{{ rfd.tfs.name }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Remarks</td>
+                    <td><strong>{{ rfd.remarks }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Date Requested</td>
+                    <td><strong>{{ rfd.date_requested }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Date of Effectivity</td>
+                    <td><strong>{{ rfd.date_effectivity|date:'M d, Y' }}</strong></td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        {% if req.count == total_compliance %}
+                            {% if not rfd.date_approved %}
+                            <form action="{% url 'deactivate_user' %}" method="POST" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_id" value="{{ emp.pi.user_id }}">
+                                <input type="hidden" name="emp_id" value="{{ emp.id }}">
+                                <button type="submit" class="btn btn-info">Deactivate</button>
+                            </form>
+                            {% endif %}
+                        {% elif rfd.tfs.name == 'End of Contract' %}
+                            <form action="{% url 'deactivate_user' %}" method="POST" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_id" value="{{ emp.pi.user_id }}">
+                                <input type="hidden" name="emp_id" value="{{ emp.id }}">
+                                <button type="submit" class="btn btn-info">Deactivate</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="col-sm-12">
+        <h3>{{ emp.empstatus.name }} Requirements</h3>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Requirement</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in req %}
+                <tr>
+                    <td>{{ row.name }}</td>
+                    <td>
+                        {% getcompliance emp.id row.id as compliance %}
+                        {% if compliance %}
+                        <span>
+                            {{ compliance.datetime }} <a data-role="delete" data-id="[{{ row.id }}, {{ emp.id }}]" class="text-danger"><i class="fa fa-times"></i></a>
+                        </span> 
+                        {% else %}
+                        <span>
+                            <a data-role="approve" data-id="[{{ row.id }}, {{ emp.id }}]">Approve</a>
+                        </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div> -->
+
+{% load tags %}
+{% load frontend_tags %}
+
+
+<div class="row resignation">
+    <div class="col-sm-12">
+        <h3>Main Information</h3>
+        <table class="table table-bordered">
+            <tbody>
+                <tr>
+                    <td>Name</td>
+                    <td><strong>{{ emp.pi.user.first_name }} {{ emp.pi.user.middle_name|to_middleinitial }} {{ emp.pi.user.last_name }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Sex</td>
+                    <td><strong>{% if emp.pi.gender == 1 %}Male{% else %}Female{% endif %}</strong></td>
+                </tr>
+                <tr>
+                    <td>Position</td>
+                    <td><strong>{{ emp.position.name }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Employment Status</td>
+                    <td><strong>{{ emp.empstatus.name }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Program</td>
+                    <td><strong>{{ emp.project.name }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Salary Rate</td>
+                    <td><strong>{{ emp.salary_rate }} SG{{ emp.salary_grade }} - {{ emp.step_inc }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Type of Employment Separation</td>
+                    <td><strong>{{ rfd.tfs.name }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Remarks</td>
+                    <td><strong>{{ rfd.remarks }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Date Requested</td>
+                    <td><strong>{{ rfd.date_requested }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Date of Effectivity</td>
+                    <td><strong>{{ rfd.date_effectivity|date:'M d, Y' }}</strong></td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        {% if emp.pi.user.is_active %}
+                            <form action="{% url 'deactivate_user' %}" method="POST" id="deactivate-form-{{ emp.pi.user.id }}">
+                                {% csrf_token %}
+                                <input type="hidden" name="user_id" value="{{ emp.pi.user.id }}">
+                                <input type="hidden" name="emp_id" value="{{ emp.id }}">
+                                <button type="button" class="btn btn-danger" onclick="confirmDeactivate('{{ emp.pi.user.id }}', '{{ emp.id }}')">Deactivate</button>
+                            </form>
+                        {% else %}
+                            <form action="{% url 'activate_user' emp.pi.user.id %}" method="POST" id="activate-form-{{ emp.pi.user.id }}">
+                                {% csrf_token %}
+                                <button type="button" class="btn btn-success" onclick="confirmActivate('{{ emp.pi.user.id }}')">Activate</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                
+            </tbody>
+        </table>
+    </div>
+
+    <div class="col-sm-12">
+        <h3>{{ emp.empstatus.name }} Requirements</h3>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Requirement</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in req %}
+                <tr>
+                    <td>{{ row.name }}</td>
+                    <td>
+                        {% getcompliance emp.id row.id as compliance %}
+                        {% if compliance %}
+                        <span>
+                            {{ compliance.datetime }} 
+                            <a data-role="delete" data-id="[{{ row.id }}, {{ emp.id }}]" class="text-danger">
+                                <i class="fa fa-times"></i>
+                            </a>
+                        </span> 
+                        {% else %}
+                        <span>
+                            <a data-role="approve" data-id="[{{ row.id }}, {{ emp.id }}]">Approve</a>
+                        </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+
+
+
+function confirmActivate(userId) {
+    Swal.fire({
+        title: "Activate User?",
+        text: "Are you sure you want to activate this user?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#28a745",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, Activate"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/backend/activate-user/${userId}/`, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "Content-Type": "application/json"
+                },
+                credentials: "same-origin"
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    Swal.fire("Activated!", data.message, "success").then(() => {
+                        location.reload(); 
+                    });
+                } else {
+                    Swal.fire("Error!", data.message, "error");
+                }
+            })
+            .catch(error => {
+                Swal.fire("Error!", "Something went wrong.", "error");
+            });
+        }
+    });
+}
+
+function confirmDeactivate(userId, empId) {
+    Swal.fire({
+        title: "Deactivate User?",
+        text: "Are you sure you want to deactivate this user?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "Yes, Deactivate"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch("{% url 'deactivate_user' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: new URLSearchParams({
+                    user_id: userId,
+                    emp_id: empId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    Swal.fire("Deactivated!", data.message, "success").then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire("Error!", data.message, "error");
+                }
+            })
+            .catch(error => {
+                Swal.fire("Error!", "Something went wrong.", "error");
+            });
+        }
+    });
+}
+</script>

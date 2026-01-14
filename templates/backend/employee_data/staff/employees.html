@@ -1,0 +1,1121 @@
+{% extends 'layout.html' %}
+{% load tags %}
+{% load static %}
+{% block style %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/adjustments.css' %}">
+<link href="{% static 'css/plugins/textSpinners/spinners.css' %}" rel="stylesheet">
+<style type="text/css">
+	.select2-container--default .select2-selection--single {
+		text-align: left !important;
+    }
+
+    .font-xs{
+    	font-size: 15px !important;
+    }
+    
+   	.modal{
+	  background: rgba(0,0,0,0.3);
+	  height: 100vh;
+	  position: fixed;
+	}#search {
+    height: 25px;
+    width: 22vh;
+    border: 1px solid;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+#search:focus {
+    border-color:#17a2b8; 
+}label{
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: small;
+}#reset-button{
+	border:1px solid;
+}.card-header {
+    display: flex;          
+    justify-content: center; 
+    align-items: center;     
+    text-align: center;      
+	font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+}.filter-sidebar {
+    position: fixed;
+    top: 0;
+    right: -100%; 
+    height: 85%;
+    width: 300px;
+    background-color: #fff;
+    box-shadow: -1px 0 4px rgba(0, 0, 0, 0.5);
+    transition: right 0.3s ease-in-out;
+    z-index: 1050;
+}
+.filter-sidebar.open {
+    right: 0; 
+}.card-body-filter{
+	margin: 2vh;
+	height: 100vh;
+}#filter-panel {
+    height: 85vh; 
+    border-radius: 5px;
+    margin-top: 10vh; 
+    overflow: hidden; 
+	
+}
+
+</style>
+{% endblock %}
+{% block content %}
+
+<div class="container-fluid">
+    <div class="row px-3 pt-3">
+        <div class="col-lg-8 col-md-6">
+            <h1 class="font-weight-bold">Staff Inventory</h1>
+            <ol class="breadcrumb bg-transparent p-0">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'backend-dashboard' %}">Home</a>
+                </li>
+                <li class="breadcrumb-item">Admin</li>
+                <li class="breadcrumb-item">Employee Data</li>
+                <li class="breadcrumb-item active">
+                    <strong>Staff Inventory</strong>
+                </li>
+            </ol>
+        </div>
+      
+		<div class="col-lg-4 col-md-6 pt-3 text-md-right text-center">
+			{% if user|check_permission:'register_employee' or user|check_permission:'superadmin' %}
+				<a class="btn btn-info mb-2" id="btn-register">
+					<i class="fas fa-plus"></i> Register Employee
+				</a>
+			{% endif %}
+			{% if user|check_permission:'superadmin' or user|check_permission:'staffing' %}
+			<a data-role="import" class="btn btn-default mb-2"><i class="fas fa-file-import"></i> Import</a>
+			<div class="btn-group mb-2">
+				<div class="dropdown">
+					<button type="button" data-toggle="dropdown" class="btn btn-default dropdown-toggle">
+						<span class="loading open-circle" style="display:none;"></span> 
+						<i class="fas fa-file-export"></i> Export 
+					</button>
+					<div class="dropdown-menu">
+						<h5 class="dropdown-header">Central Office Template</h5>
+						<a class="dropdown-item" id="dump">All</a>
+						<a class="dropdown-item" data-toggle="modal" data-target="#export_division">Division</a>
+						<a class="dropdown-item" data-toggle="modal" data-target="#export_section">Section</a>
+						<div class="dropdown-divider"></div>
+						<a class="dropdown-item" id="export_all">All</a>
+						<a class="dropdown-item" data-toggle="modal" data-target="#export_birthday">Birthday</a>
+						<a class="dropdown-item" data-toggle="modal" data-target="#export_bloodtype">Blood Type</a>
+					</div>
+					</div>
+					</div>
+				<button class="btn btn-info mb-2" id="filter-toggle">
+					<i class="fas fa-filter"></i> Filter
+				</button>
+			{% endif %}
+			</div>
+
+	<div class="container-fluid p-0">
+		<div class="row">
+			<div class="col-lg-12 col-md-12 mb-3"> 
+                <div class="card card-info card-outline">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover" id="employee_table" width="100%">
+                                <thead>
+                                    <tr>
+                                        <th class="capslock">Action</th>
+                                        <th class="text-center display-none">Personal Information ID</th>
+                                        <th class="text-center">ID NUMBER</th>
+                                        <th class="text-center">PICTURE</th>
+                                        <th class="capslock">Last Name</th>
+                                        <th class="capslock">First Name</th>
+                                        <th class="capslock">Middle Name</th>
+										<th class="capslock">Designation</th>
+                                        <th class="capslock">Ext</th>
+                                        <th class="text-center capslock">Gender</th>
+                                        <th class="text-center capslock">Employment Status</th>
+                                        <th class="text-center capslock">Position</th>
+                                        <th class="text-center capslock">Fund Source</th>
+                                        <th class="text-center capslock">Area of Assignment</th>
+                                        <th class="text-center capslock">Section</th>
+                                        <th class="text-center capslock">Division</th>
+                                        <th class="text-right capslock">Status</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+				
+			<div id="filter-panel" class="filter-sidebar">
+				<div class="card">
+					<div class="card-header title bg-info">
+						<h5 class="card-title font-weight-bold mb-0">Filter Panel</h5>
+					</div>
+					<div class="card-body-filter">
+						<form id="filter-form" class="d-flex flex-column">
+							<div class="form-group">
+								<label for="filter-position">Employee Position</label>
+								<select class="form-control select" id="filter-position" name="position">
+									<option></option>
+									{% for row in position %}
+										<option value="{{ row.id }}">{% if row.acronym %}{{ row.acronym }} - {% endif %}{{ row.name }}</option>
+									{% endfor %}
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="filter-aoa">Area of Assignment</label>
+								<select class="form-control select" id="filter-aoa" name="aoa">
+									<option></option>
+									{% for row in aoa %}
+										<option value="{{ row.id }}">{{ row.name }}</option>
+									{% endfor %}
+								</select>
+							</div>
+			
+							<div class="form-group">
+								<label for="filter-fundsource">Program/Fund Source</label>
+								<select class="form-control select" id="filter-fundsource" name="fundsource">
+									<option></option>
+									{% for row in fundsource %}
+										<option value="{{ row.id }}">{{ row.name }}</option>
+									{% endfor %}
+								</select>
+							</div>
+			
+							<div class="form-group">
+								<label for="filter-status">Employment Status</label>
+								<select class="form-control select" id="filter-status" name="empstatus">
+									<option></option>
+									{% for row in empstatus %}
+										<option value="{{ row.id }}">{{ row.name }}</option>
+									{% endfor %}
+								</select>
+							</div>
+			
+							<div class="form-group">
+								<label for="filter-division">Division</label>
+								<select class="form-control select" id="filter-division" name="division">
+									<option></option>
+									{% for div in division %}
+										<option value="{{ div.id }}">{{ div.div_name }}</option>
+									{% endfor %}
+								</select>
+							</div>
+			
+							<div class="form-group">
+								<label for="filter-gender">Gender</label>
+								<select class="form-control select" id="filter-gender" name="gender">
+									<option></option>
+									{% for row in gender %}
+										<option value="{{ row.id }}">{{ row.name }}</option>
+									{% endfor %}
+								</select>
+							</div>
+			
+							<div class="form-group mt-3">
+								<div class="d-flex justify-content-around" style="gap: 10px;">
+									<button type="button" id="filter-button" class="btn bg-info w-100 mb-2">Filter</button>
+									<button type="button" id="reset-button" class="btn bg-light w-100 mb-2">Reset</button>
+									<button type="button" id="close-button" class="btn bg-danger w-100 mb-2">Close</button>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+			
+{% if user|check_permission:'register_employee' or user|check_permission:'superadmin' %}
+<div class="modal" id="register" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-info">
+                <h3 class="modal-title">
+                    REGISTER EMPLOYEE
+                    <p><small>When you are new you can create your account here. Enter your details below.</small></p>
+                </h3>
+                <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <form id="submitEmployeeForm">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div id="alertDiv"></div>
+                <div class="row">
+                    <div class="col-sm-4">
+                        <input type="checkbox" id="generate_id_number" class="mt-2" checked> <label>Generate ID Number</label>
+                    </div>
+                    <div class="col-sm-8">
+                        <div class="form-group">
+                              <input type="text" class="form-control" id="id_number" name="id_number" autocomplete="off" required>
+                          </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label>Last Name<span class="asteriskField">*</span></label>
+                              <input type="text" class="form-control" id="last_name" name="last_name" autocomplete="off" required>
+                          </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label>First Name<span class="asteriskField">*</span></label>
+                              <input type="text" class="form-control" id="first_name" name="first_name" autocomplete="off" required>
+                          </div>
+                    </div>
+                </div>
+                  <div class="row">
+                    <div class="col-sm-5">
+                        <div class="form-group">
+                            <label>Middle Name</label>
+                              <input type="text" class="form-control" id="middle_name" name="middle_name" autocomplete="off">
+                          </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="form-group">
+                            <label>Username<span class="asteriskField">*</span></label>
+                              <input type="text" class="form-control" id="username" name="username" autocomplete="off" required>
+                          </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div class="form-group">
+                            <label>Name Extension</label>
+                              <select class="form-control selectpicker" data-live-search="true" name="ext">
+								<option value="" disabled selected>select</option>
+
+                                  {% for row in ext %}
+                                  <option value="{{ row.id }}">{{ row.name }}</option>
+                                  {% endfor %}
+                              </select>
+                          </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label>Email<span class="asteriskField">*</span></label>
+                              <input type="text" class="form-control" name="email" autocomplete="off" required>
+                          </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label>Contact Number<span class="asteriskField">*</span></label>
+                              <input type="number" placeholder="09**********" class="form-control" name="contact_number" autocomplete="off" required>
+                          </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label>Sex<span class="asteriskField">*</span></label>
+                              <select class="form-control selectpicker" data-live-search="true" name="gender" required>
+								<option value="" disabled selected>select</option>
+
+                                  <option value="1">Male</option>
+                                  <option value="2">Female</option>
+                              </select>
+                          </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label>Area of Assignment<span class="asteriskField">*</span></label> <a target="_blank" href="{% url 'home' %}admin/backend/aoa/add/" class="text-success pull-right"><i class="fas fa-plus"></i></a>
+  
+							<select class="form-control selectpicker" data-live-search="true" name="aoa" required>
+								<option value="" disabled selected>select</option>
+
+                                  {% for row in aoa %}
+                                  <option value="{{ row.id }}">{{ row.name }}</option>
+                                  {% endfor %}
+                              </select>
+                          </div>
+                    </div>
+                </div>
+<!--             	<div class="row">
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label>Project/Program</label> <a target="_blank" href="{% url 'home' %}admin/backend/project/add/" class="text-success pull-right"><i class="fas fa-plus"></i></a>
+                              <select class="form-control select" name="project">
+                                  <option></option>
+                                  {% for row in project %}
+                                  <option value="{{ row.id }}">{{ row.name }}</option>
+                                  {% endfor %}
+                              </select>
+                          </div>
+                    </div> -->
+                    <div class="row">
+                    <div class="col-sm-12">
+                        <div class="form-group">
+                            <label>Fund Source</label> <a target="_blank" href="{% url 'home' %}admin/backend/fundsource/add/" class="text-success pull-right"><i class="fas fa-plus"></i></a>
+                              <select class="form-control selectpicker" data-live-search="true" name="fundsource">
+								<option value="" disabled selected>select</option>
+ 
+								{% for row in fundsource %}
+                                  <option value="{{ row.id }}">{{ row.name }}</option>
+                                  {% endfor %}
+                              </select>
+                          </div>
+                    </div>
+                    </div>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="form-group">
+                            <label>Section<span class="asteriskField">*</span></label>
+                              <select class="form-control selectpicker" data-live-search="true" name="section" required>
+								<option value="" disabled selected>select</option>
+ 
+								{% for div in division %}
+                                <optgroup label="{{ div.div_name }}">
+                                    {% for row in section %}
+                                    {% if row.div_id == div.id %}
+                                        {% if row.id == employee.section_id %}
+                                        <option value="{{ row.id }}" selected="selected">{{ row.sec_name }}</option>
+                                        {% else %}
+                                        <option value="{{ row.id }}">{{ row.sec_name }}</option>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% endfor %}
+                                </optgroup>
+                                {% endfor %}
+                              </select>
+                          </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-5">
+                        <div class="form-group">
+                            <label>Employment Status<span class="asteriskField">*</span></label>
+                              <select class="form-control selectpicker" data-live-search="true" name="empstatus" required>
+								<option value="" disabled selected>select</option>
+ 
+								{% for row in empstatus %}
+                                      <option value="{{ row.id }}">{{ row.name }}</option>
+                                  {% endfor %}
+                              </select>
+                          </div>
+                    </div>
+                    <div class="col-sm-7">
+                        <div class="form-group">
+                            <label>Position<span class="asteriskField">*</span></label> <a target="_blank" href="{% url 'home' %}admin/backend/position/add/" class="text-success pull-right"><i class="fas fa-plus"></i></a>
+                              <select class="form-control selectpicker" data-live-search="true" name="position" required>
+								<option value="" disabled selected>select</option>
+  
+								{% for row in position %}
+                                      <option value="{{ row.id }}">{% if row.acronym %}{{ row.acronym }} - {% endif %}{{ row.name }}</option>
+                                  {% endfor %}
+                              </select>
+                          </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-5">
+                        <div class="form-group">
+                            <label>Salary Rate<span class="asteriskField">*</span></label>
+                            <input type="number" placeholder="ex.29000" class="form-control" name="sr" autocomplete="off" required>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="form-group">
+                            <label>Salary Grade<span class="asteriskField">*</span></label>
+                            <select class="form-control selectpicker" data-live-search="true" name="sg" required>
+								<option value="" disabled selected>select</option>
+
+								{% for row in sg %}
+                                    <option value="{{ row.id }}">{{ row.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div class="form-group">
+                            <label>Step Increment<span class="asteriskField">*</span></label>
+                            <select class="form-control selectpicker" data-live-search="true" name="si" required>
+								<option value="" disabled selected>select</option>
+
+								{% for row in stepinc %}
+                                    {% if forloop.first %}
+                                      <option value="{{ row.id }}" selected>{{ row.name }}</option>
+                                    {% else %}
+                                    <option value="{{ row.id }}">{{ row.name }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-info">Save changes</button>
+            </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+<div class="modal" id="view-profile" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog fs-sm-dialog" style="max-width: 85%; margin: auto;">
+		<div class="modal-content animated bounceInDown" id="view-profile-content">
+			<div class="modal-body justify-content-center d-block">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+			  		<span aria-hidden="true">&times;</span>
+				</button>
+				<div class="tabs-container">
+						<input type="hidden" id="pi_id">
+                    	<input type="hidden" id="emp_id">
+                    <div class="tab-content">
+                   	</div>
+                </div>
+	      	</div>
+		</div>
+	</div>
+</div>
+
+{% if user|check_permission:'staffing' or user|check_permission:'edit_employee' or user|check_permission:'superadmin' %}
+<div class="modal" id="import-employees" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog">
+		<div class="modal-content animated bounceInDown">
+	        <div class="modal-header bg-info">
+	            <h3 class="modal-title">
+					BULK IMPORT
+					<p><small>Hasten creation of new employees by uploading an Excel file.</small></p>
+				</h3>
+				<button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+	        </div>
+	        <form method="POST" action="{% url 'bulk-import-employees' %}" enctype="multipart/form-data">
+	        {% csrf_token %}
+        	<div class="modal-body">
+            	<div class="row">
+            		<div class="col-sm-12">
+            			<div class="form-group">
+							<div class="custom-file">
+								<input type="file" id="url" accept=".xlsx" name="bulk-import" onchange="triggerFileTypeValidation(this)" class="form-control custom-file-input-single" required>
+								<label for="url" class="custom-file-label">Choose files..</label>
+							</div>
+						</div>
+            		</div>
+            	</div>
+            </div>
+            <div class="modal-footer">
+				<div class="btn-group">
+					<a href="{% url 'generate_bulk_import_template' %}" class="btn btn-default">Download Template</a>
+	            	<button type="submit" class="btn btn-info"><span class="loading open-circle" style="display:none;"></span> Start Bulk Import</button>
+				</div>
+            </div>
+            </form>
+		</div>
+	</div>
+</div>
+
+<div class="modal" id="export_division" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog">
+		<div class="modal-content animated bounceInDown">
+	        <div class="modal-header bg-info">
+	            <h3 class="modal-title">
+					EXPORT EMPLOYEE'S BY DIVISION
+					<p><small>Please choose below the division you want to export.</small></p>
+				</h3>
+				<button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+	        </div>
+	        <form method="POST" action="{% url 'backend-export-employees' %}">
+	        	<div class="modal-body">
+	            	<div class="row">
+	            		<div class="col-sm-12">
+	            			<div class="form-group">
+	            				<label>List of Divisions</label>
+	            				<select class="select" style="width:100%;" name="division[]" id="division" data-reorder="1" multiple required>
+									{% for row in division %}
+										<option value="{{ row.id }}">{{ row.div_name }}</option>
+									{% endfor %}
+								</select>
+			              	</div>
+	            		</div>
+	            	</div>
+	            </div>
+	            <div class="modal-footer">
+					<div class="btn-group">
+		            	<button type="submit" class="btn btn-info clear-wrapper"><span class="loading open-circle" style="display:none;"></span> Export</button>
+					</div>
+	            </div>
+            </form>
+		</div>
+	</div>
+</div>
+
+<div class="modal" id="export_section" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog">
+		<div class="modal-content animated bounceInDown">
+	        <div class="modal-header bg-info">
+	            <h3 class="modal-title">
+					EXPORT EMPLOYEE'S BY SECTION
+					<p><small>Please choose below the section you want to export.</small></p>
+				</h3>
+				<button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+	        </div>
+	        <form method="POST" action="{% url 'backend-export-employees' %}">
+	        	<div class="modal-body">
+	            	<div class="row">
+	            		<div class="col-sm-12">
+	            			<div class="form-group">
+	            				<label>List of Sections</label>
+	            				<select class="select form-control section" style="width:100%;" name="section[]" id="section" data-reorder="1" multiple required>
+									{% for row in section %}
+										<option value="{{ row.id }}">{{ row.sec_name }}</option>
+									{% endfor %}
+								</select>
+			              	</div>
+	            		</div>
+	            	</div>
+	            </div>
+	            <div class="modal-footer">
+					<div class="btn-group">
+						<button type="submit" class="btn btn-info clear-wrapper"><span class="loading open-circle" style="display:none;"></span> Export</button>
+					</div>
+	            </div>
+        	</form>
+		</div>
+	</div>
+</div>
+<div class="modal" id="export_birthday" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog">
+		<div class="modal-content animated bounceInDown">
+	        <div class="modal-header bg-info">
+	            <h3 class="modal-title">
+					EXPORT BIRTHDAY CELEBRANTS
+					<p><small>Please choose below the month you want to export.</small></p>
+				</h3>
+				<button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+	        </div>
+	        <form method="POST" action="{% url 'export_data' %}">
+	        	<div class="modal-body">
+	            	<div class="row">
+	            		<div class="col-sm-12">
+	            			<div class="form-group">
+	            				<h4>By Month</h4>
+								<div class="form-group">
+                                    <select class="form-control select" multiple="" style="width:100%;" name="months[]" id="months" required>
+			                            <option></option>
+			                            {% for key, value in data %}
+				                            <option value="{{ key }}">{{ value }}</option>
+			                            {% endfor %}
+			                        </select>
+                                </div>
+			              	</div>
+	            		</div>
+	            	</div>
+	            </div>
+	            <div class="modal-footer">
+					<div class="btn-group">
+						<button type="submit" class="btn btn-info clear-wrapper"><span class="loading open-circle" style="display:none;"></span> Export</button>
+					</div>
+	            </div>
+        	</form>
+		</div>
+	</div>
+</div>
+<div class="modal" id="export_bloodtype" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog">
+		<div class="modal-content animated bounceInDown">
+	        <div class="modal-header bg-info">
+	            <h3 class="modal-title">
+					EXPORT EMPLOYEE'S BLOOD TYPE
+					<p><small>Please choose below the blood type you want to export.</small></p>
+				</h3>
+				<button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+	        </div>
+	        <form method="POST" action="{% url 'export_data' %}">
+	        	<div class="modal-body">
+	            	<div class="row">
+	            		<div class="col-sm-12">
+	            			<div class="form-group">
+	            				<h4>By Blood Type's</h4>
+								<div class="form-group">
+                                    <select class="form-control select" multiple="" style="width:100%;" name="bt[]" id="bt" required>
+			                            <option></option>
+			                            {% for row in bt %}
+				                            <option value="{{ row.id }}"}>{{ row.name }}</option>
+			                            {% endfor %}
+			                        </select>
+                                </div>
+			              	</div>
+	            		</div>
+	            	</div>
+	            </div>
+	            <div class="modal-footer">
+					<div class="btn-group">
+						<button type="submit" class="btn btn-info clear-wrapper"><span class="loading open-circle" style="display:none;"></span> Export</button>
+					</div>
+	            </div>
+        	</form>
+		</div>
+	</div>
+</div>
+<div class="modal" id="edit-workhistory-modal" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog modal-lg">	
+		<div class="modal-content animated bounceInDown">
+			<div class="modal-header bg-info">
+				<h3 class="font-weight-bold">
+					WORK HISTORY
+				</h3>
+				<button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+			</div>
+			<div class="modal-body"></div>
+		</div>
+	</div>
+</div>
+{% endif %}
+{% if user|check_permission:'superadmin' or user|check_permission:'edit_employee' %}
+<div class="modal" id="update-employee-modal" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog">
+		<div class="modal-content animated bounceInDown">
+			<div class="modal-header bg-info">
+				<h3 class="font-weight-bold">
+					EDIT EMPLOYEE
+				</h3>
+				<button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+			</div>
+			<div class="edit-employee-content"></div>
+		</div>
+	</div>
+</div>
+<div class="modal" id="reset-password-modal" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-danger">
+                <h3 class="modal-title">
+					Reset Password
+					<p><small>Need to reset the password? No problem!</small></p>
+				</h3>
+				<button type="button" class="close text-white" id="close-reset-modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div id="reset-password-content"></div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block script %}
+<script type="text/javascript">
+	function downloadTemplate() {
+		var link = document.createElement('a');
+		link.href = "{% static 'templates/backend/Bulk Import Employees.xlsx' %}";
+		link.download = "Bulk Import Employees.xlsx";
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+	}
+
+	{% if user|check_permission:'superadmin' or user|check_permission:'staffing' %}
+		var beforeSend = function(){
+			$('.loading').css('display', '');
+			$('button').prop("disabled", true);
+		}
+		var afterSend = function(){
+			$('.loading').css('display', 'none');
+			$('button').prop("disabled", false);
+		}
+
+		$('.clear-wrapper').click(function() {
+			setTimeout(function () {
+				$('.modal').modal('hide');
+				$('.modal').find('form').trigger('reset');
+			   	$(".loader-wrapper").fadeOut("slow");
+			}, 500);
+		});
+
+        var form = document.getElementById('dump');
+	    form.addEventListener('click', function(event) {
+	    	beforeSend();
+	       	var xhr = new XMLHttpRequest();
+			var url = "{% url 'backend-export-employees' %}";
+			xhr.open("GET", url, true);
+			xhr.setRequestHeader("Content-Type", "application/json");
+			xhr.onreadystatechange = function () {
+				if (xhr.readyState === 4 && xhr.status === 200) {
+					a = document.createElement('a');
+					a.href = window.URL.createObjectURL(xhr.response);
+					today = new Date();
+					a.download = "Staffing_" + today.toDateString().split(" ").join("_") + ".xlsx";
+					Swal.fire("Good job!", "You have successfully exported all employee's details.", "success");
+					a.style.display = 'none';
+					document.body.appendChild(a);
+					afterSend();
+					return a.click();
+				}
+			}
+
+	        xhr.responseType = 'blob';
+	        xhr.send();
+	  	});
+
+	  	var export_all = document.getElementById('export_all');
+	    export_all.addEventListener('click', function(event) {
+	        beforeSend();
+			event.preventDefault();
+			var xhr = new XMLHttpRequest();
+			var url = "{% url 'export_data' %}";
+			xhr.open("GET", url, true);
+			xhr.setRequestHeader("Content-Type", "application/json");
+			xhr.onreadystatechange = function () {
+				if (xhr.readyState === 4 && xhr.status === 200) {
+					a = document.createElement('a');
+					a.href = window.URL.createObjectURL(xhr.response);
+					today = new Date();
+					a.download = "Staffing_" + today.toDateString().split(" ").join("_") + ".xlsx";
+					Swal.fire("Good job!", "You have successfully exported all employee's details.", "success");
+					a.style.display = 'none';
+					document.body.appendChild(a);
+					afterSend();
+					return a.click();
+				}
+			}
+
+	        xhr.responseType = 'blob';
+	        xhr.send();
+	   	});
+
+	   	$(document).on('click', 'a[data-role=import]',function(){
+			$('#import-employees').modal('show');
+		});
+
+
+		var regex = new RegExp("(.*?)\.(xlsx)$");
+		function triggerFileTypeValidation(el) {
+			if (!(regex.test(el.value.toLowerCase()))) {
+				el.value = '';
+				alert('Only allowed file type for bulk import is Excel (.xlsx).');
+			}
+		}
+	{% endif %}
+
+	$(document).on('click', 'a[data-role=view-employee]',function(){
+        var init_pid = $(this).data('pid');
+        var init_empid = $(this).data('id');
+
+		$('#pi_id').val(init_pid);
+		$('#emp_id').val(init_empid);
+
+        $('#view-profile').modal('show').find('.modal-body .tabs-container .tab-content').empty();
+		$('#view-profile').modal('show').find('.modal-body .tabs-container .tab-content').load(`/backend/view-profile/${init_empid}`, function() {
+            $('#btn-about').on('click', function(){
+                var aboutUrl = `/backend/about/${init_empid}/${init_pid}`;
+                $('#view-profile').modal('show').find('.tabs-container .tab-content #pds').load(aboutUrl, function() {
+                    $('input').attr('autocomplete', 'off');
+
+                    $.get('{% url "filter-incumbent" %}', function(data){
+                        $(".filter_employee").typeahead({
+                            source:data,
+                            highlight: true
+                        });
+                    },'json');
+
+                    $('.selectpicker').selectpicker();
+
+                    {% if user|check_permission:'edit_employee' or user|check_permission:'superadmin' or user|check_permission:'designation_officer' %}
+                    $('#submitForm').on('submit', function(e){
+                        e.preventDefault();
+                        var form = new FormData(this);
+                        $.ajax({
+                            url: aboutUrl,
+                            type: "POST",
+                            data: form,
+                            success: function (response) {
+                                $('.error').remove();
+                                if (response.error){
+                                    $.each(response.errors, function(name, error){
+                                        error = '<small class="text-danger error">' + error + '</small>'
+                                        $form.find('[name=' + name + ']').after(error);
+                                    })
+                                }
+                                else {
+                                    Swal.fire({
+                                        title: "Good job!",
+                                        text: "Employee Information was updated successfully",
+                                        icon: "success",
+                                        confirmButtonColor: "#3498DB",
+                                    });
+                                }
+                            },
+                            cache: false,
+                            contentType: false,
+                            processData: false
+                        });
+                    });
+                    {% endif %}
+                });
+            });
+        });
+	});
+	
+	function getFilterValues() {
+    return {
+        aoa: $('#filter-aoa').val() || '',  
+		fundsource: $('#filter-fundsource').val() || '',
+		empstatus: $('#filter-status').val() || '', 
+		division: $('#filter-division').val() || '',
+		position: $('#filter-position').val() || '',
+		gender: $('#filter-gender').val() || ''
+
+    };
+}
+
+function initializeEmployeeTable() {
+    var table = $('#employee_table').DataTable({
+        'serverSide': true,
+        'processing': true,
+        'deferRender': true,
+        'order': [[4, 'asc']],
+        'lengthMenu': [25, 50, 100, 200],
+        'ajax': {
+			'url': '/api/employees/view/all/?format=datatables',
+            'type': 'GET',
+            'data': function(d) {
+                var filterData = getFilterValues();
+                console.log('Filter data being sent to server:', filterData);
+                $.extend(d, filterData);  
+            },
+            'beforeSend': function(request) {
+                request.setRequestHeader("Authorization", "Token 82b88a7bdac1ea3868361448927035e93b0dc19d");
+            },
+            'dataSrc': function(json) {
+                console.log('Data received from server:', json);
+                if (json.error) {
+                    alert("An error occurred: " + json.error);
+                    return [];
+                }
+                return json.data;
+            }
+        },
+        'columns': [
+            {
+                'data': 'id',
+                'render': function(data, type, row) {
+                    return `<a href="javascript:void(0);" data-role="view-employee" data-id="${data}" data-pid="${row['pi_id']}">Details</a>`;
+                }
+            },
+            {'data': 'pi_id', 'className': 'display-none', 'searchable': false},
+            {
+                'data': 'id_number',
+                'render': function(data, type, row) {
+                    var template = "";
+                    {% if user|check_permission:'superadmin' or user|check_permission:'edit_employee' %}
+                    template += "<a href='javascript:;' data-role='update' data-id='" + row['id'] +"'>"+ data +"</a>";
+                    {% else %}
+                    template += data;
+                    {% endif %}
+                    return template;
+                },
+                'className': 'text-center'
+            },
+            // {
+            //     'data': 'picture',
+            //     'render': function(data) {
+            //         return `<center><img loading="lazy" class="img-circle" data-toggle="popover"
+            //             data-html="true"
+            //             style="object-fit:cover; width: 40px; height: 40px;"
+            //             data-placement="right"
+            //             data-content="<center><img loading='lazy' src='`+ data + `' style='width: 250px; height: 250px; object-fit:cover;'></center>" src="` + data + `">
+            //         </center>`;
+            //     },
+            //     'className': 'text-center'
+            // },
+			{
+				'data': 'picture',
+				'render': function(data) {
+					if (!data) return '';
+
+					data = data.replace(/^https?:\/\/[^/]+/, '');
+
+					return `<center><img loading="lazy" class="img-circle" data-toggle="popover"
+						data-html="true"
+						style="object-fit:cover; width: 40px; height: 40px;"
+						data-placement="right"
+						data-content="<center><img loading='lazy' src='`+ data + `' style='width: 250px; height: 250px; object-fit:cover;'></center>" src="` + data + `">
+					</center>`;
+				},
+				'className': 'text-center'
+			},
+            {'data': 'last_name', 'name': 'pi.user.last_name', 'searchable': true},
+            {'data': 'first_name', 'name': 'pi.user.first_name', 'searchable': true},
+            {'data': 'middle_name', 'name': 'pi.user.middle_name', 'searchable': true},
+			{'data': 'designation', 'name': 'designation', 'searchable': true},
+            {'data': 'ext', 'className': 'text-center', 'name': 'pi.ext.name', 'searchable': true},
+            {'data': 'gender', 'className': 'text-center', 'name': 'pi.get_gender', 'searchable': false},
+            {'data': 'employment_status', 'className': 'text-center', 'name': 'empstatus.name', 'searchable': false},
+            {'data': 'position', 'className': 'text-center', 'name': 'position.name', 'searchable': true},
+            {
+                'data': 'fund_source',
+                'render': function(data) {
+                    return (data) ? data : '';
+                },
+                'className': 'text-center', 'name': 'fundsource.name', 'searchable': true
+            },
+            {'data': 'area_of_assignment', 'className': 'text-center', 'name': 'aoa.name', 'searchable': true},
+            {'data': 'section', 'className': 'text-center', 'name': 'section.sec_name', 'searchable': true},
+            {'data': 'division', 'className': 'text-center', 'name': 'section.div.div_name', 'searchable': true},
+            {
+                'data': 'status',
+                'render': function(data) {
+                    return data == 1 ? "<span class='badge badge-success'>Active</span>" : "<span class='badge badge-danger'>Inactive</span>";
+                },
+                'className': 'text-center',
+                'searchable': false
+            }
+        ],
+        'drawCallback': function() {
+            $('[data-toggle="popover"]').popover({
+                container: "body"
+            });
+        }
+    });
+
+	$('#search').on('keyup', function() {
+        table.search(this.value).draw();
+    });
+
+
+    $('#filter-button').on('click', function() {
+        var filterData = getFilterValues();
+        console.log('Filter data being sent to DataTable:', filterData);
+        table.ajax.reload();  
+    });
+
+	$('#reset-button').on('click', function() {
+    $('#filter-form')[0].reset();  
+    
+    $('#filter-position').val(null).trigger('change');
+    $('#filter-aoa').val(null).trigger('change');
+    $('#filter-fundsource').val(null).trigger('change');
+    $('#filter-status').val(null).trigger('change');
+    $('#filter-division').val(null).trigger('change');
+    $('#filter-gender').val(null).trigger('change');
+    
+    table.ajax.reload(); 
+});
+
+}
+
+$(document).ready(function() {
+    initializeEmployeeTable();  
+});
+
+
+	{% if user|check_permission:'superadmin' or user|check_permission:'edit_employee' %}
+	$(document).on('click', 'a[data-role=update]',function(){
+		$('#update-employee-modal').modal('show').find('.edit-employee-content').empty();
+		$('#update-employee-modal').modal('show').find('.edit-employee-content').load('/backend/employees/edit/' + $(this).data('id'));
+	});
+	{% endif %}
+
+	{% if user|check_permission:'register_employee' or user|check_permission:'superadmin' %}
+	$('#btn-register').on('click', function(){
+		$('#register').modal('show');
+		$('input[type="checkbox"]').attr("disabled", false);
+	});
+
+	$('#submitEmployeeForm').on('submit', function(e){
+		var form = new FormData(this);
+		Swal.fire({
+			title: "Are you sure",
+			text: "You want to register this employee?",
+			icon: "info",
+			showCancelButton: true,
+			confirmButtonColor: "#3498DB",
+			confirmButtonText: "Yes",
+			allowOutsideClick: false,
+			showLoaderOnConfirm: true,
+		    preConfirm: function (){
+                return $.ajax({
+                    data        : form,
+                    url         : '{% url "register_employee" %}',
+                    type        : 'POST',
+                    cache       : false,
+                    contentType : false,
+                    processData : false,
+                });
+		    },
+		}).then(function (data){
+			if (data.value.data == "success"){
+				Swal.fire({
+					title: "Good job!",
+					text: data.value.msg,
+					icon: "success",
+					confirmButtonColor: "#3498DB",
+				}).then((result) => {
+					if (result.isConfirmed) {
+						$("#generate_id_number").removeAttr("disabled");
+						$(".select").val("").change();
+						$('#submitEmployeeForm').trigger('reset');
+						$('#id_number').attr('readonly', true);
+						$('#register').modal('hide');
+						$('#employee_table').DataTable().ajax.reload();
+					}
+				});
+			} else {
+				$('#alertDiv').empty();
+				$('#alertDiv').append('<div class="alert alert-warning"><i class="fas fa-info-circle"></i>' + data.value.msg + '</p><br>');
+			}
+		});
+        e.preventDefault();
+    });
+
+	document.addEventListener('DOMContentLoaded', function () {
+		const filterToggle = document.getElementById('filter-toggle');
+		const filterPanel = document.getElementById('filter-panel');
+		const closeButton = document.getElementById('close-button');
+
+		filterToggle.addEventListener('click', function () {
+			filterPanel.classList.toggle('open');
+		});
+
+		closeButton.addEventListener('click', function () {
+			filterPanel.classList.remove('open');
+		});
+	});
+
+
+	
+	// $(document).ready(function(){
+	// 	$('#middle_name').add('#first_name').on('change', function(){
+	// 		first_name = $('#first_name').val();
+	// 		first_word = first_name.replace(/[a-z]/g, '');
+	// 		second_word = $('#middle_name').val().charAt(0);
+	// 		last_word = $('#last_name').val();
+	// 		$('#username').val(first_word.replace(/\s+/g, '').toLowerCase() + second_word.toLowerCase() + last_word.toLowerCase());
+	// 	});
+
+	// 	$('#id_number').attr('readonly', true);
+
+	// 	$('#generate_id_number').on('change', function(){
+	// 		if ($(this).is(':checked')){
+	// 			$('#id_number').attr('readonly', true);
+	// 		} else {
+	// 			$('#id_number').attr('readonly', false);
+	// 		}
+	// 	});
+		
+	
+	// });
+
+	$(document).ready(function(){
+    $('#first_name, #middle_name, #last_name').on('input', function(){
+        let first_name = $('#first_name').val().trim().toLowerCase();
+        let middle_name = $('#middle_name').val().trim().toLowerCase();
+        let last_name = $('#last_name').val().trim().toLowerCase();
+
+        let first_letter = first_name.charAt(0); 
+        let middle_letter = middle_name ? middle_name.charAt(0) : ''; 
+        let last_word = last_name.replace(/\s+/g, ''); 
+
+        $('#username').val(first_letter + middle_letter + last_word);
+    });
+
+    $('#id_number').attr('readonly', true);
+    $('#generate_id_number').on('change', function(){
+        $('#id_number').attr('readonly', $(this).is(':checked'));
+    });
+});
+
+
+
+	
+	{% endif %}
+</script>
+{% endblock %}

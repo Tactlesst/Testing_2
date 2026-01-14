@@ -1,0 +1,161 @@
+<form id="calibrationForm">
+    {% csrf_token %}
+    <div class="card-body" style="border:1px solid rgb(224, 224, 224); border-radius: 5px; padding: 15px;">
+        <div id="wrapper-calibration">
+            {% for row in calibrations %}
+                <div class="row col-sm-12 mb-2 align-items-center calibration-row">
+                    <div class="col-4" style="padding-left:20px !important;">
+                        <div class="form-group">
+                            {% if forloop.first %}
+                                <label class="control-label requiredField">Name<span class="asteriskField">*</span></label>
+                            {% endif %}
+                            <div class="controls">
+                                <input type="text" class="form-control" name="name[]" value="{{ row.name }}" autocomplete="off" placeholder="Enter name" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-5">
+                        <div class="form-group">
+                            {% if forloop.first %}
+                                <label class="control-label requiredField">Description</label>
+                            {% endif %}
+                            <div class="controls">
+                                <input type="text" class="form-control" name="desc[]" value="{{ row.desc }}" autocomplete="off" placeholder="Enter description">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="form-group">
+                            {% if forloop.first %}
+                                <label class="control-label requiredField">Action</label>
+                            {% endif %}
+                            <div class="input-group">
+                                {% if forloop.first %}
+                                    <button type="button" id="btn-add-calibration" class="btn btn-info"><i class="fas fa-plus"></i></button>
+                                {% else %}
+                                    <button type="button" class="btn btn-danger remove-calibration"><i class="fas fa-minus"></i></button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="row col-sm-12 mb-2 align-items-center calibration-row">
+                    <div class="col-4" style="padding-left:20px !important;">
+                        <div class="form-group">
+                            <label class="control-label requiredField">Name<span class="asteriskField">*</span></label>
+                            <div class="controls">
+                                <input type="text" class="form-control" name="name[]" autocomplete="off" placeholder="Enter name" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-5">
+                        <div class="form-group">
+                            <label class="control-label requiredField">Description</label>
+                            <div class="controls">
+                                <input type="text" class="form-control" name="desc[]" autocomplete="off" placeholder="Enter description">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-3">
+                        <div class="form-group">
+                            <label class="control-label requiredField">Action</label>
+                            <div class="input-group">
+                                <button type="button" id="btn-add-calibration" class="btn btn-info"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <br>
+    <button type="submit" class="btn btn-info">Save changes</button>
+</form>
+
+
+
+
+
+{% block script %}
+
+<script>
+	$(document).ready(function () {
+    $("#btn-add-calibration").click(function () {
+        let newRow = `
+            <div class="row col-sm-12 mb-2 align-items-center">
+                <div class="col-4" style="padding-left:20px !important;">
+                    <div class="form-group">
+                        <div class="controls">
+                            <input type="text" class="form-control" name="name[]" autocomplete="off" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-5">
+                    <div class="form-group">
+                        <div class="controls">
+                            <input type="text" class="form-control" name="desc[]" autocomplete="off" >
+                        </div>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="form-group">
+                        <div class="input-group">
+                            <span class="input-group-append">
+                                <button type="button" class="btn btn-danger remove-calibration"><i class="fas fa-minus"></i></button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        $("#wrapper-calibration").append(newRow);
+    });
+
+    $(document).on("click", ".remove-calibration", function () {
+        $(this).closest(".row").remove();
+    });
+});
+
+
+    $('#calibrationForm').on('submit', function(e){
+	var form = new FormData(this);
+	Swal.fire({
+		title: "Are you sure?",
+		text: "You want to save this calibration of points?",
+		icon: "info",
+		showCancelButton: true,
+		confirmButtonText: "Yes",
+		confirmButtonColor: "#3498DB",
+		allowOutsideClick: false,
+		showLoaderOnConfirm: true,
+		preConfirm: function (){
+			return $.ajax({
+				data        : form,
+				url         : '{% url "awards_eligibility_calibration" pk %}', 
+				type        : 'POST',
+				cache       : false,
+				contentType : false,
+				processData : false,
+			});
+		},
+	}).then(function (response){
+		if (response.value.data == "success"){
+			Swal.fire({
+				title: 'Good job!',
+				html: response.value.msg,
+				icon: "success",
+				confirmButtonColor: "#3498DB",
+				allowOutsideClick: false,
+			}).then((result) => {
+				if (result.isConfirmed){
+					$('#calibration-content').load('{% url "awards_eligibility_calibration" pk %}');
+				}
+			});
+		}
+	});
+	e.preventDefault();
+});
+
+</script>
+{% endblock %}

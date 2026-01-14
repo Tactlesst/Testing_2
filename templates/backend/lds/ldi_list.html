@@ -1,0 +1,160 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h1 class="mb-0">LDI / Activities</h1>
+            <small class="text-muted">Select a plan to view details or edit</small>
+        </div>
+        <div>
+            <button class="btn btn-info" id="create-btn">
+                <i class="fas fa-plus"></i> Create / Edit LDI Plan
+            </button>
+        </div>
+    </div>
+
+    <!-- Approved Plan Dropdown -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <label class="font-weight-bold">Approved LDI Plan</label>
+            <select class="form-control" id="plan">
+                {% for plan in plans %}
+                    <option value="{{ plan.id }}">
+                        [{{ plan.id }}] {{ plan.title }} ({{ plan.quarter }})
+                    </option>
+                {% empty %}
+                    <option disabled>No approved plans yet</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Activities List -->
+    <div class="card">
+        <div class="card-header bg-info text-white">Activities</div>
+        <div class="card-body p-0">
+            <ul class="list-group list-group-flush" id="activities"></ul>
+        </div>
+    </div>
+
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal fade" id="ldiModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title">Create / Edit LDI Plan</h5>
+        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="ldi-form">
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label>Training Category <span class="text-danger">*</span></label>
+              <select class="form-control" name="category" required>
+                  {% for c in categories %}
+                  <option value="{{ c }}">{{ c }}</option>
+                  {% endfor %}
+                  <option value="_new">+ Add New Category</option>
+              </select>
+              <input type="text" class="form-control mt-2" name="new_category"
+                     placeholder="Enter new category (approval required)">
+            </div>
+            <div class="form-group col-md-3">
+              <label>Quarter <span class="text-danger">*</span></label>
+              <select class="form-control" name="quarter">
+                  <option value="Q1">1st Quarter</option>
+                  <option value="Q2">2nd Quarter</option>
+                  <option value="Q3">3rd Quarter</option>
+                  <option value="Q4">4th Quarter</option>
+              </select>
+            </div>
+            <div class="form-group col-md-3">
+              <label>Year <span class="text-danger">*</span></label>
+              <input type="number" name="year" class="form-control" value="2026" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Proposed LDI / Activities <span class="text-danger">*</span></label>
+            <textarea class="form-control" name="activities" rows="3"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-md-4">
+              <label>Proposed Date <span class="text-danger">*</span></label>
+              <input type="date" name="proposed_date" class="form-control">
+            </div>
+            <div class="form-group col-md-4">
+              <label>Target Participants <span class="text-danger">*</span></label>
+              <input type="text" name="participants" class="form-control">
+            </div>
+            <div class="form-group col-md-4">
+              <label>Budget <span class="text-danger">*</span></label>
+              <input type="number" step="0.01" name="budget" class="form-control">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Target Competencies <span class="text-danger">*</span></label>
+            <textarea class="form-control" name="competencies" rows="3"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Aim <span class="text-danger">*</span></label>
+            <textarea class="form-control" name="aim" rows="3"></textarea>
+          </div>
+
+          <div class="text-right">
+            <button type="submit" class="btn btn-info">Save Plan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block script %}
+<script>
+const LDI_DATA = {{ plans|safe }};
+const planSelect = document.getElementById('plan');
+const activities = document.getElementById('activities');
+const createBtn = document.getElementById('create-btn');
+const modal = $('#ldiModal');
+
+function renderActivities() {
+    const planId = planSelect.value;
+    const plan = LDI_DATA.find(p => p.id === planId);
+    activities.innerHTML = '';
+    if (!plan || !plan.activities) return;
+    plan.activities.forEach((act, idx) => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+        li.innerHTML = `<div><strong>${idx+1}.</strong> ${act}</div>
+                        <span class="badge badge-secondary">${plan.status || 'Planned'}</span>`;
+        activities.appendChild(li);
+    });
+}
+
+planSelect.addEventListener('change', renderActivities);
+renderActivities();
+
+// Open modal for new/edit
+createBtn.addEventListener('click', function() {
+    modal.modal('show');
+});
+
+// Handle form submission (mock)
+$('#ldi-form').on('submit', function(e){
+    e.preventDefault();
+    alert('This is a mock. Form would save to mock_data.json here.');
+    modal.modal('hide');
+});
+</script>
+{% endblock %}

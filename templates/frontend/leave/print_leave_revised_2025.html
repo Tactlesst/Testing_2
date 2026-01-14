@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+{% load static %}
+{% load frontend_tags %}
+{% load tags %}
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>HRPEARS | Print Leave Request</title>
+    <link rel="shortcut icon" type="image/png" href="{% static 'image/hrpearlogo_192.png' %}" />
+	<link href="{% static 'css/adminlte.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/plugins/sweetalert/sweetalert.css' %}" rel="stylesheet">
+	<link href="{% static 'font-awesome/css/all.css' %}" rel="stylesheet">
+    <link href="{% static 'css/print_new.css' %}" rel="stylesheet">
+    <link href="{% static 'css/style_new.css' %}" rel="stylesheet">
+    <link href="{% static 'css/print.css' %}" rel="stylesheet">
+	<style type="text/css">
+       
+	   @page {
+			margin: 20px 30px 10px 30px;
+			size: A4;
+		}
+
+		body {
+			font-family: Inter, sans-serif;
+			font-size: 15px;
+			color: black;
+		}
+
+		.containerX {
+			transform: scale(0.6);
+			transform-origin: top left;
+			width: calc(100% / 0.6);
+		}
+
+		.print-mode {
+			transform: none !important;
+			width: 100% !important;
+		}
+		.print:last-child {
+			page-break-after: auto !important;
+		}	
+
+
+		.magic-1 {
+			border-bottom: 0px !important;
+			border-right: 0px !important;
+		}
+
+		.magic-2 {
+			border-bottom: 0px !important;
+			border-left: 0px !important;
+			border-right: 0px !important;
+		}
+
+		.magic-3 {
+			border-bottom: 0px !important;
+			border-left: 0px !important;
+		}
+
+		.magic-4 {
+			border-top: 0px !important;
+			border-right: 0px !important;
+		}
+
+		.magic-5 {
+			border-top: 0px !important;
+			border-left: 0px !important;
+			border-right: 0px !important;
+		}
+
+		.magic-6 {
+			border-top: 0px !important;
+			border-left: 0px !important;
+		}
+		.magic-7 {
+			border-right: 0px !important;
+			border-left: 0px !important;
+		}
+
+        input{
+        	text-align: center;
+        }
+
+        input[type=checkbox]{
+        	transform: scale(1.5);
+        }
+
+		body{
+			font-family: inter;
+			font-size: 15px;
+			color: black;
+		}
+		
+		.page {
+			page-break-after: always;
+			display: block;
+		}
+
+		.page:last-child,
+		.page.last-page {
+			page-break-after: auto !important;
+		}
+
+
+		#applicant-signature #applicant {  	
+			margin: -8vh 4vh 20px 30vh !important;
+		}
+
+		.signature-container img,
+		.signature-container p {
+			display: block !important;
+			visibility: visible !important;
+		}
+		.signature-input,
+		.pdf-signature-name {
+			display: none !important;
+			visibility: hidden !important;
+		}
+
+		.pdf-generation .signatory-with-p12 img,
+		.pdf-generation .signatory-with-p12 p,
+		.hide-signatures-for-pdf .signatory-with-p12 img,
+		.hide-signatures-for-pdf .signatory-with-p12 p {
+			display: none !important;
+			visibility: hidden !important;
+		}
+
+		.pdf-generation .signatory-without-p12 img,
+		.pdf-generation .signatory-without-p12 p,
+		.hide-signatures-for-pdf .signatory-without-p12 img,
+		.hide-signatures-for-pdf .signatory-without-p12 p {
+			display: block !important;
+			visibility: visible !important;
+		}
+
+		.pdf-generation .signature-input,
+		.hide-signatures-for-pdf .signature-input {
+			display: block !important;
+			visibility: visible !important;
+		}
+
+		.signature-wrapper {
+    display: flex;
+    justify-content: space-between; /* Applicant left, Section Head right */
+    align-items: flex-end; /* Align signatures to bottom */
+    width: 100%;
+    min-height: 120px; /* fixed height */
+    margin-top: 20px;
+    position: relative;
+}
+
+/* Individual signature box */
+.signature-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Signature image */
+.signature-box img {
+    max-height: 60px;
+    display: block;
+}
+
+/* Label below signature */
+.signature-box label {
+    margin-top: 5px;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* Optional: smaller signatures for supervisors */
+.signature-box.section-head img {
+    max-height: 25px;
+}
+.signature-box-single {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+    width: 100%;
+}
+
+.signature-line {
+    position: relative;
+    width: 50%;         /* adjust the line width */
+    border-bottom: 1px solid black;
+    min-height: 7px;   /* height for the signature space */
+}
+
+.signature-line img {
+    position: absolute;
+    top: -60%;          /* signature floats above the line */
+    left: 50%;
+    transform: translateX(-50%);
+    max-height: 40px;   /* smaller signature */
+    width: auto;        /* maintain aspect ratio */
+}
+
+.signature-line .signature-input {
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid black;
+    font-weight: bold;
+    text-align: center;
+    height: 50px;
+}
+
+.signature-box-single label {
+    margin-top: 10px;
+    font-size: 14px;
+    text-align: center;
+}
+
+
+</style>
+</head>
+<nav class="main-header navbar navbar-expand navbar-light navbar-white m-0">
+    <div class="container">
+        <a class="navbar-brand" href="javascript:;">
+            <strong>Leave Request ({{ leave.leaveapp.tracking_no }}) &emsp; <em><small>Note: Print in A4</small></em></strong>
+        </a>
+        <ul class="navbar-nav ml-auto">
+			
+			
+			{% if signatory.status == 1 %}
+				<li><button class="btn btn-success" disabled><i class="fas fa-check-circle"></i> Already Approved {% if signatory.date %}<br><small style="font-size: 10px;">{{ signatory.date|date:"M d, Y H:i" }}</small>{% endif %}</button>&emsp;</li>
+						<li><button class="btn btn-info" id="download-official" title="Download"><i class="fas fa-file-pdf"></i> Download Official Copy</button>&emsp;</li>
+			{% elif signatory.status == 2 %}
+				<li><button class="btn btn-warning" id="disapprove-leave" title="Disapprove" disabled><i class="fas fa-signature"></i> Disapprove Request {% if signatory.date %}<br><small style="font-size: 10px;">{{ signatory.date|date:"M d, Y H:i" }}</small>{% endif %}</button>&emsp;</li>
+			{% else %}
+				<li><button class="btn btn-success" id="sign-button" data-signatory-id="{{ signatory.id }}" data-leave-id="{{ leave.id }}"><i class="fas fa-signature"></i> Approve Leave</button>&emsp;</li>
+				<li><button class="btn btn-warning btn-disapprove" data-signatory-id="{{ signatory.id }}" data-leave-id="{{ leave.id }}"><i class="fas fa-signature"></i> Disapprove</button>&emsp;</li>
+			{% endif %}
+
+				<li><button class="btn btn-info print-button" id="floatprint" title="Print"><i class="fas fa-print"></i> Print</button></li>
+
+        </ul>
+    </div>
+</nav>
+
+
+<body>
+	{% if classes == 1 %}
+		{% getemployeebyempid first_level as first_lvl %}
+		{% getemployeebyempid second_level as second_lvl %}
+	{% elif classes == 2 %}
+		{% if first_level == "" %}
+			{% getemployeebyempid second_level.emp_id as second_lvl %}
+		{% else %}
+			{% getemployeebyempid first_level as first_lvl %}
+			{% getemployeebyempid second_level.emp_id as second_lvl %}
+		{% endif %}
+	{% endif %}
+
+<div id="print-container">
+	<page size="A4" class="page last-page" style="padding: 35px;">	
+		<div class="containerX">
+			<div style="width:100%;">
+				<div class="float-left" style="font-size: 13px;">
+					<em>Civil Service Form No. 6<br>
+						Revised 2020</em>
+				</div>
+				<div class="float-right" style="font-size: 20px;">
+					<strong>ANNEX A</strong>
+				</div>
+				<br><br>
+				<p class="font-weight-bold text-center m-0">Republic of the Philippines</p>
+				<p class="font-weight-bold text-center m-0">DEPARTMENT OF SOCIAL WELFARE AND DEVELOPMENT</p>
+				<p class="font-weight-bold text-center m-0">Region X</p>
+				<p class="font-weight-bold text-center">Masterson Avenue, Upper Carmen, Cagayan de Oro City, 9000, Misamis Oriental </p>
+				<div class="float-left" style="margin-top: -90px; margin-left: 50px;">
+					<img loading="lazy"  src="{% static 'image/dswd_logo.png' %}" width="130px;" style="mix-blend-mode: multiply;">
+				</div>
+				<div class="float-right" style="margin-top: -90px; margin-right: 50px;">
+					<table class="table table-bordered" style="font-size: 12px">
+						<tr>
+							<th class="text-center">Stamp of Date of Receipt</th>
+						</tr>
+					</table>
+				</div>
+				<p class="text-center" style="font-size: 25px;">
+					<strong>APPLICATION FOR LEAVE</strong>
+				</p>
+				<br>
+				<table class="table" border="1" style="font-size: 16px; margin-top: -15px;">
+					<tr>
+						<td class="p-0 magic-1" width="30%">1. OFFICE/DEPARTMENT</td>
+						<td class="p-0 magic-2" width="25%">&nbsp;2. NAME: &emsp;&emsp;(Last)</td>
+						<td class="p-0 text-center magic-2" width="20%">(First)</td>
+						<td class="p-0 text-center magic-3">(Middle)</td>
+					</tr>
+					<tr>
+						<td class="p-0 text-center magic-4" style="font-weight: normal;">
+							<strong>{{ leave.leaveapp.emp.section.sec_name }}</strong>
+						</td>
+						<td class="p-0 magic-5">
+							&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;
+							<strong>{{ leave.leaveapp.emp.pi.user.last_name|title }}</strong>
+						</td>
+						<td class="p-0 text-center magic-5">
+							<strong>{{ leave.leaveapp.emp.pi.user.first_name|title }}</strong>
+						</td>
+						<td class="p-0 text-center magic-6">
+							<strong>{{ leave.leaveapp.emp.pi.user.middle_name|to_middleinitial|title }}</strong>
+						</td>
+					</tr>
+					<tr>
+						<td class="magic-1">
+							3. DATE OF FILING <u><strong>{{ leave.leaveapp.date_of_filing|date:"m/d/Y" }}</strong></u>
+						</td>
+						<td class="text-center magic-7" colspan="2">
+							4. POSITION <u><strong>{{ leave.leaveapp.emp.position.name }}</strong></u>
+						</td>
+						<td class="magic-3">
+							5. SALARY <u><strong>{{ leave.leaveapp.emp.salary_rate }}</strong></u>
+						</td>
+					</tr>
+					<tr>
+						<th colspan="4" class="p-0 text-center" style="font-size: 18px;">6. DETAILS OF APPLICATION</th>
+					</tr>
+					<tr>
+						{% if leave.leaveapp.leavesubtype.name != 'Solo Parent' %}
+						<td colspan="2" style="font-size: 15px;">
+							<div>
+							<p>6.A TYPE OF LEAVE TO BE AVAILED OF</p>
+							{% for row in leavesubtype %}
+								{% if row.is_others != 1 %}
+									{% if row.name == leave.leaveapp.leavesubtype.name %}
+									&nbsp;<input class="icheck" type="checkbox" checked> &nbsp; {{ row.name }} <small>({{ row.description }})</small> <br style="line-height: 10px;">
+										{% if leave.leaveapp.reasons %}
+												&emsp;&emsp;&emsp;Reason for Leave: <u>{{ leave.leaveapp.reasons }}</u><br>
+										{% else %}
+											{% if leave.specify %}
+												&emsp;&emsp;&emsp;Reason for Leave: <u>{{ leave.specify }}</u><br>
+											{% elif leave.leaveapp.remarks %}
+												&emsp;&emsp;&emsp;Type of Calamity: <u>{{ leave.leaveapp.remarks }}</u><br>
+											{% endif %}
+										{% endif %}
+									{% else %}
+									&nbsp;<input class="icheck" type="checkbox"> &nbsp; {{ row.name }} <small>({{ row.description }})</small> <br style="line-height: 10px;">
+									{% endif %}
+								{% endif %}
+							{% endfor %}
+							<br>
+							&nbsp;<input class="icheck" type="checkbox" {% if leave.leaveapp.leavesubtype.is_others == 1 %}checked{% endif %}> &nbsp;<em>Others (specify)</em><br>
+							<label style="border-bottom: 1px solid black; width: 100%; display: inline-block; white-space: normal; word-wrap: break-word;">
+								{% if leave.leaveapp.leavesubtype.is_others == 1 %}
+									{{ leave.leaveapp.leavesubtype.name }}
+									{% if leave.leavespent.name %}
+									- {{ leave.leavespent.name }} ({{ leave.specify }})
+									{% else %}
+										{% if leave.specify %}
+											({{ leave.specify }})
+										{% else %}
+											({{ leave.leaveapp.reasons }})
+										{% endif %}
+									{% endif %}
+								{% else %}
+									<br>
+								{% endif %}
+							</label>
+							</div>
+						</td>
+						<td colspan="2" style="font-size: 15px;">
+							<div>
+							<p>6.B DETAILS OF LEAVE</p>
+							<p>&emsp;<em>In case of Vacation/Special Privilege Leave</em></p>
+							&emsp;<input class="icheck" type="checkbox" {% if leave.leavespent.name == 'Within the Philippines' %}checked{% endif %}> &nbsp; Within the Philippines <input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold;" value="{% if leave.leavespent.name == 'Within the Philippines' %}{{ leave.specify }}{% endif %}" size="24"><br>
+							&emsp;<input class="icheck" type="checkbox" {% if leave.leavespent.name == 'Abroad' %}checked{% endif %}> &nbsp; Abroad (specify)
+							&emsp;<input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold;" value="{% if leave.leavespent.name == 'Abroad' %}{{ leave.specify }}{% endif %}" size="26">
+							<p>&emsp;<em>In case of Sick Leave</em></p>
+							&emsp;<input class="icheck" type="checkbox" {% if leave.leavespent.name == 'In Hospital' %}checked{% endif %}> &nbsp; In Hospital (Specify Illness)
+							&emsp;<input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold;" value="{% if leave.leavespent.name == 'In Hospital' %}{{ leave.specify }}{% endif %}" size="19"><br>
+							&emsp;<input class="icheck" type="checkbox" {% if leave.leavespent.name == 'Out Patient' %}checked{% endif %}> &nbsp; Out Patient (Specify Illness)
+							<input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold;" value="{% if leave.leavespent.name == 'Out Patient' %}{{ leave.specify }}{% endif %}" size="20"> <br>
+							<br>
+							<p>&emsp;<em>In case of Special Leave Benefits for Women</em></p>
+							&emsp;(Specify Illness) <br>
+							&emsp;<input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold;" value="{% if leave.leaveapp.leavesubtype.name == 'Special Leave Benefits for Women' %}{{ leave.specify }}{% endif %}" size="35"><br>
+							<br>
+							<p>&emsp;<em>In case of Study Leave</em></p>
+							&emsp;<input class="icheck" type="checkbox" {% if leave.leavespent.name == "Completion of Master's Degree" %}checked{% endif %}> &nbsp; Completion of Master's Degree <br>
+							&emsp;<input class="icheck" type="checkbox" {% if leave.leavespent.name == 'BAR/Board Examination Review' %}checked{% endif %}> &nbsp; BAR/Board Examination Review <br>
+							<br><p>&emsp;<em>Other purpose</em></p>
+							&emsp;<input class="icheck" type="checkbox" {% if leave.leaveapp.leavesubtype.name == 'Monetization' %}checked{% endif %}> &nbsp; Monetization of Leave Credits <br>
+							&emsp;<input class="icheck" type="checkbox" {% if leave.leaveapp.leavesubtype.name == 'Terminal Leave' %}checked{% endif %}> &nbsp; Terminal Leave <br>
+							</div>
+						</td>
+						{% endif %}
+					</tr>
+					<tr>
+						<td colspan="2" style="font-size: 15px;">
+							<p>6.C NUMBER OF WORKING DAYS APPLIED FOR:</p>
+							{% if leave.leaveapp.start_date and leave.leaveapp.end_date %}
+								{% days_until leave.leaveapp.start_date|date:"Y-m-d" leave.leaveapp.end_date|date:"Y-m-d" as days_until %}
+								&emsp;<input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold;" value="{{ days_until }}" class="working_days" size="50"><br>
+							{% else %}
+								&emsp;<input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold;" value="{% get_leave_total_days leave.leaveapp_id %}" class="working_days" size="50"><br>
+							{% endif %}
+							&emsp;<p>INCLUSIVE DATES</p>
+							&emsp;<input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold;" value="{% if leave.leaveapp.start_date is None %}{% get_leave_dates leave.leaveapp_id %}{% else %}{% if leave.leaveapp.start_date == leave.leaveapp.end_date %}{{ leave.leaveapp.start_date }}{% else %}{{ leave.leaveapp.start_date }} - {{ leave.leaveapp.end_date }}{% endif %}{% endif %}" size="50">
+						</td>
+						<td colspan="2" style="font-size: 15px;">
+							{% if leave.leaveapp.leavesubtype.name != 'Solo Parent' %}
+								<p>6.D COMMUTATION</p>
+								&emsp;<input type="checkbox"> &nbsp; Requested <br>
+								&emsp;<input type="checkbox"> &nbsp; Not Requested <br><br>
+								
+								
+							<div class="row">
+								<div class="col-12">
+									<div class="text-center signature-box-single">
+										<div class="signature-line">
+											{% for sig in signatories %}
+												{% if sig.signatory_type == 0 and sig.status == 1 and sig.esignature %}
+													<div class="signature-container {% if sig.has_p12 %}signatory-with-p12{% else %}signatory-without-p12{% endif %}" 
+														style="position: absolute; top: -60px; left: 50%; transform: translateX(-50%);">
+														<img src="data:image/png;base64,{{ sig.esignature }}" 
+															alt="Applicant Signature" id="applicant" 
+															style="max-height: 60px; display: block;">
+													</div>
+
+												{% elif sig.signatory_type == 0 %}
+													<input type="text" class="signature-input" 
+														style="outline: 0; border: 0; border-bottom: 1px solid black; 
+														font-weight: bold; width:150%; margin: 0vh 0vh 20px 0vh;">
+												{% endif %}
+											{% endfor %}
+										</div>
+										<label style="margin-bottom: 60px;">Signature of Applicant</label>
+									</div>
+								</div>
+							</div>
+
+
+							{% else %}
+								<p>PURPOSE</p>
+								<input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold;" value="{{ leave.leaveapp.reasons }}" size="45">
+							{% endif %}
+						</td>
+					</tr>
+					<tr>
+						<th colspan="4" class="p-0 text-center" style="font-size: 18px;">
+							7. DETAILS OF ACTION ON APPLICATION
+						</th>
+					</tr>
+					<tr>
+						<td colspan="2" style="font-size: 15px;">
+							<div>
+							<p>7.A {% if leave.leaveapp.leavesubtype.name != 'Solo Parent' %}CERTIFICATION OF LEAVE CREDITS{% else %}SOLO PARENT LEAVE BALANCE{% endif %}</p>
+							<p class="text-center">As of ___________________</p>
+							{% if leave.leaveapp.leavesubtype.name != 'Solo Parent' %}
+							<table class="table table-bordered">
+								<thead>
+									<tr>
+										<th></th>
+										<th class="p-0 text-center" width="35%">Vacation Leave</th>
+										<th class="p-0 text-center" width="35%">Sick Leave</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td class="text-center"><i>Total Earned</i></td>
+										<td class="text-center font-weight-bold">&nbsp;</td>
+										<td class="text-center font-weight-bold"></td>
+									</tr>
+									</tr>
+									<tr>
+										<td class="text-center"><i>Less this application</i></td>
+										<td class="text-center p-0 font-weight-bold">&nbsp;</td>
+										<td class="text-center p-0 font-weight-bold"></td>
+									</tr>
+									<tr>
+										<td class="text-center"><i>Balance</i></td>
+										<td class="text-center p-0 font-weight-bold">&nbsp;</td>
+										<td class="text-center p-0 font-weight-bold"></td>
+									</tr>
+								</tbody>
+							</table>
+							{% else %}
+							<table class="table-bordered" width="50%">
+								<thead>
+									<tr>
+										<th class="p-0 text-center" width="16%">Solo Parent Leave</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td class="text-center font-weight-bold"><br><br><br></td>
+									</tr>
+									<tr>
+										<td class="text-center p-0 font-weight-bold">&nbsp;</td>
+									</tr>
+								</tbody>
+							</table>
+							{% endif %}
+							<br>
+							<div class="text-center" id="hr-approval-signature"
+								style="min-height: 120px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;margin-top: -55px;">
+
+								<!-- HR SIGNATURE SLOT (RESERVED, FIXED HEIGHT) -->
+								<div class="signature-slot" style="position: relative; height: 50px; width: 100%; ">
+
+									{% with has_hr_signature=False %}
+										{% for sig in signatories %}
+											{% if sig.signatory_type == 4 and sig.status == 1 and sig.esignature %}
+												{% with has_hr_signature=True %}
+													<div class="signature-container {% if sig.has_p12 %}signatory-with-p12{% else %}signatory-without-p12{% endif %}"
+														style="position: absolute; top: 0; left: 50%; transform: translateX(-50%);">
+														<img src="data:image/png;base64,{{ sig.esignature }}"
+															alt="HR Signature"
+															style="max-height: 60px; display:block;">
+													</div>
+												{% endwith %}
+											{% endif %}
+										{% endfor %}
+									{% endwith %}
+
+								</div>
+
+								<!-- HR NAME (underline, never moves) -->
+								{% if hr_approval_signatory and hr_approval_signatory.emp %}
+									<input type="text" style="outline:0; border:0; border-bottom:1px solid black; font-weight:bold; text-align:center; font-size:15px; width:300px;"
+										value="{{ hr_approval_signatory.emp.pi.user.get_fullname|upper }}">
+								{% endif %}
+
+								<!-- HR POSITION (centered, never moves) -->
+								<input type="text" class="set_approved_by_pos"
+									value="{{ hr_approval_signatory.designation_name|default:'' }}"
+									style="outline:0; border:0; font-weight:bold; text-align:center; font-size:13px; width:200px; margin-top:3px;">
+
+							</div>
+
+								
+
+								<input type="text" style="outline: 0; border: 0; font-weight: bold; text-align: center; font-size: 13px; width: 200px; margin-top: 5px;" 
+									value="{{ personnel_officer.key_name }}">
+							</div>
+
+						</td>
+						<td colspan="2" style="font-size: 15px;">
+							<p>7.B RECOMMENDATION</p>
+							&emsp;<input type="checkbox"> &nbsp; For approval <br>
+							&emsp;<input type="checkbox"> &nbsp; For disapproval due to<br>
+							<input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold; width: 100%;"><br>
+							<input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold; width: 100%;"><br>
+							<input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold; width: 100%;"><br>
+							<input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold; width: 100%;">
+							<br><br><br>
+					
+							<div id="first-level-signature" class="text-center"
+								style="min-height:120px; position:relative; margin-top:-30px;">
+
+								<!-- SECTION HEAD SIGNATURE (TOP-RIGHT, FIXED) -->
+								{% for sig in signatories %}
+									{% if sig.signatory_type == 1 and sig.status == 1 and sig.esignature %}
+										<div class="signature-container {% if sig.has_p12 %}signatory-with-p12{% else %}signatory-without-p12{% endif %}"
+											style="position:absolute; top:0; right:0; max-width:150px;">
+											<img src="data:image/png;base64,{{ sig.esignature }}"
+												alt="Section Head Signature"
+												style="max-height:30px; margin-right:30px;margin-top: 40px; display:block;">
+										</div>
+									{% endif %}
+								{% endfor %}
+
+								<!-- FIRST-LEVEL SIGNATURE SPACE (RESERVED) -->
+								<div class="signature-slot" style="position:relative; height:50px;">
+									{% for sig in signatories %}
+										{% if sig.signatory_type == 2 and sig.status == 1 and sig.esignature %}
+											<div class="signature-container {% if sig.has_p12 %}signatory-with-p12{% else %}signatory-without-p12{% endif %}"
+												style="position:absolute; top:-20px; left:50%; transform:translateX(-50%);">
+												<img src="data:image/png;base64,{{ sig.esignature }}"
+													alt="First-Level Signature"
+													style="max-height:80px; display:block;">
+											</div>
+										{% endif %}
+									{% endfor %}
+								</div>
+
+								<!-- NAME + POSITION (NEVER MOVES) -->
+								{% if division_chief_signatory and division_chief_signatory.emp %}
+									<div style="text-align:center;">
+										<input type="text" class="set_recommended_by"
+											value="{{ division_chief_signatory.emp.pi.user.get_fullname|upper }}"
+											style="outline:0;border:0;border-bottom:1px solid black;
+												font-weight:bold;text-align:center;
+												text-transform:uppercase;width:250px;">
+
+										<br>
+
+										<input type="text" class="set_approved_by_pos"
+											value="{{ division_chief_signatory.designation_name|default:'' }}"
+											style="outline:0;border:0;font-weight:bold;
+												text-align:center;font-size:13px;
+												width:200px;margin-top:3px;">
+
+										<p style="margin:0;font-size:12px;">(Authorized Official)</p>
+									</div>
+								{% endif %}
+
+							</div>
+
+
+							</td>
+						</tr>
+					<tr>
+						<td colspan="2" class="magic-1" style="font-size: 15px;">
+							<p>7.C APPROVED FOR</p>
+							&emsp;<input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold;" size="10"> <span>days with pay</span><br>
+							&emsp;<input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold;" size="10"> <span>days without pay</span><br>
+							&emsp;<input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold;" size="10"> <span>others (Specify)</span>
+						</td>
+						<td colspan="2" class="magic-3" style="font-size: 15px;">
+							<p>7.D DISAPPROVED DUE TO:</p>
+							&emsp;<input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold;" size="25"><br>
+							&emsp;<input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold;" size="25"><br>
+							&emsp;<input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold;" size="25">
+						</td>
+					</tr>
+					<tr>
+						<td colspan="4" class="magic-4" style="font-size: 15px;">
+						<br><br>
+						<div class="row">
+					<div class="col-sm-12 text-center" id="final-approval-signature" style="min-height: 120px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;">
+
+						{% for sig in signatories %}
+							{% if sig.signatory_type == 3 and sig.status == 1 and sig.esignature %}
+								<div class="signature-container {% if sig.has_p12 %}signatory-with-p12{% else %}signatory-without-p12{% endif %}" 
+									style="margin-bottom: 5px;">
+									<img src="data:image/png;base64,{{ sig.esignature }}" 
+										alt="Final Approval Signature" style="max-height: 80px; display:block; margin: 0 auto;">
+								</div>
+							{% endif %}
+						{% endfor %}
+
+						{% if final_approval_signatory and final_approval_signatory.emp %}
+						<input type="text" class="set_approved_by"
+							value="{{ final_approval_signatory.emp.pi.user.get_fullname|upper }}"
+							style="outline:0;border:0;border-bottom:1px solid black;font-weight:bold;text-align:center;text-transform:uppercase;width:300px;">
+
+						 	<input type="text" class="set_approved_by_pos" 
+								value="{{ final_approval_signatory.designation_name|default:'' }}"
+								style="outline:0; border:0; font-weight:bold; text-align:center; font-size:13px; width:200px; margin-top:3px;">
+						
+								<p style="font-size:12px; margin:0;">(Authorized Official)</p>
+										{% endif %}
+
+								</div>
+							</div>
+
+						<div class="float-left" style="margin-top: -50px;">
+							<small><b>TRACKING NO. {{ leave.leaveapp.tracking_no }}</b></small><br>
+							<small>Note: Print in A4. Please see instructions at the back</small>
+						</div>
+					</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</page>
+
+
+<page size="A4" class="page last-page" style="padding: 35px;">
+		<div class="containerX">
+			<center>
+				<img loading="lazy" src="{% static 'image/leave_application/instructions.PNG' %}"
+					style="height: 100%; padding-top: 10vh; width: 90%; max-width: 1000px; mix-blend-mode: multiply;">
+			</center>
+		</div>
+	</page>
+</div>
+
+
+
+	<script src="{% static 'js/jquery-3.1.1.min.js' %}"></script>
+	<script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'js/adminlte.min.js' %}"></script>
+    <script src="{% static 'js/plugins/sweetalert/sweetalert.min.js' %}"></script>
+	<script src="{% static 'js/plugins/typehead/bootstrap3-typeahead.min.js' %}"></script>
+    <script src="{% static 'js/functions.js' %}"></script>
+	<script src="{% static 'js/sweetalert2.min.js' %}"></script>
+	<script src="{% static 'js/html2pdf.bundle.js' %}"></script>
+
+
+
+	<script>
+		$(document).ready(function(){
+			{% if classes != 3 %}
+				$('#signatory-modal').modal('show');
+			{% endif %}
+
+			$(".filter_employee_leave").typeahead({
+				source: function(query, process){
+					return $.get({
+						url: '{% url "filter_employee" %}',
+						data: { query: query },
+						datatype: 'json',
+						success: function (data) {
+							return process(data);
+						}
+					});
+				},
+				highlight: true,
+			});
+
+			$(document).ready(function(){
+				$('#select2').select2({
+					width: "100%",
+					allowClear: true,
+					placeholder: 'Choose',
+				});
+			});
+
+			
+			$(document).on('click', '.btn-disapprove', function () {
+				var id = $(this).data('signatory-id');  
+
+				Swal.fire({
+					title: 'Are you sure?',
+					text: "You are about to disapprove this leave request.",
+					icon: 'warning',
+					showCancelButton: true,
+					confirmButtonColor: '#d33',
+					cancelButtonColor: '#3085d6',
+					confirmButtonText: 'Yes, disapprove it!',
+					cancelButtonText: 'Cancel'
+				}).then((result) => {
+					if (result.isConfirmed) {
+						$.ajax({
+							url: '{% url "disapproved_leave_signatories" %}', 
+							type: 'POST',
+							data: { id: id },
+							beforeSend: function (jqXHR) {
+								jqXHR.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+							},
+							success: function (response) {
+								if (response.success) {
+									Swal.fire({
+										icon: 'success',
+										title: 'Leave has been disapproved!',
+										timer: 2000,
+										showConfirmButton: false
+									}).then(() => {
+										location.reload(); // 🔥 refresh page after disapprove
+									});
+								} else {
+									Swal.fire({
+										icon: 'error',
+										title: 'Something went wrong!',
+										text: 'Please try again later.'
+									});
+								}
+							},
+							error: function () {
+								Swal.fire({
+									icon: 'error',
+									title: 'Server Error',
+									text: 'Could not process request.'
+								});
+							}
+						});
+					}
+				});
+			});
+
+
+			$('#setSignatureForm').on('submit', function(e){
+				e.preventDefault();
+				var form = new FormData(this);
+				$.ajax({
+					data: form,
+					url: '{% url "set_signature_leave" %}',
+					type: 'POST',
+					success: function(response) {
+						$('.set_recommended_by').val(response.first_level);
+						$('.set_recommended_by_pos').text(response.first_level_pos);
+						$('.set_approved_by').val(response.second_level);
+						$('.set_approved_by_pos').val(response.second_level_pos);
+						$('#signatory-modal').modal('hide');
+					},
+					cache       : false,
+                    contentType : false,
+                    processData : false,
+				});
+			});
+
+			window.onafterprint = function() {
+				$.ajax({
+					url: '{% url "leave_after_print" %}',
+					data: {
+						'pk': {{ leave.leaveapp_id }}
+					},
+					type: "POST",
+				});
+			}
+		});
+
+		function getCookie(name) {
+			let cookieValue = null;
+			if (document.cookie && document.cookie !== '') {
+				const cookies = document.cookie.split(';');
+				for (let i = 0; i < cookies.length; i++) {
+					const cookie = cookies[i].trim();
+					if (cookie.substring(0, name.length + 1) === (name + '=')) {
+						cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+						break;
+					}
+				}
+			}
+			return cookieValue;
+		}
+		const csrftoken = getCookie('csrftoken');
+		var hasP12 = {{ has_p12|yesno:"true,false" }};
+
+
+		
+
+	$(document).on('click', '#download-official', function () {
+    const formElement = document.getElementById('print-container');
+    if (!formElement) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Form container not found. Please refresh the page and try again.',
+            confirmButtonColor: '#dc3545',
+            confirmButtonText: 'OK'
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "Do you want to download this file?",
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, download it'
+    }).then((result) => {
+        if (!result.isConfirmed) {
+            return; 
+        }
+        Swal.fire({
+            title: 'Generating Document',
+            html: `
+                <div style="text-align: center; padding: 20px;">
+                    <div style="
+                        width: 60px; 
+                        height: 60px; 
+                        margin: 0 auto 20px; 
+                        border: 4px solid #f3f3f3;
+                        border-top: 4px solid #007bff;
+                        border-radius: 50%;
+                        animation: spin 1s linear infinite;
+                    "></div>
+                    <p style="color: #666; font-size: 16px; margin: 0;">
+                        Please wait while we process your document...
+                    </p>
+                </div>
+                
+                <style>
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                </style>
+            `,
+            showConfirmButton: false,
+            allowOutsideClick: false,
+            allowEscapeKey: false
+        });
+
+        try {
+            // Apply PDF generation classes to control signature visibility
+            document.body.classList.add('pdf-generation');
+            formElement.classList.add('hide-signatures-for-pdf');
+            
+            const signatureInputs = document.querySelectorAll('.signature-input');
+            signatureInputs.forEach(input => {
+                input.style.display = 'block';
+                input.style.visibility = 'visible';
+            });
+
+            // Generate PDF using html2pdf
+            html2pdf().set({
+                margin: 0,
+                filename: 'leave_application.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 3,
+                    useCORS: true,
+                    allowTaint: true
+                },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            }).from(formElement).outputPdf("blob").then(pdfBlob => {
+                document.body.classList.remove('pdf-generation');
+                formElement.classList.remove('hide-signatures-for-pdf');
+                signatureInputs.forEach(input => {
+                    input.style.display = '';
+                    input.style.visibility = '';
+                });
+
+                const formData = new FormData();
+                formData.append('pdf_file', pdfBlob, 'leave_application.pdf');
+
+                return fetch("{% url 'sign_uploaded_pdf' pk=leave.leaveapp.id %}", {
+                    method: "POST",
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                    }
+                }).then(response => {
+                    if (response.headers.get('content-type')?.includes('application/json')) {
+                        return response.json().then(data => {
+                            if (response.status === 400) {
+                                throw new Error(data.error || "Failed to process document.");
+                            }
+                            if (response.status === 403) {
+                                if (data.error?.includes('not approved')) {
+                                    throw new Error("You haven't approved this leave application yet. Please approve it first before downloading.");
+                                }
+                                throw new Error(data.error || "Access denied. You don't have permission to sign this document.");
+                            }
+                            if (response.status === 404) {
+                                throw new Error("Document not found. Please refresh the page and try again.");
+                            }
+                            if (response.status === 500) {
+                                throw new Error(data.error || "Server error occurred while processing the document.");
+                            }
+                            if (!response.ok) {
+                                throw new Error(data.error || `Document processing failed (Error ${response.status})`);
+                            }
+                            return data;
+                        });
+                    }
+                    if (response.status === 403) {
+                        throw new Error("Access denied. You may need to approve this document first.");
+                    }
+                    if (response.status === 404) {
+                        throw new Error("Document not found. Please refresh the page and try again.");
+                    }
+                    if (response.status === 500) {
+                        throw new Error("Server error occurred while processing the document.");
+                    }
+                    if (!response.ok) {
+                        throw new Error(`Document processing failed (Error ${response.status})`);
+                    }
+                    return response.blob();
+                });
+            }).then(signedBlob => {
+                if (!signedBlob || signedBlob.size === 0) {
+                    throw new Error("Invalid signed document received. Please try again.");
+                }
+                
+                // Download the signed document
+                const blobUrl = URL.createObjectURL(signedBlob);
+                const a = document.createElement("a");
+                a.href = blobUrl;
+                a.download = "signed_leave_application.pdf";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(blobUrl);
+
+                // Simple success message
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Download Complete!',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#28a745',
+                    timer: 4000
+                });
+
+            }).catch(error => {
+                // Clean up on error
+                document.body.classList.remove('pdf-generation');
+                formElement.classList.remove('hide-signatures-for-pdf');
+                signatureInputs.forEach(input => {
+                    input.style.display = '';
+                    input.style.visibility = '';
+                });
+                console.error('Download error:', error);
+                throw error;
+            });
+
+        } catch (error) {
+            // Clean up on error
+            document.body.classList.remove('pdf-generation');
+            formElement.classList.remove('hide-signatures-for-pdf');
+			
+            const signatureInputs = document.querySelectorAll('.signature-input');
+            signatureInputs.forEach(input => {
+                input.style.display = '';
+                input.style.visibility = '';
+            });
+            
+            console.error('Error:', error);
+            
+            // Simple error message
+            Swal.fire({
+                icon: 'error',
+                title: 'Download Failed',
+                html: `
+                    <div style="text-align: center; padding: 15px;">
+                        <div style="
+                            background: #f8d7da; 
+                            border: 1px solid #f5c6cb; 
+                            border-radius: 8px; 
+                            padding: 15px; 
+                            margin: 15px 0;
+                        ">
+                            <p style="color: #721c24; margin: 0; font-size: 15px;">
+                                ${error.message || 'An unexpected error occurred while downloading the document.'}
+                            </p>
+                        </div>
+                        <small style="color: #666;">
+                            If this problem persists, please contact support
+                        </small>
+                    </div>
+                `,
+                confirmButtonText: 'Try Again',
+                confirmButtonColor: '#007bff',
+                showCancelButton: true,
+                cancelButtonText: 'Close',
+                cancelButtonColor: '#6c757d'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('download-official').click();
+                }
+            });
+        }
+    });
+});
+
+
+	$(document).on('click', '#sign-button', function () {
+    const signatoryId = $(this).data('signatory-id');
+    const leaveId = $(this).data('leave-id');
+    
+    showPasswordModal();
+
+    function showPasswordModal() {
+        Swal.fire({
+            title: '<i class="fas fa-signature" style="color: #17a2b8; margin-right: 10px;"></i>Digital Signature',
+            html: `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <p style="color: #666; font-size: 14px; margin: 10px 0;">
+                       Enter your password to approve and sign this document digitally.
+                    </p>
+                </div>
+                <div style="position: relative; margin: 20px 0;">
+                    <input 
+                        id="password-input" 
+                        type="password" 
+                        placeholder="Enter your .p12 certificate password"
+                        autocomplete="new-password"
+                        style="width:100%; padding:15px 20px 15px 50px; border:1px solid #e0e0e0; border-radius:10px; font-size:16px; outline:none; transition:all 0.3s ease; background:#f8f9fa; box-sizing:border-box;"
+						onfocus="this.style.borderColor='#17a2b8'; this.style.background='#fff'"
+						onblur="this.style.borderColor='#e0e0e0'; this.style.background='#f8f9fa'; this.style.boxShadow='none'" />
+            
+                    <button 
+                        type="button" 
+                        id="toggle-password"
+                        onclick="
+                            const input = document.getElementById('password-input');
+                            const icon = this.querySelector('i');
+                            if (input.type === 'password') {
+                                input.type = 'text';
+                                icon.className = 'fas fa-eye-slash';
+                            } else {
+                                input.type = 'password';
+                                icon.className = 'fas fa-eye';
+                            }
+                        "
+                        style="position:absolute; right:15px; top:50%; transform:translateY(-50%); background:none; border:none; color:#999; cursor:pointer; padding:5px; font-size:16px;"
+
+                    >
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+               <div style="margin-top:10px;"><small style="color:#888; font-size:12px;"><i class="fas fa-lock" style="margin-right:5px;"></i>Your password is encrypted and secure</small></div>
+
+            `,
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-check-circle" style="margin-right: 8px;"></i>Sign & Approve',
+            cancelButtonText: '<i class="fas fa-times" style="margin-right: 8px;"></i>Cancel',
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#dc3545',
+            showLoaderOnConfirm: true,
+            allowOutsideClick: () => !Swal.isLoading(),
+            customClass: {
+                popup: 'swal-custom-popup',
+                title: 'swal-custom-title',
+                confirmButton: 'swal-custom-confirm',
+                cancelButton: 'swal-custom-cancel'
+            },
+            didOpen: () => {
+                // Add custom CSS
+                const style = document.createElement('style');
+                style.textContent = `
+                    .swal-custom-popup {
+                        border-radius: 15px !important;
+                        box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
+                        border: none !important;
+                    }
+                    .swal-custom-title {
+                        font-size: 24px !important;
+                        font-weight: 600 !important;
+                        color: #2c3e50 !important;
+                        margin-bottom: 10px !important;
+                    }
+                    .swal-custom-confirm, .swal-custom-cancel {
+                        border-radius: 8px !important;
+                        padding: 12px 24px !important;
+                        font-weight: 500 !important;
+                        font-size: 14px !important;
+                        transition: all 0.3s ease !important;
+                        border: none !important;
+                    }
+                    .swal-custom-confirm:hover {
+                        transform: translateY(-1px) !important;
+                        box-shadow: 0 4px 12px rgba(40,167,69,0.3) !important;
+                    }
+                    .swal-custom-cancel:hover {
+                        transform: translateY(-1px) !important;
+                        box-shadow: 0 4px 12px rgba(220,53,69,0.3) !important;
+                    }
+                `;
+                document.head.appendChild(style);
+                
+                // Focus on the password input
+                document.getElementById('password-input').focus();
+            },
+            preConfirm: () => {
+                const password = document.getElementById('password-input').value.trim();
+                
+                if (!password) {
+                    Swal.showValidationMessage('Certificate password is required!');
+                    return false;
+                }
+                if (password.length < 4) {
+                    Swal.showValidationMessage('Password must be at least 4 characters long!');
+                    return false;
+                }
+
+                Swal.update({
+                    html: `
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="
+                                width: 60px; 
+                                height: 60px; 
+                                margin: 0 auto 20px; 
+                                border: 4px solid #f3f3f3;
+                                border-top: 4px solid #28a745;
+                                border-radius: 50%;
+                                animation: spin 1s linear infinite;
+                            "></div>
+                            <p style="color: #666; font-size: 16px; margin: 0;">
+                                Processing digital signature...
+                            </p>
+                        </div>
+                        
+                        <style>
+                            @keyframes spin {
+                                0% { transform: rotate(0deg); }
+                                100% { transform: rotate(360deg); }
+                            }
+                        </style>
+                    `
+                });
+
+                return $.ajax({
+                    url: '{% url "approved_leave_signatories" %}',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: { 
+                        id: signatoryId,
+                        p12_password: password
+                    },
+                    headers: { "X-CSRFToken": csrftoken }
+                }).then(function(response) {
+                    if (response.success) {
+                        return response;
+                    } else {
+                        throw new Error(response.error || 'Unknown error occurred.');
+                    }
+                }).catch(function(xhr) {
+                    let errorMessage = 'An unexpected error occurred.';
+                    
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMessage = xhr.responseJSON.error;
+                    }
+                    
+                    throw new Error(errorMessage);
+                });
+            }
+        }).then((result) => {
+            if (result.isConfirmed && result.value) {
+                const data = result.value;
+                console.log('Signature approval data:', data); // Debug log
+                
+                showSuccessModal(data);
+                updateSignatureDisplay(data);
+                updateButtonToApproved();
+
+                // Reload approval table in opener window if exists
+                if (window.opener && window.opener.$('#approval-table').length) {
+                    window.opener.$('#approval-table').DataTable().ajax.reload(null, false);
+                }
+            }
+        }).catch((error) => {
+            showErrorModal(error);
+        });
+    }
+
+    function showSuccessModal(data) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Approval Complete!',
+            html: `
+                <div style="text-align: center; padding: 15px;">
+                    <div style="
+                        background: #d4edda; 
+                        border: 1px solid #c3e6cb; 
+                        border-radius: 8px; 
+                        padding: 15px; 
+                        margin: 15px 0;
+                    ">
+                        <i class="fas fa-check-circle" style="color: #28a745; font-size: 24px; margin-right: 8px;"></i>
+                        <strong>Leave application has been digitally signed and approved</strong>
+                    </div>
+                    <p style="color: #666; font-size: 14px; margin: 10px 0;">
+                        <i class="fas fa-certificate" style="margin-right: 5px;"></i>
+                        Digital signature applied successfully
+                    </p>
+                </div>
+            `,
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#28a745',
+            timer: 4000
+        });
+    }
+
+    function showErrorModal(error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Approval Failed',
+            html: `
+                <div style="text-align: center; padding: 15px;">
+                    <div style="
+                        background: #f8d7da; 
+                        border: 1px solid #f5c6cb; 
+                        border-radius: 8px; 
+                        padding: 15px; 
+                        margin: 15px 0;
+                    ">
+                        <p style="color: #721c24; margin: 0; font-size: 15px;">
+                            ${error.message || 'An unexpected error occurred during the approval process.'}
+                        </p>
+                    </div>
+                    <small style="color: #666;">
+                        Please check your certificate password and try again
+                    </small>
+                </div>
+            `,
+            confirmButtonText: 'Try Again',
+            confirmButtonColor: '#28a745',
+            showCancelButton: true,
+            cancelButtonText: 'Close',
+            cancelButtonColor: '#6c757d'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                showPasswordModal();
+            }
+        });
+	}
+
+
+			function updateSignatureDisplay(data) {
+				const signatoryType = data.signatory_type;
+				const hasP12 = data.has_p12 || false; // Get p12 status from response
+				console.log('Updating signature for type:', signatoryType, 'Has P12:', hasP12);
+				
+				let targetElement;
+				
+				if (signatoryType == 0) {
+					targetElement = $('#applicant-signature');
+				} else if (signatoryType == 1) {
+					targetElement = $('#applicant-signature');
+					
+					targetElement.find('.signature-container[data-type="section-head"]').remove();
+					
+					const cssClass = hasP12 ? 'signatory-with-p12' : 'signatory-without-p12';
+					
+					const sectionHeadSignatureHtml = `
+						<div class="signature-container ${cssClass}" data-type="section-head" style="position: absolute; top: 0; right: 15%;">
+							<img src="data:image/png;base64,${data.signature_img}" 
+								alt="Section Head Signature" style="max-height: 25px; display:${hasP12 ? 'none' : 'block'}; margin:57vh 1vh 0 0vh;">
+						</div>
+					`;
+					
+					targetElement.append(sectionHeadSignatureHtml);
+					console.log('Section head signature added successfully');
+					return;
+					
+				} else if (signatoryType == 2) {
+					targetElement = $('#first-level-signature');
+				} else if (signatoryType == 3) {
+					targetElement = $('#final-approval-signature');
+				} else if (signatoryType == 4) {
+					targetElement = $('#hr-approval-signature');
+				}
+				
+				console.log('Target element found:', targetElement.length > 0);
+				
+				if (targetElement && targetElement.length && data.signature_img) {
+					// Remove existing signature containers
+					if (signatoryType != 1) {
+						targetElement.find('.signature-container').remove();
+					}
+					
+					const cssClass = hasP12 ? 'signatory-with-p12' : 'signatory-without-p12';
+					const displayStyle = hasP12 ? 'none' : 'block';
+					
+					if (signatoryType == 0) {
+						const signatureHtml = `
+							<div class="signature-container ${cssClass}" data-type="applicant" style="position: absolute; top: 0; left: 0;">
+								<input type="text" class="signature-input" 
+									style="outline: 0; border: 0; border-bottom: 1px solid black; 
+									font-weight: bold; width:150%; margin: 0vh 0vh 20px 0vh;">
+								<img src="data:image/png;base64,${data.signature_img}" 
+									alt="Applicant Signature" style="max-height: 60px; display:${displayStyle}; margin: -8vh 4vh 20px 30vh;">
+							</div>
+						`;
+						
+						targetElement.prepend(signatureHtml);
+						
+						// Keep the label at the bottom
+						const label = targetElement.find('label').detach();
+						targetElement.append(label);
+						
+					} else if (signatoryType == 2) {
+						// First Level Signature
+						const signatureHtml = `
+							<div class="signature-container ${cssClass}" style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 10;">
+								<img src="data:image/png;base64,${data.signature_img}" 
+									alt="Signature" style="max-height: 60px; display:${displayStyle}; margin:-8vh 0px 0px 1vh;">
+								<p style="font-size: 12px; margin: 2px 0; text-align: center; display:${displayStyle};">${data.emp_name || 'Approved'}</p>
+								<p style="font-size: 12px; margin: 2px 0; text-align: center; display:${displayStyle};">${data.date_approved || new Date().toLocaleDateString()}</p>
+							</div>
+						`;
+						
+						targetElement.prepend(signatureHtml);
+						
+					} else if (signatoryType == 3) {
+						// Final Approval Signature
+						const signatureHtml = `
+							<div class="signature-container ${cssClass}" style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 10;">
+								<img src="data:image/png;base64,${data.signature_img}" 
+									alt="Signature" style="max-height: 60px; display:${displayStyle}; margin:-8vh 0px 0px 0vh;">
+								<p style="font-size: 12px; margin: 2px 0; text-align: center; display:${displayStyle};">${data.emp_name || 'Final Approver'}</p>
+								<p style="font-size: 12px; margin: 2px 0; text-align: center; display:${displayStyle};">${data.date_approved || new Date().toLocaleDateString()}</p>
+							</div>
+						`;
+						
+						const existingInput = targetElement.find('input.set_approved_by');
+						if (existingInput.length) {
+							existingInput.before(signatureHtml);
+							existingInput.val(data.emp_name || existingInput.val());
+						}
+						
+					} else if (signatoryType == 4) {
+						// HR Approval Signature
+						const signatureHtml = `
+							<div class="signature-container ${cssClass}" style="position: absolute; top: 10vh; left: 0; right: 0;">
+								<img src="data:image/png;base64,${data.signature_img}" 
+									alt="Signature" style="max-height: 60px; display:${displayStyle}; margin-top:-18vh;">
+							</div>
+						`;
+						
+						const centerElement = targetElement.find('center');
+						if (centerElement.length) {
+							centerElement.prepend(signatureHtml);
+						}
+					}
+					
+					// Apply the container CSS class for PDF generation control
+					targetElement.addClass(cssClass);
+					
+					console.log('Signature display updated successfully with p12 status:', hasP12);
+					
+					// Force a repaint
+					targetElement[0].offsetHeight;
+					
+				} else {
+					console.log('Could not update signature - missing element or data');
+				}
+			}
+
+
+			function updateButtonToApproved() {
+				const signButton = $('#sign-button');
+				const currentDate = new Date().toLocaleDateString('en-US', {
+					month: 'short', 
+					day: '2-digit',
+					year: 'numeric',
+					hour: '2-digit',
+					minute: '2-digit'
+				});
+				
+				signButton.replaceWith(`
+					<button class="btn btn-success" disabled>
+						<i class="fas fa-check-circle"></i> Already Approved
+						<br><small style="font-size: 10px;">${currentDate}</small>
+					</button>
+				`);
+			}
+
+			function showSuccessModal(response) {
+			Swal.fire({
+				icon: 'success',
+				title: 'Leave Application Approved!',
+				html: `
+					<div style="text-align: center; padding: 10px;">
+						<p style="margin: 10px 0;"><strong>Signed by:</strong> ${response.emp_name || 'Unknown'}</p>
+						<p style="margin: 10px 0;"><strong>Date:</strong> ${response.date_approved || new Date().toLocaleString()}</p>
+						<hr style="margin: 20px 0;">
+						<p style="color: #6c757d; font-size: 14px; margin: 0;">
+							<i class="fas fa-shield-alt"></i> 
+							Document digitally signed and tamper-evident.
+						</p>
+					</div>
+				`,
+				confirmButtonText: 'Continue',
+				confirmButtonColor: '#28a745',
+				timer: 4000,
+				timerProgressBar: true,
+				allowOutsideClick: false,
+				allowEscapeKey: false
+			}).then((result) => {
+				// Refresh the page after user clicks "Continue" or timer expires
+				if (result.isConfirmed || result.isDismissed) {
+					window.location.reload();
+				}
+			});
+		}
+
+			function showErrorModal(error) {
+				const errorMessage = error.message || error;
+				let errorTitle = 'Approval Failed';
+				let errorIcon = 'error';
+				
+				if (errorMessage.toLowerCase().includes('password')) {
+					errorTitle = 'Invalid Password';
+					errorIcon = 'warning';
+				} else if (errorMessage.toLowerCase().includes('certificate')) {
+					errorTitle = 'Certificate Error';
+				}
+				
+				Swal.fire({
+					icon: errorIcon,
+					title: errorTitle,
+					text: errorMessage,
+					showCancelButton: true,
+					confirmButtonText: 'Try Again',
+					cancelButtonText: 'Cancel',
+					confirmButtonColor: '#007bff',
+					cancelButtonColor: '#6c757d'
+				}).then((result) => {
+					if (result.isConfirmed) {
+						showPasswordModal();
+					}
+				});
+			}
+		});
+
+		// ✅ SweetAlert2 Styling (unchanged)
+		(function () {
+			$('<style>')
+				.prop('type', 'text/css')
+				.html(`
+					.swal2-popup {
+						font-family: inherit !important;
+					}
+					.swal2-title {
+						font-size: 24px !important;
+						font-weight: 600 !important;
+						margin-bottom: 20px !important;
+					}
+					.swal2-html-container {
+						margin: 0 !important;
+					}
+					.swal2-input {
+						width: 100% !important;
+						max-width: none !important;
+						margin: 8px 0 !important;
+						padding: 12px 16px !important;
+						border: 2px solid #e9ecef !important;
+						border-radius: 6px !important;
+						font-size: 16px !important;
+						box-sizing: border-box !important;
+					}
+					.swal2-input:focus {
+						border-color: #007bff !important;
+						box-shadow: 0 0 0 0.05rem rgba(0, 123, 255, 0.25) !important;
+						outline: none !important;
+					}
+					.swal2-validation-message {
+						background: #f8d7da !important;
+						color: #721c24 !important;
+						border: 1px solid #f5c6cb !important;
+						margin-top: 10px !important;
+						padding: 8px 12px !important;
+						border-radius: 4px !important;
+					}
+				`)
+				.appendTo('head');
+		})();
+	</script>
+</body>
+</html>

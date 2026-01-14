@@ -1,0 +1,1410 @@
+{% extends 'layout.html' %}
+{% load tags %}
+{% load frontend_tags %}
+{% load static %}
+{% block style %}
+<link href="{% static 'css/plugins/textSpinners/spinners.css' %}" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="{% static 'css/adjustments.css' %}">
+<style type="text/css">
+	.dropdown-menu {
+	    width: 100%;
+	}
+</style>
+{% endblock %}
+{% block content %}
+<div class="container-fluid">
+	<div class="row px-3 pt-3">
+		<div class="col-lg-8">
+			<h1 class="font-weight-bold">{{ tab_title }}</h1>
+			<ol class="breadcrumb bg-transparent p-0">
+				<li class="breadcrumb-item">
+					<a href="{% url 'backend-dashboard' %}">Home</a>
+				</li>
+				<li class="breadcrumb-item">
+					{{ tab_parent }}
+				</li>
+				<li class="breadcrumb-item active">
+					<strong>Travel Requests</strong>
+				</li>
+			</ol>
+		</div>
+		{% if user|check_permission:'rito' or user|check_permission:'superadmin' %}
+		<div class="col-lg-4 pt-3">
+			<div class="float-md-right">
+				<button class="btn btn-info" data-toggle="modal" data-target="#add-rito-modal"><i class="fas fa-plus"></i> Request for Travel</button>
+			</div>
+		</div>
+		{% endif %}
+	</div>
+</div>
+<div class="content-wrapper p-4 ml-0">
+	<div class="row">
+        <div class="col-lg-12">
+            <div class="card card-info card-tabs">
+				<div class="card-header p-0 pt-1">
+					<ul class="nav nav-tabs" id="tabUL">
+						<li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#request-view"> Requests View <span id="total-init-requests" class="badge badge-primary"></span></a></li>
+						<li class="nav-item"><a class="nav-link" data-toggle="tab" href="#travel-workflow">Travel Workflow <span id="total-requests" class="badge badge-success"></span></a></li>
+						<li class="nav-item"><a class="nav-link" data-toggle="tab" href="#travel-drafts">Drafts <span id="total-drafts" class="badge badge-warning"></span></a></li>
+					    <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#travel-for-approval">For Approval <span id="total-for-approval" class="badge badge-danger"></span></a></li>
+						<!-- <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#travel-monitoring">Monitoring <span id="total-monitoring" class="badge badge-danger"></span></a></li> -->
+
+				    </ul>
+				</div>
+                <div class="card-body">
+                    <div class="tabs-container">
+						<div class="tab-content">
+							<div id="request-view" class="tab-pane active">
+								<div class="panel-body">
+									<div class="table-responsive" style="margin-top: 15px;">
+										<table class="table table-bordered table-hover" style="zoom: 95% !important;" id="table-requests" width="100%">
+											<thead>
+												<tr>
+													<th class="text-left" rowspan="2">ACTION</th>
+													<th class="text-left" style="width:25%;" rowspan="2">STAFF</th>
+													<th class="text-center" rowspan="2">PLACE OF TRAVEL</th>
+													<th class="text-center" rowspan="2">PURPOSE</th>
+													<th class="text-center" colspan="2">INCLUSIVE DATES</th>
+													<th class="text-center" rowspan="2">EXPECTED OUTPUT</th>
+													<th class="text-center" rowspan="2">CLAIMS</th>
+													<th class="text-center" rowspan="2">MEANS OF TRANSPORTATION</th>
+												</tr>
+												<tr>
+													<th class="text-center">FROM</th>
+													<th class="text-center">TO</th>
+												</tr>
+											</thead>
+										</table>
+									</div>
+									<hr>
+									<form id="submitForm" class="pull-right">
+										{% csrf_token %}
+										<input type="hidden" name="draftid2" id="draftid2" value="{{ request.GET.id }}">
+										<button type="submit" class="btn btn-info" id="rito-submit-btn"> Submit</button>
+										<button type="button" id="saveasdraft" class="btn btn-default"> Save as Draft</button>
+									</form>
+								</div>
+							</div>
+							<div id="travel-workflow" class="tab-pane">
+								<div class="panel-body">
+									<div class="row">
+										<div class="col-lg-9">
+											<div class="table-responsive">
+												<table class="table table-bordered table-hover" style="zoom: 95% !important;" id="table-workflow" width="100%">
+													<thead>
+														<tr>
+															<th class="text-left" width="15%">ACTION</th>
+															<th width="15%">TRACKING NO.</th>
+															<th style="width:35%;" width="35%">STAFF</th>
+															<th class="text-center" width="15%">DATE FILED</th>
+															<th class="text-right" width="20%">RSO STATUS | FILE</th>
+                                                            <th class="text-center">REMARKS</th>
+															<th class="display-none">STATUS</th>
+															<th class="display-none">ID</th>
+															<th class="display-none">JUSTIFICATION</th>
+														</tr>
+													</thead>
+												</table>
+											</div>
+										</div>
+										<div class="col-lg-3">
+											<h4>FILTER</h4>
+											<h4>By keyword</h4>
+											<div class="form-group">
+												<div class="input-group">
+													<input type="text" class="form-control b-r-sm" id="keyword" autocomplete="off"> <span class="input-group-append">
+													<button type="button" class="btn btn-info" id="filter-keyword">Filter</button> </span>
+												</div>
+											</div>
+											<br>
+											<h4>By status</h4>
+											<div class="list-group">
+												<a class="list-group-item list-group-item-action active" id="status-all" href="javascript:;" data-role="status" data-filter="all">All</a>
+												<a class="list-group-item list-group-item-action" id="status-2" href="javascript:;" data-role="status" data-filter="2">Pending</a>
+												<a class="list-group-item list-group-item-action" id="status-3" href="javascript:;" data-role="status" data-filter="3">Approved</a>
+												<a class="list-group-item list-group-item-action" id="status-5" href="javascript:;" data-role="status" data-filter="5">Canceled</a>
+											</div>
+											<br>
+											<h4>By date filed</h4>
+											<div class="form-group">
+												<label>Start date</label>
+												<input type="date" class="form-control" id="filter-start-date">
+											</div>
+											<div class="form-group">
+												<label>End date</label>
+												<div class="input-group">
+													<input type="date" class="form-control b-r-sm" id="filter-end-date" autocomplete="off"> <span class="input-group-append">
+													<button type="button" class="btn btn-info" id="filter-date-range">Filter</button> </span>
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div id="travel-drafts" class="tab-pane">
+								<div class="panel-body">
+									<div class="table-responsive">
+										<table class="table table-hover table-bordered" style="zoom: 95% !important;" id="table-drafts" width="100%">
+											<thead>
+												<tr>
+													<th>REQUESTS</th>
+													<th>DATE CREATED</th>
+												</tr>
+											</thead>
+										</table>
+									</div>
+								</div>
+							</div>
+
+                            <div id="travel-for-approval" class="tab-pane">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover" style="zoom: 95% !important;" id="table-for-approval" width="100%">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center" width="15%">ACTION</th>
+                                                <th class="text-center" width="15%">TRACKING NO.</th>
+                                                <th class="text-center" style="width:35%;" width="35%">STAFF</th>
+                                                <th class="text-center" width="15%">DATE FILED</th>
+                                                <th class="text-right" width="20%">RSO | FILE</th>
+                                                <th class="text-center">REMARKS</th>
+                                                <th class="display-none">STATUS</th>
+                                                <th class="display-none">ID</th>
+                                                <th class="display-none">JUSTIFICATION</th>
+                                            </tr>
+                                        </thead>
+                                    </table>
+                                </div>
+                            </div>
+
+
+
+							<!-- <div id="travel-monitoring" class="tab-pane">
+								<div class="row">
+                               		<div class="col-lg-2">
+										<div class="section">
+											<div class="section">rictsm</div>
+											<div class="section">HR</div>
+											<div class="section">PPD</div>
+											<div class="section">rictsm</div>
+										</div>
+									</div>
+								<div class="col-lg-10">
+								<div class="calendar-body" style="border:1px solid black;height:70vh;">
+									</div>
+								</div>
+							</div> -->
+
+							   </div>
+                            </div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="modal" id="add-rito-modal" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog fs-sm-dialog" style="max-width: 80%;">
+		<div class="modal-content animated bounceInDown" style="padding-bottom: 0px !important;">
+	        <div class="modal-header bg-info">
+	            <h3 class="modal-title">TRAVEL REQUESTS</h3>
+				<button type="button" class="close text-white" data-dismiss="modal">
+					<span aria-hidden="true">&times;</span>
+					<span class="sr-only">Close</span>
+				</button>
+	        </div>
+	        
+	        <form id="submitRitoForm">
+				<input type="hidden" name="draftid" id="draftid" value="{{ request.GET.id }}">
+				
+		        <div class="modal-body">
+		        	{% csrf_token %}
+					<div id="alertDiv"></div>
+					
+					<div class="row">
+						<div class="col-sm-7">
+							<div class="row">
+								<div class="col-sm-6">
+									<div class="form-group">
+										<label>From<span class="asteriskField">*</span></label>
+										<input type="datetime-local" id="from" name="from" class="form-control b-r-sm" required>
+									</div>
+								</div>
+								<div class="col-sm-6">
+									<div class="form-group">
+										<label>To<span class="asteriskField">*</span></label>
+										<input type="datetime-local" id="to" name="to" class="form-control b-r-sm" required>
+									</div>
+								</div>
+								<div class="col-sm-12">
+									<div class="form-group">
+										<label>Places of Travel<span class="asteriskField">*</span></label>
+										<textarea class="form-control b-r-sm" name="places" placeholder="Input specific places of travel" required></textarea>
+									</div>
+								</div>
+								<div class="col-sm-12">
+									<div class="form-group">
+										<label>Purpose<span class="asteriskField">*</span></label>
+										<textarea class="form-control b-r-sm" name="purpose" placeholder="Write purpose of travel" required></textarea>
+									</div>
+								</div>
+								<div class="col-sm-12">
+									<div class="form-group">
+										<label>Expected Output<span class="asteriskField">*</span></label>
+										<textarea class="form-control b-r-sm" name="expected_output" placeholder="Specify expected outputs of travel" required></textarea>
+									</div>
+								</div>
+								<div class="col-sm-12">
+									<div class="form-group">
+										<label>Subject<span class="asteriskField">*</span></label>
+										<select class="form-control select b-r-sm" id="subject" name="subject" required>
+											<option></option>
+											{% for row in subject %}
+											<option value="{{ row.id }}">{{ row.name }}</option>
+											{% endfor %}
+										</select>
+									</div>
+								</div>
+								<div class="col-sm-6">
+									<div class="form-group">
+										<label>Claims<span class="asteriskField">*</span></label>
+										<select class="form-control select b-r-sm" id="claims" name="claims" required>
+											<option></option>
+											{% for row in claims %}
+											<option value="{{ row.id }}">{{ row.name }}</option>
+											{% endfor %}
+										</select>
+									</div>
+								</div>
+								<div class="col-sm-6">
+									<div class="form-group">
+										<label>Means of Transportation<span class="asteriskField">*</span></label>
+										<select class="form-control select b-r-sm" id="mot" name="mot" required>
+											<option></option>
+											{% for row in mot %}
+											<option value="{{ row.id }}">{{ row.name }}</option>
+											{% endfor %}
+										</select>
+									</div>
+								</div>
+
+								<div class="col-sm-6">
+									<div class="form-group form-check">
+										<input type="checkbox" class="form-check-input" id="lap" name="lap" value="1">
+										<label class="form-check-label" for="lap">With LAP (Learning Action Plan)</label>
+									</div>
+								</div>
+								
+							</div>
+						</div>
+
+						<div class="col-sm-5">
+							<div class="card card-info card-tabs">
+								<div class="card-header p-0 pt-1">
+									<ul class="nav nav-tabs" id="tabUL">
+										<li class="nav-item">
+											<a class="nav-link active" data-toggle="tab" href="#custom">
+												Custom <span id="total-init-requests" class="badge badge-primary"></span>
+											</a>
+										</li>
+										<li class="nav-item">
+											<a class="nav-link" data-toggle="tab" href="#section-bulk-details">
+												Bulk Section <span id="total-requests" class="badge badge-success"></span>
+											</a>
+										</li>
+										<li class="nav-item">
+											<a class="nav-link" data-toggle="tab" href="#division-bulk-details">
+												Bulk Division <span id="total-requests" class="badge badge-success"></span>
+											</a>
+										</li>
+									</ul>
+								</div>
+
+								<div class="card-body tab-content">
+									<!-- Per Employee Tab -->
+									<div class="tab-pane active" id="custom">
+										<label>Employee name</label>
+										<div id="items">
+											<div class="form-group">
+												<div class="input-group">
+													<input type="text" class="form-control filter_employee_to b-r-sm" name="employee[]" autocomplete="off" placeholder="e.g. [16-12345] FIRST NAME MIDDLE INITIAL LAST NAME">
+													<span class="input-group-append">
+														<button type="button" class="btn btn-info add"><i class="fas fa-plus"></i></button>
+													</span>
+												</div>
+											</div>
+										</div>
+										<div id="employee-details"></div>
+									</div>
+
+									<!-- Per Section Tab -->
+									<div class="tab-pane" id="section-bulk-details">
+										<div class="col-md-12">
+											<div class="form-group">
+												<label>Section</label>
+												<div class="d-flex align-items-start gap-2">
+													<select class="form-control select flex-grow-1" name="section" id="section">
+														<option></option>
+														{% for division in divisions %}
+															<optgroup label="{{ division.div_name }}">
+																{% for section in sections %}
+																	{% if division.id == section.div_id %}
+																		<option value="{{ section.id }}">{{ section.sec_name }}</option>
+																	{% endif %}
+																{% endfor %}
+															</optgroup>
+														{% endfor %}
+													</select>
+													&emsp;
+													<button type="button" class="btn btn-info add-section">
+														<i class="fas fa-plus"></i>
+													</button>
+												</div>
+											</div>
+										</div>
+									</div>
+
+									<!-- Per Division Tab -->
+									<div class="tab-pane" id="division-bulk-details">
+										<div class="col-md-12">
+											<div class="form-group">
+												<label>Division</label>
+												<div class="d-flex align-items-start gap-2">
+													<select class="form-control select flex-grow-1" name="division" id="division">
+														<option></option>
+														{% for division in divisions %}
+															<option value="{{ division.id }}">{{ division.div_name }}</option>
+														{% endfor %}
+													</select>
+													&emsp;
+													<button type="button" class="btn btn-info add-division">
+														<i class="fas fa-plus"></i>
+													</button>
+												</div>
+											</div>
+										</div>
+									</div>
+
+
+									<!-- 
+									<div class="tab-pane" id="travel-monitoring">
+										test
+									</div> -->
+
+
+								</div> <!-- End card-body tab-content -->
+							</div> <!-- End card -->
+						</div> <!-- End col-sm-5 -->
+					</div> <!-- End row -->
+				</div> <!-- End modal-body -->
+
+				<div class="modal-footer">
+					<button type="submit" class="btn btn-info" id="btnSaveForm">Save</button>
+				</div>
+			</form>
+	    </div> <!-- End modal-content -->
+	</div> <!-- End modal-dialog -->
+</div> <!-- End modal -->
+
+
+<div class="modal" id="edit-rito-modal" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog modal-xl">
+		<div class="modal-content animated bounceInDown">
+	        <div class="modal-header bg-info">
+	            <h3 class="modal-title">
+					EDIT TRAVEL REQUEST
+				</h3>
+				<button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+	        </div>
+			<div id="edit-content-tr"></div>
+		</div>
+	</div>
+</div>
+
+<div class="modal" id="to_attachment_modal" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-info">
+                <h3 class="modal-title">
+					ATTACHMENT
+				</h3>
+				<button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+			<div id="to_attachment_content"></div>
+		</div>
+	</div>
+</div>
+
+<div class="modal" id="tracking_modal" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-info">
+                <h3 class="modal-title">
+					TRAVEL TRACKING FOR <span id="tracking_no_text"></span>
+				</h3>
+				<button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+			<div id="tracking-content"></div>
+		</div>
+	</div>
+</div>
+{% include 'frontend/pas/rito/modals/set_signatories.html' %}
+{% endblock %}
+{% block script %}
+<script type="text/javascript">
+	$(document).ready(function() {
+		if (location.hash) {
+			$("a[href='" + location.hash + "']").tab("show");
+		}
+		$(document.body).on("click", "a[data-toggle='tab']", function(event) {
+			location.hash = this.getAttribute("href");
+		});
+
+		$('.add').on('click', function(){
+			$('#items').append('<div class="form-group"><div class="input-group minus-remove"><input type="text" class="form-control filter_employee_to b-r-sm" name="employee[]" required autocomplete="off" placeholder="e.g. [16-11626] FIRST NAME MIDDLE INITIAL LAST NAME"> <span class="input-group-append"> <button type="button" class="btn btn-danger remove_field"><i class="fa fa-minus"></i></button> </span></div></div></div>');
+
+			$(".filter_employee_to").typeahead({
+				source: function(query, process){
+					return $.get({
+						url: '{% url "filter_employee" %}',
+						data: { query: query },
+						datatype: 'json',
+						success: function (data) {
+							return process(data);
+						}
+					});
+				},
+				highlight: true,
+			});
+		});
+
+		// $('#items').on("click", ".remove_field", function(e){
+		// 	e.preventDefault();
+		// 	$(this).parent().parent().remove();
+		// });
+
+		$(".filter_employee_to").typeahead({
+			source: function(query, process){
+				return $.get({
+					url: '{% url "filter_employee" %}',
+					data: { query: query },
+					datatype: 'json',
+					success: function (data) {
+						return process(data);
+					}
+				});
+			},
+			highlight: true,
+		});
+
+		globalInitialization()
+		function globalInitialization(){
+			$.get({
+				url: '{% url "get_travel_totals" %}',
+				success: function(response){
+					$('#total-drafts').text(response.drafts);
+					$('#total-requests').text(response.requests);
+					$('#total-init-requests').text(response.init_requests);
+                    $('#total-for-approval').text(response.for_approval);
+					// $('#travel-monitoring').text(response.for_monitoring);
+				}
+			});
+		}
+
+		// $('#table-requests').DataTable({
+		// 	'serverSide': true,
+		// 	'processing': true,
+		// 	'deferRender': true,
+		// 	'order': [[ 4, 'desc' ]],
+		// 	'lengthMenu': [ 25, 50, 100 ],
+		// 	'ajax': {
+		// 		'url': '/api/travel/details/requests/?format=datatables&status=1&employee_id={% getHash request.session.emp_id %}',
+		// 		'type': 'GET',
+		// 		'beforeSend': function (request) {
+		// 			request.setRequestHeader("Authorization", "Token 82b88a7bdac1ea3868361448927035e93b0dc19d");
+		// 		},
+		// 	},
+		// 	'fnCreatedRow': function (row, data, index) {
+		// 		$(row).attr('id', data['id']);
+		// 	},
+		// 	"columnDefs": [
+		// 		{ "orderable": false, "targets": [0, 1] },
+		// 		{ "orderable": true, "targets": [2, 3, 4, 5, 6, 7, 8] }
+		// 	],
+		// 	'columns': [
+		// 		{'data': 'id', 'searchable': false,
+		// 			'render': function(data, type, row, meta) {
+		// 				var template = "";
+		// 				template += "<a href='javascript:;' data-role='edit' data-id='"+ data +"'>Edit</a> | ";
+		// 				template += "<a href='javascript:;' data-role='delete' data-id='"+ data +"'>Delete</a>";
+		// 				return template;
+		// 			}
+		// 		},
+		// 		{'data': 'passengers', 'searchable': false },
+		// 		{'data': 'place', 'className': 'text-center' },
+		// 		{'data': 'purpose', 'className': 'text-center' },
+		// 		{'data': 'inclusive_from', 'className': 'text-center' },
+		// 		{'data': 'inclusive_to', 'className': 'text-center' },
+		// 		{'data': 'expected_output', 'className': 'text-center' },
+		// 		{'data': 'claims', 'className': 'text-center' },
+		// 		{'data': 'mot', 'className': 'text-center' },
+		// 	],
+		// });
+
+		
+$('#table-requests').DataTable({
+	'serverSide': true,
+	'processing': true,
+	'deferRender': true,
+	'order': [[ 4, 'desc' ]],
+	'lengthMenu': [ 25, 50, 100 ],
+	'ajax': {
+		'url': '/api/travel/details/requests/?format=datatables&status=1&employee_id={% getHash request.session.emp_id %}',
+		'type': 'GET',
+		'beforeSend': function (request) {
+			request.setRequestHeader("Authorization", "Token 82b88a7bdac1ea3868361448927035e93b0dc19d");
+		},
+	},
+	'fnCreatedRow': function (row, data, index) {
+		$(row).attr('id', data['id']);
+	},
+	"columnDefs": [
+		{ "orderable": false, "targets": [0, 1] },
+		{ "orderable": true, "targets": [2, 3, 4, 5, 6, 7, 8] }
+	],
+	'columns': [
+		{'data': 'id', 'searchable': false,
+			'render': function(data, type, row, meta) {
+				var template = "";
+				template += "<a href='javascript:;' data-role='edit' data-id='"+ data +"'>Edit</a> | ";
+				template += "<a href='javascript:;' data-role='delete' data-id='"+ data +"'>Delete</a>";
+				return template;
+			}
+		},
+		{'data': 'passengers', 'searchable': false },
+		{'data': 'place', 'className': 'text-center' },
+		{'data': 'purpose', 'className': 'text-center' },
+		{'data': 'inclusive_from', 'className': 'text-center',
+			'render': function(data, type, row, meta) {
+				if (!data) return '';
+				var date = new Date(data);
+				return date.toLocaleString('en-US', { 
+					month: 'short', 
+					day: '2-digit', 
+					year: 'numeric',
+					hour: '2-digit',
+					minute: '2-digit',
+					hour12: true
+				});
+			}
+		},
+		{'data': 'inclusive_to', 'className': 'text-center',
+			'render': function(data, type, row, meta) {
+				if (!data) return '';
+				var date = new Date(data);
+				return date.toLocaleString('en-US', { 
+					month: 'short', 
+					day: '2-digit', 
+					year: 'numeric',
+					hour: '2-digit',
+					minute: '2-digit',
+					hour12: true
+				});
+			}
+		},
+		{'data': 'expected_output', 'className': 'text-center' },
+		{'data': 'claims', 'className': 'text-center' },
+		{'data': 'mot', 'className': 'text-center' },
+	],
+});
+
+		$('#table-workflow').DataTable({
+			'serverSide': true,
+			'processing': true,
+			'deferRender': true,
+			'order': [[ 3, 'desc' ]],
+			'lengthMenu': [ 25, 50, 100 ],
+			'ajax': {
+				'url': '/api/travel/?format=datatables&status=workflow&employee_id={% getHash request.session.emp_id %}',
+				'type': 'GET',
+				'beforeSend': function (request) {
+					request.setRequestHeader("Authorization", "Token 82b88a7bdac1ea3868361448927035e93b0dc19d")
+				}
+			},
+			'fnCreatedRow': function (row, data, index) {
+				$(row).attr('id', data['id']);
+			},
+			"columnDefs": [
+				{ "orderable": false, "targets": [0, 2, 4, 5] },
+				{ "orderable": true, "targets": [1, 3] }
+			],
+			'columns': [
+				{'data': 'action', 'searchable': false },
+				{'data': 'tracking_no',
+                    render: function(data, type, row, meta) {
+                        return "<a href='javascript:;' data-role='tracking-details' data-content='" + data + "' data-id='"+ row['id'] +"'>"+ data +"</a>";
+                    }
+                },
+				{'data': 'passengers', 'searchable': false },
+				{'data': 'date', 'className': 'text-center' },
+				{'data': 'travel_status', 'className': 'text-right', 'searchable': false },
+                {'data': 'travel_confirmation',
+                    render: function(data, type, row, meta) {
+                        if(row['travel_justification']) {
+							return data + row['travel_justification'];
+                        } else {
+							return ''
+                        }
+                    },
+                    'className': 'text-center',
+                    'searchable': false
+                },
+				{'data': 'status', 'className': 'display-none' },
+				{'data': 'id', 'className': 'display-none' },
+				{'data': 'travel_justification', 'className': 'display-none', 'searchable': false }
+			],
+		});
+
+       $(document).on('click', 'a[data-role=set-signatories]', function() {
+		var id = $(this).data('id');
+		var url = `/travel/request/signatories/${id}/1`;
+
+		$('#set-signatories-content').load(url, function() {
+			$('#set_signatories_modal').modal('show');
+
+			$(".filter_employee_signatories_to").typeahead({
+				source: function(query, process){
+					return $.get({
+						url: '{% url "filter_employee" %}',
+						data: { query: query },
+						datatype: 'json',
+						success: function (data) {
+							return process(data);
+						}
+					});
+				},
+				highlight: true,
+			});
+
+			$('#setSignatoriesForm').on('submit', function(e){
+				e.preventDefault();
+				$.ajax({
+					url: url,
+					type: 'POST',
+					data: new FormData(this),
+					processData: false,
+					contentType: false,
+					beforeSend: function (request) {
+						$('#btn-set-signatories-save-changes').prop('disabled', true);
+					},
+					success: function(response) {
+						if (response.success) {
+							$('#set_signatories_modal').modal('hide');
+							$('#table-for-approval').DataTable().ajax.reload();
+							Swal.fire({
+								icon: 'success',
+								title: 'Saved!',
+								text: 'Signatories have been saved successfully.',
+								timer: 2000,
+								showConfirmButton: false
+							});
+						} else {
+							Swal.fire({
+								icon: 'error',
+								title: 'Error',
+								text: response.error || 'Something went wrong while saving signatories.'
+							});
+						}
+					},
+					error: function(xhr, status, error) {
+						Swal.fire({
+							icon: 'error',
+							title: 'Error',
+							text: 'Failed to save signatories. Please try again.'
+						});
+					},
+					complete: function() {
+						$('#btn-set-signatories-save-changes').prop('disabled', false);
+					}
+				});
+			})
+		});
+	})
+
+
+		$('#table-drafts').DataTable({
+			'serverSide': true,
+			'processing': true,
+			'deferRender': true,
+			'order': [[ 1, 'desc' ]],
+			'lengthMenu': [ 25, 50, 100 ],
+			'ajax': {
+				'url': '/api/travel/?format=datatables&status=drafts&employee_id={% getHash request.session.emp_id %}',
+				'type': 'GET',
+				'beforeSend': function (request) {
+					request.setRequestHeader("Authorization", "Token 82b88a7bdac1ea3868361448927035e93b0dc19d")
+				}
+			},
+			'fnCreatedRow': function (row, data, index) {
+				$(row).attr('id', data['id']);
+			},
+			'columns': [
+				{'data': 'hash',
+					'render': function(data, type, row, meta) {
+						return "<a href='javascript:;' data-role='undraft' data-id='"+ data +"'>Draft "+ data +"</a>"
+					},
+					'searchable': false
+				},
+				{'data': 'date' },
+			],
+		});
+
+       	$('#table-for-approval').DataTable({
+			'serverSide': true,
+			'processing': true,
+			'deferRender': true,
+			'order': [[ 3, 'desc' ]],
+			'lengthMenu': [ 25, 50, 100 ],
+			'ajax': {
+				'url': '/api/travel/for-approval/?format=datatables&status=workflow&employee_id={{ request.session.emp_id }}',
+				'type': 'GET',
+				'beforeSend': function (request) {
+					request.setRequestHeader("Authorization", "Token 82b88a7bdac1ea3868361448927035e93b0dc19d")
+				}
+			},
+			'fnCreatedRow': function (row, data, index) {
+				$(row).attr('id', data['id']);
+			},
+			"columnDefs": [
+				{ "orderable": false, "targets": [0, 2, 4, 5] },
+				{ "orderable": true, "targets": [1, 3] }
+			],
+			'columns': [
+				{'data': 'id','className':'text-center',
+					render: function(data, type, row, meta) {
+						var tracking_no = row['tracking_no'] || row['rito_tracking_no'];
+						return `<a href="/backend/generate-to/${tracking_no}" target="_blank">Details</a>`;
+					},
+					'searchable': false
+				},
+				{'data': 'tracking_no','className':'text-center',
+					render: function(data, type, row, meta) {
+						return `<a href="/travel/requests/print/${row['rito_id']}" target="_blank">${data}</a>`;
+					},
+					'name': 'rito.tracking_no'
+				},
+				{'data': 'passengers', 'searchable': false },
+				{'data': 'date', 'className': 'text-center', 'name': 'rito.date' },
+				{'data': 'getstatus', 'className': 'text-right', 'searchable': false },
+				{'data': 'travel_confirmation',
+					render: function(data, type, row, meta) {
+						if(row['travel_justification']) {
+							return data + row['travel_justification'];
+						} else {
+							return ''
+						}
+					},
+					'className': 'text-center',
+					'searchable': false
+				},
+				{'data': 'status', 'className': 'display-none', 'searchable': false },
+				{'data': 'rito_id', 'name': 'rito.id', 'className': 'display-none', 'searchable': false },
+				{'data': 'travel_justification', 'className': 'display-none', 'searchable': false }
+			],
+		});
+
+		
+
+        $(document).on('click', 'a[data-role=approved-rito]', function() {
+            var id = $(this).data('id');
+
+            $.ajax({
+                url: '{% url "approved_rito_signatories" %}',
+                type: 'POST',
+                data: {
+                    id: id
+                },
+                beforeSend: function(jqXHR) {
+                    jqXHR.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+                },
+                success: function(response) {
+                    if(response.success) {
+                        $('#table-for-approval').DataTable().ajax.reload();
+                    }
+                }
+            })
+        });
+
+        $(document).on('click', 'a[data-role=disapproved-rito]', function() {
+            var id = $(this).data('id');
+
+            $.ajax({
+                url: '{% url "disapproved_rito_signatories" %}',
+                type: 'POST',
+                data: {
+                    id: id
+                },
+                beforeSend: function(jqXHR) {
+                    jqXHR.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+                },
+                success: function(response) {
+                    if(response.success) {
+                        $('#table-for-approval').DataTable().ajax.reload();
+                    }
+                }
+            })
+        });
+
+$('#submitRitoForm').on('submit', function(e){
+	e.preventDefault(); 
+	var hasEmployees = $('input[name="employee[]"]').length > 0;
+	
+	if(!hasEmployees) {
+		Swal.fire("Oops!", "Please add at least one employee.", "warning");
+		return;
+	}
+
+	var form = new FormData(this);
+	
+	$('#btnSaveForm').prop("disabled", true);
+	$('#btnSaveForm').html('<span class="loading open-circle"></span> Saving');
+
+	$.ajax({
+		data: form,
+		url: '{% url "rito" %}',
+		type: 'POST',
+		success: function(response) {
+			if (response.data == "success") {
+				$('#add-rito-modal').modal('toggle');
+				Swal.fire({
+					title: "Good job!",
+					text: "Initial travel request was successfully added.",
+					icon: "success",
+					confirmButtonColor: "#3498DB",
+					allowOutsideClick: false,
+				}).then((result) => {
+					if(result.isConfirmed){
+						$('#submitRitoForm').trigger('reset');
+						$('.select').val("").change();
+						// Clear all employee groups
+						$('.section-group').remove();
+						$('.division-group').remove();
+						$('#items .minus-remove').remove();
+						globalInitialization();
+						$('#table-requests').DataTable().ajax.reload();
+						$('#add-rito-modal').modal('hide');
+					}
+				});
+			} else {
+				if (response.conflict) {
+					var conflict = response.conflict;
+					$('#alertDiv').empty();
+					for (var i = 0; i < conflict.length; i++) {
+						$('#alertDiv').append(`
+							<div class='alert alert-warning'>
+								<i class='fas fa-info-circle'></i>
+								It seems ` + conflict[i]['name'] + ` has already been scheduled to travel on or within the ` + conflict[i]['text_date'] + `, as indicated in `+ conflict[i]['text_to']  +`: ` + conflict[i]['to_number'] + `
+							</div><br>`);
+					}
+				}
+				if (response.confirmation) {
+					$('#alertDiv').append(`
+						<div class='alert alert-warning'>
+							<i class='fas fa-info-circle'></i>
+							It seems that you are trying to have both request/s for confirmation and not for confirmation in the same filing.
+						</div><br>`);
+				}
+			}
+		},
+		complete: function() {
+			$('#btnSaveForm').prop("disabled", false);
+			$('#btnSaveForm').html('Save');
+		},
+		cache: false,
+		contentType: false,
+		processData: false
+	});
+});
+		// Delete Initial Requests
+		$(document).on('click', 'a[data-role=delete]', function(){
+			var id = $(this).data('id');
+			Swal.fire({
+			  	title: "Are you sure",
+			  	text: "You want to delete this record?",
+			  	icon: "warning",
+			  	showCancelButton: true,
+			  	confirmButtonColor: "#DD6B55",
+			 	confirmButtonText: "Yes",
+			  	allowOutsideClick: false,
+			  	showLoaderOnConfirm: true,
+				preConfirm: function (){
+					return $.ajax({
+						data        :{ id: id },
+						url         : '{% url "delete-rito" %}',
+						type        : 'POST',
+					});
+				},
+			}).then(function (response){
+				if (response.value.data){
+					Swal.fire({
+						title: "Good job!",
+						text: "Initial travel request successfully deleted.",
+						icon: "success",
+						confirmButtonColor: "#3498DB",
+						allowOutsideClick: false,
+					}).then((result) => {
+						if (result.isConfirmed){
+							globalInitialization();
+							$('#table-requests').DataTable().ajax.reload();
+						}
+					});
+				}
+			});
+		});
+
+		$(document).on('click', 'a[data-role=edit]', function(){
+			$('#edit-rito-modal').modal('show').find('#edit-content-tr').load('/travel/requests/edit/' + $(this).data('id'));
+		});
+
+		//Load Attachment Modal
+		$(document).on('click', 'a[data-role=to_attachment]', function(){
+			$('#to_attachment_content').load('/attachment/travel/' + $(this).data('filter'));
+			$('#to_attachment_modal').modal('show');
+		});
+
+		// Save as Drafts
+		$('#saveasdraft').on("click", function(e){
+			e.preventDefault();
+			if (!$('#table-requests').DataTable().data().any()){
+				Swal.fire("Oh snap!", "Sorry, it seems like you have an empty request.", "error");
+			} else {
+				var id = $('#draftid2').val();
+				Swal.fire({
+					title: "Are you sure",
+					text: "You want to save this as draft?",
+					icon: "info",
+					showCancelButton: true,
+					confirmButtonColor: "#3498DB",
+					confirmButtonText: "Yes",
+					allowOutsideClick: false,
+					showLoaderOnConfirm: true,
+					preConfirm: function (){
+						return $.ajax({
+							data        : { id: id },
+							url         : '{% url "draft-rito" %}',
+							type        : 'POST',
+						});
+					},
+				}).then(function (response) {
+					if (response.value.data){
+						$('#submitForm').trigger('reset');
+						Swal.fire({
+						  title: "Good job!",
+						  text: "Travel requests was saved as draft.",
+						  icon: "success",
+						  confirmButtonColor: "#3498DB",
+						}).then((result) => {
+							if (result.isConfirmed) {
+								globalInitialization();
+								$('#table-requests').DataTable().ajax.reload();
+								$('#table-drafts').DataTable().ajax.reload();
+							}
+						});
+					} else {
+						Swal.fire("Oh snap!", "Sorry, it seems like you have an empty request.", "error");
+					}
+				});
+			}
+		});
+
+		// Submit Travel Requests
+		$('#submitForm').on('submit', function(e){
+			e.preventDefault();
+			var form = new FormData(this)
+			if (!$('#table-requests').DataTable().data().any()){
+				Swal.fire("Oh snap!", "Sorry, it seems like you have an empty request.", "error");
+			} else {
+				Swal.fire({
+				  title: "Are you sure",
+				  text: "You want to submit this travel request?",
+				  icon: "info",
+				  showCancelButton: true,
+				  confirmButtonColor: "#3498DB",
+				  confirmButtonText: "Yes",
+				  allowOutsideClick: false,
+				  showLoaderOnConfirm: true,
+					preConfirm: function (){
+						return $.ajax({
+							data        : form,
+							url         : '/submit-rito/',
+							type        : 'POST',
+							cache       : false,
+							contentType : false,
+							processData : false,
+						});
+					},
+				}).then(function (response){
+					if (response.value.data){
+						$('#submitForm').trigger('reset');
+						Swal.fire({
+						  title: "Good job!",
+						  text: "This will serve as your tracking no. " + response.value.data +". Please wait for the reviewal of your travel request. Thank you :)",
+						  icon: "success",
+						  confirmButtonColor: "#3498DB",
+						  allowOutsideClick: false,
+						}).then((result) => {
+							if (result.isConfirmed) {
+								globalInitialization();
+								$('#table-requests').DataTable().ajax.reload();
+								$('#table-workflow').DataTable().ajax.reload();
+                                $('#table-for-approval').DataTable().ajax.reload();
+								$('a[href="#travel-workflow"]').trigger('click');
+							}
+						});
+					} else {
+						Swal.fire("Oh snap!", "Sorry, it seems like you have an empty request.", "error");
+					}
+				});
+			}
+		});
+
+		// Cancel Travel Workflow
+		$(document).on('click', 'a[data-role=cancel]', function(){
+			var id = $(this).data('id');
+			Swal.fire({
+			  title: "Are you sure",
+			  text: "You want to cancel this travel request?",
+			  icon: "warning",
+			  showCancelButton: true,
+			  confirmButtonColor: "#DD6B55",
+			  confirmButtonText: "Yes",
+			  allowOutsideClick: false,
+			}).then((result) => {
+				if (result.isConfirmed) {
+					Swal.showLoading()
+					$.ajax({
+						url: "{% url 'cancel_travel_request' %}",
+						data: {
+							id: id
+						},
+						type: "POST"
+					})
+					.done(function(data){
+						if (data.data == 'success'){
+							Swal.fire({
+							  title: "Good job!",
+							  text: "Successfully cancelled travel request",
+							  icon: "success",
+							  confirmButtonColor: "#3498DB",
+							  allowOutsideClick: false,
+							}).then((result) => {
+								if (result.isConfirmed) {
+									$('#table-workflow').DataTable().ajax.reload();
+								}
+							});
+						}
+					});
+				}
+			});
+		});
+
+		// Undraft
+		$(document).on('click', 'a[data-role=undraft]', function(){
+			$.post({
+				url: '{% url "travel_undraft" %}',
+				data: {
+					pk: $(this).data('id')
+				},
+				success: function(response){
+					if(response.data){
+						globalInitialization();
+						$('#table-requests').DataTable().ajax.reload();
+						$('#table-drafts').DataTable().ajax.reload();
+						$('a[href="#request-view"]').trigger('click');
+					}
+				}
+			});
+		});
+
+		$(document).on('click', 'a[data-role=status]', function(){
+			$('.list-group-item').removeClass('active');
+			$('#status-'+$(this).data('filter')).addClass('active');
+			if($(this).data('filter') == 'all'){
+				var table = $('#table-workflow').DataTable();
+				table.clear();
+				table.ajax.url('/api/travel/?format=datatables&status=workflow&employee_id={% getHash request.session.emp_id %}').load(function() {
+					$('#total-requests').text(table.rows().count());
+				});
+			}else{
+				var table = $('#table-workflow').DataTable();
+				table.clear();
+				table.ajax.url('/api/travel/?format=datatables&employee_id={% getHash request.session.emp_id %}&status='+$(this).data('filter')).load(function() {
+					$('#total-requests').text(table.rows().count());
+				});
+			}
+		});
+
+		$('#filter-date-range').on('click', function(){
+			if($('#filter-start-date').val() == "" || $('#filter-end-date').val() == "") {
+				Swal.fire("Ooops!", "Fields on filter by date filed cannot be blank.", "warning");
+			} else {
+				var table = $('#table-workflow').DataTable();
+				table.clear();
+				table.ajax.url('/api/travel/?format=datatables&employee_id={% getHash request.session.emp_id %}&start_date='+$('#filter-start-date').val() + '&end_date='+$('#filter-end-date').val()).load(function() {
+					$('#total-requests').text(table.rows().count());
+				});
+			}
+		});
+
+		$('#filter-keyword').on('click', function(){
+			if($('#keyword').val() == "") {
+				Swal.fire("Ooops!", "Fields on filter by keyword cannot be blank.", "warning");
+			} else {
+				var table = $('#table-workflow').DataTable();
+				table.clear();
+				table.ajax.url('/api/travel/?format=datatables&employee_id={% getHash request.session.emp_id %}&keyword='+$('#keyword').val()).load(function() {
+					$('#total-requests').text(table.rows().count());
+				});
+			}
+		});
+
+		$(document).on('click', 'a[data-role=tracking-details]', function(){
+            var pk = $(this).data('id');
+            var tracking_no = $(this).data('content');
+            $('#tracking-content').load('/tracking/travel-request/' + pk, function(){
+                $('#tracking_no_text').text(tracking_no);
+                $('#tracking_modal').modal('show');
+            });
+        });
+	});
+
+	$(window).on("popstate", function() {
+		var anchor = location.hash || $("a[data-toggle='tab']").first().attr("href");
+		$("a[href='" + anchor + "']").tab("show");
+	});
+
+$('#section-bulk-details').on('click', '.add-section', function(e){
+	e.preventDefault();
+	var sectionId = $('#section').val();
+	var sectionText = $('#section option:selected').text();
+	
+	if(!sectionId) {
+		Swal.fire("Oops!", "Please select a section first.", "warning");
+		return;
+	}
+
+	// Check if section already added
+	if($('.section-group[data-section="' + sectionId + '"]').length > 0) {
+		Swal.fire("Oops!", "This section has already been added.", "warning");
+		return;
+	}
+
+	$.ajax({
+		url: '/travel/employees-by-section/',
+		type: 'GET',
+		data: { 
+			section_id: sectionId,
+			encrypted: true
+		},
+		success: function(response) {
+			if(response.employees && response.employees.length > 0) {
+				// Create a unique container for this section's employees
+				var uniqueId = 'section-' + sectionId + '-' + Date.now();
+				var employeeHtml = '<div class="section-group mb-3" data-section="' + sectionId + '" id="' + uniqueId + '" style="border: 1px solid #ddd; border-radius: 4px;">';
+				employeeHtml += '<div class="alert alert-info mb-0" style="border-radius: 4px 4px 0 0; margin-bottom: 0 !important;">';
+				employeeHtml += '<div class="d-flex justify-content-between align-items-center">';
+				employeeHtml += '<strong>' + sectionText + ' (' + response.employees.length + ' employees)</strong>';
+				employeeHtml += '<button type="button" class="btn btn-sm btn-danger remove-section-group" title="Remove all employees from this section">';
+				employeeHtml += '<i class="fas fa-trash-alt"></i>';
+				employeeHtml += '</button>';
+				employeeHtml += '</div></div>';
+				employeeHtml += '<div class="employees-container" style="max-height: 300px; overflow-y: auto; padding: 10px; background: #fff;">';
+				
+				response.employees.forEach(function(emp, index) {
+					// Use a unique name attribute to avoid conflicts
+					var uniqueInputId = uniqueId + '-emp-' + index;
+					employeeHtml += '<div class="employee-item mb-2" data-employee-id="' + uniqueInputId + '" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee;">';
+					employeeHtml += '<input type="hidden" name="employee[]" id="' + uniqueInputId + '" value="' + emp + '">';
+					employeeHtml += '<div class="employee-name" style="flex: 1;">' + emp + '</div>';
+					employeeHtml += '<button type="button" class="btn btn-sm btn-outline-danger remove-individual-employee" title="Remove this employee">';
+					employeeHtml += '<i class="fas fa-times"></i>';
+					employeeHtml += '</button>';
+					employeeHtml += '</div>';
+				});
+				
+				employeeHtml += '</div></div>';
+				
+				$('#section-bulk-details .col-md-12').append(employeeHtml);
+				$('#section').val('').trigger('change');
+				
+				Swal.fire({
+					icon: 'success',
+					title: 'Added!',
+					text: response.employees.length + ' employee(s) added from ' + sectionText,
+					timer: 2000,
+					showConfirmButton: false
+				});
+			} else {
+				Swal.fire("Oops!", "No employees found in this section.", "warning");
+			}
+		},
+		error: function(xhr) {
+			var errorMsg = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : "Failed to fetch employees.";
+			Swal.fire("Error!", errorMsg, "error");
+		}
+	});
+});
+
+// Bulk Division - Fixed version
+$('#division-bulk-details').on('click', '.add-division', function(e){
+	e.preventDefault();
+	var divisionId = $('#division').val();
+	var divisionText = $('#division option:selected').text();
+	
+	if(!divisionId) {
+		Swal.fire("Oops!", "Please select a division first.", "warning");
+		return;
+	}
+
+	// Check if division already added
+	if($('.division-group[data-division="' + divisionId + '"]').length > 0) {
+		Swal.fire("Oops!", "This division has already been added.", "warning");
+		return;
+	}
+
+	$.ajax({
+		url: '/travel/employees-by-division/',
+		type: 'GET',
+		data: { division_id: divisionId },
+		success: function(response) {
+			if(response.employees && response.employees.length > 0) {
+				var uniqueId = 'division-' + divisionId + '-' + Date.now();
+				var employeeHtml = '<div class="division-group mb-3" data-division="' + divisionId + '" id="' + uniqueId + '" style="border: 1px solid #ddd; border-radius: 4px;">';
+				employeeHtml += '<div class="alert alert-info mb-0" style="border-radius: 4px 4px 0 0; margin-bottom: 0 !important;">';
+				employeeHtml += '<div class="d-flex justify-content-between align-items-center">';
+				employeeHtml += '<strong>' + divisionText + ' (' + response.employees.length + ' employees)</strong>';
+				employeeHtml += '<button type="button" class="btn btn-sm btn-danger remove-division-group" title="Remove all employees from this division">';
+				employeeHtml += '<i class="fas fa-trash-alt"></i>';
+				employeeHtml += '</button>';
+				employeeHtml += '</div></div>';
+				employeeHtml += '<div class="employees-container" style="max-height: 300px; overflow-y: auto; padding: 10px; background: #fff;">';
+				
+				response.employees.forEach(function(emp, index) {
+					//	avoid conflicts
+					var uniqueInputId = uniqueId + '-emp-' + index;
+					employeeHtml += '<div class="employee-item mb-2" data-employee-id="' + uniqueInputId + '" style="display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee;">';
+					employeeHtml += '<input type="hidden" name="employee[]" id="' + uniqueInputId + '" value="' + emp + '">';
+					employeeHtml += '<div class="employee-name" style="flex: 1;">' + emp + '</div>';
+					employeeHtml += '<button type="button" class="btn btn-sm btn-outline-danger remove-individual-employee" title="Remove this employee">';
+					employeeHtml += '<i class="fas fa-times"></i>';
+					employeeHtml += '</button>';
+					employeeHtml += '</div>';
+				});
+				
+				employeeHtml += '</div></div>';
+				
+				$('#division-bulk-details .col-md-12').append(employeeHtml);
+				$('#division').val('').trigger('change');
+				
+				Swal.fire({
+					icon: 'success',
+					title: 'Added!',
+					text: response.employees.length + ' employee(s) added from ' + divisionText,
+					timer: 2000,
+					showConfirmButton: false
+				});
+			} else {
+				Swal.fire("Oops!", "No employees found in this division.", "warning");
+			}
+		},
+		error: function(xhr) {
+			var errorMsg = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : "Failed to fetch employees.";
+			Swal.fire("Error!", errorMsg, "error");
+		}
+	});
+});
+// Remove entire section group
+$(document).on('click', '.remove-section-group', function(){
+	var sectionGroup = $(this).closest('.section-group');
+	var sectionName = sectionGroup.find('strong').text();
+	
+	Swal.fire({
+		title: 'Remove Section?',
+		text: 'Are you sure you want to remove all employees from ' + sectionName + '?',
+		icon: 'warning',
+		showCancelButton: true,
+		confirmButtonColor: '#d33',
+		cancelButtonColor: '#3085d6',
+		confirmButtonText: 'Yes, remove it'
+	}).then((result) => {
+		if (result.isConfirmed) {
+			sectionGroup.fadeOut(300, function() {
+				$(this).remove();
+			});
+			Swal.fire({
+				icon: 'success',
+				title: 'Removed!',
+				text: 'Section has been removed.',
+				timer: 1500,
+				showConfirmButton: false
+			});
+		}
+	});
+});
+
+// Remove entire division group
+$(document).on('click', '.remove-division-group', function(){
+	var divisionGroup = $(this).closest('.division-group');
+	var divisionName = divisionGroup.find('strong').text();
+	
+	Swal.fire({
+		title: 'Remove Division?',
+		text: 'Are you sure you want to remove all employees from ' + divisionName + '?',
+		icon: 'warning',
+		showCancelButton: true,
+		confirmButtonColor: '#d33',
+		cancelButtonColor: '#3085d6',
+		confirmButtonText: 'Yes, remove it'
+	}).then((result) => {
+		if (result.isConfirmed) {
+			divisionGroup.fadeOut(300, function() {
+				$(this).remove();
+			});
+			Swal.fire({
+				icon: 'success',
+				title: 'Removed!',
+				text: 'Division has been removed.',
+				timer: 1500,
+				showConfirmButton: false
+			});
+		}
+	});
+});
+
+$(document).on('click', '.remove-individual-employee', function(){
+	var employeeItem = $(this).closest('.employee-item');
+	var parentGroup = employeeItem.closest('.section-group, .division-group');
+	
+	employeeItem.fadeOut(200, function() {
+		$(this).remove();
+		
+		// If no employees left, remove the entire group
+		var remainingCount = parentGroup.find('.employee-item').length;
+		if(remainingCount === 0) {
+			parentGroup.fadeOut(300, function() {
+				$(this).remove();
+			});
+		}
+	});
+});
+
+$('#items').on("click", ".remove_field", function(e){
+	e.preventDefault();
+	$(this).closest('.form-group').fadeOut(200, function() {
+		$(this).remove();
+	});
+});
+
+</script>
+{% endblock %}

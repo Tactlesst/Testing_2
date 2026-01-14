@@ -1,0 +1,243 @@
+{% extends 'layout.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load tags %}
+{% block style %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/adjustments.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'css/custom_checkbox.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'css/adjustments.css' %}">
+
+<style>
+.row {
+    margin: 0;
+    padding: 5vh 0;
+}
+
+.ibox {
+    border: 1px solid rgb(221, 221, 221);
+    padding: 1.5rem;
+    border-radius: 8px;
+    background-color: white;
+    border: 2px solid #01bcaf !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.ibox-content {
+    border: 1px solid rgb(221, 221, 221);
+    margin-top: 1rem;
+    padding: 1.5rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-sm {
+    height: auto;
+    font-size: 10px;
+}
+
+.col-md-4 {
+    padding: 0 15px;
+}
+
+.ibox-title p {
+    font-size: 15px;
+    margin-bottom: 0;
+}
+
+.ibox-content h5 {
+    font-weight: bold;
+    color: #333;
+}
+
+.badge-success {
+    background-color: #28a745;
+}.text-standard {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #444; 
+    text-decoration: none; 
+}
+
+.text-standard:hover {
+    color: #3d87fd; 
+    text-decoration: none; 
+}
+
+#date-release {
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    color:rgb(186, 6, 6);
+}
+
+</style>
+
+{% endblock %}
+{% block content %}
+
+
+<div class="row wrapper border-bottom white-bg page-heading align-items-center">
+    <div class="col-lg-7 mt-2 ml-4">
+        <h1 class="bold">Developer Update</h1>
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'backend-dashboard' %}">Home</a>
+            </li>
+            <li class="breadcrumb-item">
+                Developer Update
+            </li>
+            <li class="breadcrumb-item">
+                System Update
+            </li>
+        </ol>
+    </div>
+
+    {% if user|check_permission:'superadmin' %}
+    <div class="col-lg-4 text-right">
+        <button type="button" class="btn btn-info" data-toggle="modal" data-target="#addPatchModal" style="margin-top: 4vh;">
+            <i class="fas fa-plus"></i> Add New Update
+        </button>
+    </div>
+
+    {% endif %}
+</div>
+
+<div class="row">
+    {% for patch in patches %}
+    <div class="col-lg-11 mt-2 ml-4">
+        <div class="ibox">
+            <div class="ibox-title d-flex justify-content-between align-items-center p-3 text-standard">
+                <p class="m-0 text-left">
+                    <a href="#collapse-{{ patch.id }}" class="h1 font-weight-bolder text-dark" data-toggle="collapse">
+                        HR<span class="text-info">PEARS</span>
+                    </a>
+                </p>
+    
+                <div class="text-right">
+                    <a href="#collapse-{{ patch.id }}" class="text-standard font-weight-bold" data-toggle="collapse">
+                        <div class="d-flex flex-column align-items-end">
+                            <span class="h5 mb-1">{{ patch.title }} 🔥</span>
+                            <span class="badge badge-release-date" id="date-release">({{ patch.release_date }})</span>
+                        </div>
+                    </a>
+                </div>
+                
+            </div>
+            
+            <div id="collapse-{{ patch.id }}" class="collapse">
+                <div class="ibox-content bg-light p-4 border rounded">
+                    {% if patch.new_features %}
+                    <h5>🔥 New Features:</h5>
+                    <p>{{ patch.new_features|linebreaksbr }}</p>
+                    {% endif %}
+
+                    <br>
+                    {% if patch.bug_fixes %}
+                    <h5>🛠 Bug Fixes:</h5>
+                    <p>{{ patch.bug_fixes|linebreaksbr }}</p>
+                    {% endif %}
+
+                    <br>
+                    {% if patch.upcoming %}
+                    <h5>🚀 Upcoming:</h5>
+                    <p>{{ patch.upcoming|linebreaksbr }}</p>
+                    {% endif %}
+                    
+                    {% if user|check_permission:'superadmin' %}
+
+                    <div class="button-row mt-3">
+                        <a href="{% url 'edit_patch' patch.id %}" class="btn btn-sm btn-info mr-2">
+                            <i class="fa fa-edit"></i> Edit
+                        </a>
+                        <form action="{% url 'delete_patch' patch.id %}" method="post" class="d-inline-block">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="fa fa-trash"></i> Delete
+                            </button>
+                        </form>
+                    </div>
+
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="modal fade" id="addPatchModal" tabindex="-1" role="dialog" aria-labelledby="addPatchModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-info">
+                <h3 class="modal-title text-white" id="addPatchModalLabel">Add System Update</h3>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'developer_update' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="title" class="font-weight-bold">Version Title</label>
+                        <input type="text" id="title" name="title" class="form-control" placeholder="Ex: Version 2.1.0" required>
+                    </div>
+                
+                    <div class="form-group">
+                        <label for="new_features" class="font-weight-bold">🔥 New Features</label>
+                        <textarea id="new_features" name="new_features" class="form-control" rows="4" placeholder="Enter new features" ></textarea>
+                    </div>
+                
+                    <div class="form-group">
+                        <label for="bug_fixes" class="font-weight-bold">🛠 Bug Fixes</label>
+                        <textarea id="bug_fixes" name="bug_fixes" class="form-control" rows="4" placeholder="List the fixed bugs" ></textarea>
+                    </div>
+                
+                    <div class="form-group">
+                        <label for="upcoming" class="font-weight-bold">🚀 Upcoming Features</label>
+                        <textarea id="upcoming" name="upcoming" class="form-control" rows="3" placeholder="Upcoming features" ></textarea>
+                    </div>
+                
+                    <div class="form-group">
+                        <label for="release_date" class="font-weight-bold">Release Date</label>
+                        <input type="date" id="release_date" name="release_date" class="form-control" required>
+                    </div>
+                
+                    <button type="submit" class="btn btn-info btn-block mt-4">
+                        Save Update
+                    </button>
+                </form>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+
+<script>
+
+
+ClassicEditor.create(document.querySelector('#description'), {
+    toolbar: ['bold', 'italic', 'bulletedList', 'numberedList', 'undo', 'redo'],
+}).catch(error => {
+    console.error(error);
+});
+
+$('#addPatchModal').on('shown.bs.modal', function () {
+    if (!$('#description').next().hasClass('note-editor')) {
+        $('#description').summernote({
+            height: 150,
+            toolbar: [
+                ['style', ['bold', 'italic', 'underline', 'clear']],
+                ['font', ['strikethrough']],
+                ['fontsize', ['fontsize']],
+                ['color', ['color']],
+                ['table', ['table']],
+                ['para', ['ul', 'ol', 'paragraph']],
+            ]
+        });
+    }
+});
+
+
+</script>

@@ -1,0 +1,162 @@
+{% extends 'layout.html' %}
+{% load static %}
+{% block style %}
+<link rel="stylesheet" href="{% static 'css/adjustments.css' %}">
+<link href="{% static 'css/plugins/textSpinners/spinners.css' %}" rel="stylesheet">
+<style>
+    /* Optional: some quick tweaks */
+    .search-box {
+        padding: 1.5rem;
+        border-radius: 0.375rem;
+        box-shadow: 0 0.125rem 0.25rem rgb(0 0 0 / 0.075);
+        background-color: #f8f9fa;
+    }
+    #sr-content {
+        min-height: 320px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        color: #6c757d;
+    }
+    #sr-content img {
+        margin-bottom: 1rem;
+        max-width: 50%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <div class="row px-3 pt-3">
+        <div class="col-lg-8">
+        <h1 class="fw-bold">Service Record</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb bg-transparent px-0 mb-0">
+                <li class="breadcrumb-item"><a href="{% url 'backend-dashboard' %}">Home</a></li>
+                <li class="breadcrumb-item">Employees</li>
+                <li class="breadcrumb-item active" aria-current="page"><strong>Service Record</strong></li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="wrapper wrapper-content">
+    <div class="row gx-4 gy-4" >
+        <!-- Search Box -->
+        <div class="col-lg-4" >
+            <div class="search-box">
+                <h5 class="text-primary mb-3">Search Service Record</h5>
+                <p class="text-muted small">Fill in the form below to generate the service record</p>
+                <div class="mb-3">
+                    <label for="employee-name" class="form-label">Employee Name <span class="text-danger">*</span></label>
+                    <input type="text" id="employee-name" name="employee-name" class="form-control filter-employee-all" autocomplete="off" required placeholder="Type employee name...">
+                </div>
+                <button type="button" id="btn-generate-sr-data" class="btn btn-info w-100">Search</button>
+            </div>
+        </div>
+
+        <!-- Service Record Display -->
+        <div class="col-lg-8">
+            <div class="card h-100">
+
+                <div class="card-body" id="sr-content">
+                    <img loading="lazy" src="{% static 'image/filter.png' %}" alt="No data" />
+                    <p class="mb-1 fs-5 fw-semibold">No data available.</p>
+                    <small class="text-muted">Use the search box to view generated service records of employees.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Work History Modal -->
+<div class="modal fade" id="edit_sr_modal" tabindex="-1" aria-labelledby="editSRLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="editSRLabel">Edit Work History</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div id="edit-sr-content" class="p-3"></div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="invalidEmployeeModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h3 class="modal-title">Select Employee</h3>
+      </div>
+      <div class="modal-body">
+       Please select a valid employee from the suggestions.
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block script %}
+<script>
+    function callSRPage(pageRefInput) {
+        $.ajax({
+            url: pageRefInput,
+            type: "GET",
+            dataType: 'html',
+            beforeSend: function() {
+                $('#sr-content').html(`
+                    <div class="spinner-example" id="preloader">
+                        <div class="sk-spinner sk-spinner-double-bounce">
+                            <div class="sk-double-bounce1"></div>
+                            <div class="sk-double-bounce2"></div>
+                        </div>
+                        <br>
+                        <p class="text-center">Loading...</p>
+                    </div>
+                `);
+            },
+            success: function(response) {
+                $('#sr-content').html(response);
+            },
+            error: function() {
+                $('#sr-content').html('<p class="text-danger text-center">Failed to load data. Please try again.</p>');
+            }
+        });
+    }
+
+    $(document).ready(function(){
+        $(".filter-employee-all").typeahead({
+            source: function(query, process){
+                return $.get({
+                    url: '{% url "filter_employee_all" %}',
+                    data: { query: query },
+                    datatype: 'json',
+                    success: function (data) {
+                        return process(data);
+                    }
+                });
+            },
+            highlight: true,
+        });
+
+      $('#btn-generate-sr-data').on('click', function(){
+    const employee_name = $('#employee-name').val().match(/\[(.*?)\]/);
+    if (employee_name && employee_name[1]) {
+        callSRPage(`/backend/service-record/data/${employee_name[1]}`);
+    } else {
+        const invalidModal = new bootstrap.Modal(document.getElementById('invalidEmployeeModal'));
+        invalidModal.show();
+    }
+});
+
+
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+{% load tags %}
+{% load frontend_tags %}
+{% load qr_code %}
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>DSWD My PORTAL | Print ID</title>
+	<link rel="shortcut icon" type="image/png" href="{% static 'image/logo.ico' %}"/>
+	<link href="{% static 'font-awesome/css/all.css' %}" rel="stylesheet">
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/plugins/sweetalert/sweetalert2.min.css' %}" rel="stylesheet">
+	<link href="{% static 'css/mod.css' %}" rel="stylesheet">
+	<link rel="stylesheet" type="text/css" href="{% static 'css/adjustments.css' %}">
+	<link href="{% static 'css/print.css' %}" rel="stylesheet">
+    <style>
+       @media print {
+			body{-webkit-print-color-adjust: exact;}
+			
+			page {
+				width: 100% !important;
+			}
+		}
+		@page {
+			size: auto;
+        }
+        #content {
+            display: flex;
+            justify-content: center;  /* Center horizontally */
+            align-items: center;      /* Center vertically */
+            height: 100vh;            /* Full viewport height */
+            flex-wrap: nowrap;        /* Prevent wrapping */
+            gap: 2vh;                 /* Add space between IDs */
+        }
+
+        .containerX{
+            zoom: 80%;
+        }
+        .background-box {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 50%;
+        height: 85%;
+        margin-top: 21px;
+        background-color: rgba(152, 160, 163, 0.2);
+        box-sizing: border-box;
+        overflow: hidden;
+        clip-path: polygon(0 0, 100% 0, 100% 25%, 100% 100%, 100% 100%, 0 100%, 50% 45%);
+
+    }.navbar-brand{
+        font-family:'Courier New', Courier, monospace;
+    }.rd{
+        font-size: 1.3em;
+        
+
+
+    }.page {
+        padding: 30px;
+        margin: 5vh 40vh 20vh 25vh;
+        position: relative;
+        font-family: 'Arial';
+        page-break-after: always;
+        height: 100vh;  /* Full page height */
+        display: flex;
+        align-items: center;  /* Center vertically within the page */
+        justify-content: center;
+    }
+
+.col-lg-4 {
+    margin-left: 1vh;
+}
+
+
+
+.ibox-content {
+    text-align: center;
+    
+}
+
+
+.id-card-1 {
+    border: 1px solid #ddd;
+    padding: 30px;
+    border-radius: 8px;
+    min-height: 78vh;
+    width: 63vh;
+    overflow: auto;
+    position: relative;
+    transform: rotate(180deg);
+    transform-origin: center center; /* Ensure rotation occurs around the center */
+    margin: 0px;
+
+
+}
+
+.id-card {
+    border: 1px solid #ddd;
+    padding: 30px;
+    border-radius: 8px;
+    min-height: 78vh;
+    width: 63vh;
+    overflow: auto;
+    position: relative;
+    margin: 0;
+}
+
+/* .id-card-wrapper {
+    display: flex;
+    justify-content: center; 
+    align-items: start;
+    width: 50%; 
+    margin: 0 1vh; 
+} */
+.gradient-background {
+    height: 3vh;
+    width: calc(100% + 60px);
+    margin: -30px;
+    display: flex;
+}
+
+.gradient-background div {
+    height: 100%;
+}
+
+.gradient-background .left {
+    width: 35%;
+    background-color: rgba(8, 8, 161, 0.76);
+    border-radius: 8px 0 20px 0;
+}
+
+.gradient-background .right {
+    width: 65%;
+    background: linear-gradient(120deg,  rgb(220, 42, 42) 20%, rgb(164, 6, 6) 20%);
+    border-radius: 0 8px 0 20px;
+}
+
+.employee-logo {
+    width: 30vh;
+    height: 10vh;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    margin-top: 5vh;
+}
+
+.secondary-logo {
+    width: 63px;
+    height: 8vh;
+    border-radius: 4px;
+    margin-bottom: 24px;
+    margin-left: -7px;
+    margin-top: 5vh;
+}
+
+.id-placeholder {
+    border: 1px solid black;
+    width:24vh;
+    height: 27vh;
+    /* padding: 13vh; */
+    border-radius: 4px;
+    margin-top: -10px;
+}
+
+.employee-name {
+    font-size: 1.9em;
+    margin: 0;
+    font-weight: bold;
+    margin-top: -20px;
+    margin-bottom: 10px;
+}
+
+.employee-position
+{
+    font-size: 14px;
+    font-family: serif;
+    margin-top: -13px;
+}.field-office {
+    font-size: 14px;
+    font-family: serif;
+    margin-top: -16px;
+}
+
+
+.bottom-section {
+    height: 9vh;
+    width: 100%;
+    margin: -30px -30px 0 -30px;
+    position: absolute;
+    bottom: 0;
+    display: flex;
+}
+
+.qr-section {
+    height: 100%;
+    width: 40%;
+    border-radius: 0 25px 0 0;
+    background: linear-gradient(115deg,  rgb(164, 6, 6) 70%, rgb(220, 42, 42) 20%);
+    display: flex;
+}
+
+.qr-section img {
+    height: 8vh;
+    margin: 5px 5px 5px 20px;
+    width: 8vh;
+    padding-bottom: 5px;
+    padding-top: -10px;
+}
+
+.id-no-section {
+    height: 100%;
+    width: 65%;
+    background-color: rgb(61, 61, 180);
+    clip-path: polygon(10% 0, 100% 0, 100% 100%, 0 100%);
+    border-radius: 70px 0 0 0;
+    align-items: center;
+    display: flex;
+    padding-left: 5vh;
+    margin-left: -20px;
+}
+
+.id-no-section p {
+    margin: 0;
+    color: white;
+    padding-left: 30px;
+    font-family: sans-serif;
+    font-size: 18px;
+}
+
+.id-no-display {
+    margin-left: -5vh;
+    color: white;
+    font-size: 18px;
+}.rd-signature{
+    height:9vh;
+    width: 9vh;
+}
+ </style>
+
+ 
+</head>
+
+<nav class="main-header navbar navbar-expand navbar-light m-0" style="background-color: white;">
+    <div class="container">
+        <a class="navbar-brand" href="javascript:;"><strong>GENERATE ARTA ID&emsp; <em><small>Note: Print in A4</small></em></strong></a>
+        <ul class="navbar-nav ml-auto">
+            <li><a href="javascript:;" class="btn btn-info print-button" style="background-color: rgba(8, 8, 161, 0.76)" id="floatprint" title="Print"><i class="fas fa-print"></i> Print</a></li>
+        </ul>
+    </div>
+</nav>
+
+<body>
+    {% for page in pagination|times %}
+    <page layout="portrait" class="page">
+        <div class="containerX">
+            <div class="row" id="content">
+                <div class="d-flex justify-content-center">
+                {% for row in first_page_employees %}
+                <div class="id-card-wrapper" style="margin-bottom: 20px; {% if forloop.counter0|divisibleby:1 %}margin-left: -6px;{% endif %}">
+                    <div class="ibox mb-3">
+                        <div class="ibox-content text-center">
+                            <div class="id-card-1">
+                                <div class="gradient-background">
+                                    <div class="left"></div>
+                                    <div class="right"></div>
+                                </div>
+    
+                                <img src="{% static 'image/dswd_logo_4.png' %}" alt="Employee Logo" class="employee-logo">
+                                <img src="{% static 'image/bagong_pilipinas.png' %}" alt="Employee Logo" class="secondary-logo">
+    
+                                <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 30px;">
+                                    <div class="id-placeholder"></div>
+                                </div>
+                                <br>
+    
+                                <p class="employee-name"><span id="employee-name-display">{{ row.pi.user.get_fullname|upper }}</span></p>
+                                <p class="employee-position"><span id="employee-position-display">{{ row.position }}</span></p>
+                                <p class="field-office"><span>DSWD Field Office 10</span></p>
+                                <br>
+    
+                                <div style="position: relative; display: inline-block;">
+                                    <p class="rd" style="z-index: 1;">RAMEL F. JAMEN</p>
+                                    <p style="font-size:xx-small; position: absolute; top: 20px; left: 30px; z-index: 1;">
+                                        <span>Regional Director</span>
+                                    </p>
+                                    <img src="{% static 'image/RD-signature.png' %}" alt="RD Logo" class="rd-signature" style="position: absolute; z-index: 2; top: -35px; left: 25px;">
+                                </div>
+    
+                                <div class="bottom-section">
+                                    <div class="qr-section">
+                                        <img src="{% static 'image/qr.png' %}">
+                                    </div>
+    
+                                    <div class="id-no-section">
+                                        <p>I.D. No.:&nbsp;&nbsp;</p>
+                                        <p id="employee-id-display" class="id-no-display" style="margin-left: -5vh;">{{ row.id_number }}</p>
+                                    </div>
+                                </div>
+                                <div class="background-box"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            </div>
+        </div>
+    </page>
+    
+    <page layout="portrait" class="page" style="margin-top: 5vh;">
+        <div class="containerX">
+            <div class="row" id="content">
+                <div class="d-flex justify-content-center">
+                    {% for row in second_page_employees %}
+                    <div class="id-card-wrapper" style="margin-bottom: 20px; {% if forloop.counter0|divisibleby:1 %}margin-left: -6px;{% endif %}">
+
+                        <div class="ibox mb-3">
+                            <div class="ibox-content text-center">
+                                <div class="id-card">
+                                    <div class="gradient-background">
+                                        <div class="left"></div>
+                                        <div class="right"></div>
+                                    </div>
+        
+                                    <img src="{% static 'image/dswd_logo_4.png' %}" alt="Employee Logo" class="employee-logo">
+                                    <img src="{% static 'image/bagong_pilipinas.png' %}" alt="Employee Logo" class="secondary-logo">
+        
+                                    <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 30px;">
+                                        <div class="id-placeholder"></div>
+                                    </div>
+                                    <br>
+        
+                                    <p class="employee-name"><span id="employee-name-display">{{ row.pi.user.get_fullname|upper }}</span></p>
+                                    <p class="employee-position"><span id="employee-position-display">{{ row.position }}</span></p>
+                                    <p class="field-office"><span>DSWD Field Office 10</span></p>
+                                    <br>
+        
+                                    <div style="position: relative; display: inline-block;">
+                                        <p class="rd" style="z-index: 1;">RAMEL F. JAMEN</p>
+                                        <p style="font-size:xx-small; position: absolute; top: 20px; left: 30px; z-index: 1;">
+                                            <span>Regional Director</span>
+                                        </p>
+                                        <img src="{% static 'image/RD-signature.png' %}" alt="RD Logo" class="rd-signature" style="position: absolute; z-index: 2; top: -35px; left: 25px;">
+                                    </div>
+        
+                                    <div class="bottom-section">
+                                        <div class="qr-section">
+                                            <img src="{% static 'image/qr.png' %}">
+                                        </div>
+        
+                                        <div class="id-no-section">
+                                            <p>I.D. No.:&nbsp;&nbsp;</p>
+                                            <p id="employee-id-display" class="id-no-display" style="margin-left: -5vh;">{{ row.id_number }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="background-box"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </page>
+    
+
+{% endfor %}
+
+    
+    <script src="{% static 'js/jquery-3.1.1.min.js' %}"></script>
+	<script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'js/plugins/sweetalert/sweetalert2.all.min.js' %}"></script>
+    <script src="{% static 'js/functions.js' %}"></script>
+</body>
+</html>

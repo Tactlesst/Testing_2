@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+{% load tags %}
+{% load frontend_tags %}
+{% load static %}
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>DSWD My PORTAL | Print Travel Request</title>
+	<link rel="shortcut icon" type="image/png" href="{% static 'image/logo.ico' %}"/>
+	<link href="{% static 'font-awesome/css/all.css' %}" rel="stylesheet">
+	<link href="{% static 'css/adminlte.min.css' %}" rel="stylesheet">
+	<link href="{% static 'css/plugins/select2/select2.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/plugins/sweetalert/sweetalert2.min.css' %}" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/adjustments.css' %}">
+	<link href="{% static 'css/plugins/textSpinners/spinners.css' %}" rel="stylesheet">
+	<link href="{% static 'css/print_new.css' %}" rel="stylesheet">
+	<link href="{% static 'css/style_new.css' %}" rel="stylesheet">
+	<link href="{% static 'css/print.css' %}" rel="stylesheet">
+	<style type="text/css">
+	/* GENERAL STYLES */
+body {
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    color: black;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.asteriskField {
+    color: red;
+}
+
+.containerX {
+    zoom: 100%;
+}
+
+#table2 {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    table-layout: auto;
+}
+
+#table2 th,
+#table2 td {
+    padding: 8px;
+    border: 1px solid #000;
+    text-align: center;
+    vertical-align: middle;
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+/* PRINT-SPECIFIC STYLES */
+@media print {
+    body {
+        margin: 0;
+        padding: 0;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .alert {
+        display: none !important;
+    }
+
+    .vertical-right,
+    .vertical-left {
+        margin: 0px !important;
+    }
+
+    ::-webkit-input-placeholder {
+        color: transparent;
+    }
+
+    :-moz-placeholder {
+        color: transparent;
+    }
+
+    ::-moz-placeholder {
+        color: transparent;
+    }
+
+    :-ms-input-placeholder {
+        color: transparent;
+    }
+
+    table {
+        page-break-inside: avoid;
+    }
+
+    .print-footer {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        text-align: center;
+        font-size: 10px;
+        background-color: white; /* optional */
+        padding-top: 5px;
+        page-break-after: avoid;
+    }
+
+    @page {
+        size: auto;
+        margin: 20mm 15mm 25mm 15mm; /* top, right, bottom, left */
+    }
+}
+
+	</style>
+</head>
+<nav class="main-header navbar navbar-expand navbar-light navbar-white m-0">
+	<div class="container">
+		<a class="navbar-brand" href="javascript:;">
+            <strong>Travel Request ({{ name.tracking_no }}) &emsp; <em><small>Note: Print in A4</small></em></strong>
+        </a>
+		<ul class="navbar-nav ml-auto">
+{#			<li><button class="btn btn-success" data-toggle="modal" data-target="#signatory-modal"><i class="fas fa-signature"></i> Signatories</button>&emsp;</li>#}
+			{% if name.status != 3 and name.status != 5 %}
+			<li>
+				<button class="btn btn-info" id="btn-edit"><i class="fas fa-pen"></i> Edit</button>&emsp;
+			</li>
+			{% endif %}
+			<li>
+				<button class="btn btn-info print-button" id="floatprint"><i class="fas fa-print"></i> Print</button>
+			</li>
+		</ul>
+	</div>
+</nav>
+<body>
+
+	<page size="A4" layout="portrait" class="page" style="padding: 45px; position: relative;">
+		<div class="containerX">
+		<div style="display: flex; align-items: center; justify-content: space-between;">
+			<div style="display: flex; align-items: center;">
+				<img loading="lazy" src="{% static 'image/dswd_bp_logo.png' %}" width="50%" style="margin-right: 10px;">
+				<!-- <img loading="lazy" src="{% static 'image/bagong_pilipinas.png' %}" width="10%" style="margin-top: -25px; margin-left: -10px;"> -->
+			</div>
+
+		<strong style="text-transform: uppercase; text-align: center;font-size: 10px;">
+			{{ section_head.sec_name }}
+			<p style="margin: 0; line-height: 1.2;">
+			FIELD OFFICE X
+			</p>
+		</strong>
+		</div>
+
+		</div>
+
+		<br>
+		<br>
+		<br>
+				
+            {% if name.get_total_confirmation_of_travel > 0 %}
+            <div class="alert alert-info"><i class="fas fa-info-circle"></i> Please attach request for confirmation of travel.</div>
+            <br>
+            {% endif %}
+			{% if name.count_justification_travel != '' %}
+            <div class="alert alert-info"><i class="fas fa-info-circle"></i> Please attach request for justification of travel.</div>
+
+		
+            {% endif %}
+			<h3>MEMORANDUM</h3>
+			
+			<br>
+            <table>
+				<thead>
+					<tr>
+						<td style="padding: 3px 0px" class="bold" width="30%"><p style="margin-top: -17px;">FOR</p></td>
+						<td style="padding: 3px 0px" class="bold">:&emsp;THE REGIONAL DIRECTOR <br>{{ officer_in_charge.1 }}&emsp;&nbsp;&nbsp;DSWD Field Office X</td>
+					</tr>
+					<tr>
+						<td style="padding: 3px 0px" class="bold"></td>
+						<td style="padding: 3px 0px" class="bold"></td>
+					</tr>
+					<tr>
+						<td style="padding: 3px 0px" class="bold">SUBJECT</td>
+						<td style="padding: 3px 0px" class="bold">:&emsp;
+                            {% if name.get_total_confirmation_of_travel > 0 %}
+                                REQUEST FOR THE ISSUANCE OF CONFIRMATION OF TRAVEL ORDER
+                            {% else %}
+                                REQUEST FOR THE ISSUANCE OF TRAVEL ORDER
+                            {% endif %}
+                        </td>
+					</tr>
+					<tr>
+						<td style="padding: 3px 0px" class="bold"></td>
+						<td style="padding: 3px 0px" class="bold"></td>
+					</tr>
+					<tr>
+						<td style="padding: 3px 0px" class="bold">DATE</td>
+						<td style="padding: 3px 0px" class="bold">:&emsp;&nbsp;{{ name.date|date:"F d, Y"|upper }}</td>
+					</tr>
+					<tr>
+						<td style="padding: 3px 0px" class="bold"></td>
+						<td style="padding: 3px 0px" class="bold"></td>
+					</tr>
+					<tr>
+						<td style="padding: 3px 0px" class="bold">TRACKING NO.</td>
+						<td style="padding: 3px 0px" class="bold">:&emsp;{{ name.tracking_no }}</td>
+					</tr>
+				</thead>
+			</table>
+			<hr>
+			{% for page in pagination|times %}
+
+			{% get_to_people name.id as total_people %}
+			
+			{% for rito in rito %}
+				Respectfully requesting for the issuance of Travel Order of DSWD Staff whose {% if total_people > 1 %}names are{% else %}name is{% endif %} written below with the purpose of travel to {{ rito.place }}, starting
+			{% endfor %}
+
+
+		{% for rito in rito %}
+			{% if rito.inclusive_from == rito.inclusive_to %}
+				{{ rito.inclusive_from }}
+			{% else %}
+				{{ rito.inclusive_from }} - {{ rito.inclusive_to }}
+			{% endif %}
+		{% endfor %}
+
+		<br>
+
+						
+			<div class="table-responsive">
+			<table id="table2" border="1">
+				<thead>
+					<tr>
+						<th>
+							Name<br>
+							<!-- <small style="font-weight: lighter;">(FN, M. SN )</small> -->
+						</th>
+						
+						<!-- <th><small>Place/s of Visit</small></th> -->
+						<!-- <th><small>Duration of Travel</small></th> -->
+						<!-- <th><small>Purpose</small></th>
+						<th><small>Expected Output</small></th>
+						<th><small>Means of <br>Transportation</small></th>
+						<th><small>Claims</small></th> -->
+						<th>Position</th>
+
+						<th>Place</th>
+					</tr>
+				
+				</thead>
+				<br>
+				<tbody>
+					{% for row in rito %}
+						{% ritopeople row.id as people %}
+						{% for row in people %}
+						 <tr id="{{ row.id }}">
+        				<td>{{ row.name.pi.user.get_fullname }}</td>
+						<!-- <td>{{ row.place }}</td> -->
+						<!-- <td>
+							{% if row.inclusive_from == row.inclusive_to %}
+								{{ row.inclusive_from }}
+							{% else %}
+								{{ row.inclusive_from }} - {{ row.inclusive_to }}
+							{% endif %}
+						</td> -->
+						<!-- <td>{{ row.purpose }}</td>
+						<td>{{ row.expected_output }}</td>
+						<td>{{ row.mot.name }}</td>
+						<td contenteditable="false" data-target="claims">{{ row.claims.name }}</td> -->
+						<td>{{ row.name.position.acronym }}</td>
+						<td>{{ row.name.aoa.name }}</td>
+
+					</tr>
+					{% endfor %}
+					{% endfor %}
+				</tbody>
+			</table>
+			</div>
+
+			<br>
+			&emsp;<small>It is understood that report shall be submitted upon completion of the Travel together with certificate of appearance from each place/s visited and other documentary evidences of travel.</small>
+
+			
+			<br><br>
+			
+
+			
+    <!-- Prepared By -->
+    <div style="margin-bottom: 2rem;">
+        <label style="font-weight: bold; display: block; margin-bottom: 2rem;">Prepared by:</label>
+
+        {% if name.emp.section.sec_head_id %}
+            {% getemployeebyempid name.emp.section.sec_head_id as section_head %}
+            {% getemployeebyempid name.emp.section.div.div_chief_id as division_chief %}
+        {% endif %}
+
+        {% if requested_by %}
+            <input type="text" style="width: 100%; border: 0; font-weight: bold; text-transform: uppercase;" value="{{ requested_by.pi.user.get_fullname }}">
+            <input type="text" style="width: 100%; border: 0;" value="{{ requested_by.designation }}">
+        {% else %}
+            {% getemployeebyempid section_head.sec_head_id as section_head %}
+            {% if section_head %}
+                <input type="text" style="width: 100%; border: 0; font-weight: bold; text-transform: uppercase;" value="{{ section_head.pi.user.get_fullname }}">
+                <input type="text" style="width: 100%; border: 0;" value="{{ section_head.designation }}">
+            {% else %}
+                {% getemployeebyempid request.session.emp_id as requested_by %}
+                <input type="text" style="width: 100%; border: 0; font-weight: bold; text-transform: uppercase;" value="{{ requested_by.pi.user.get_fullname }}">
+                <input type="text" style="width: 100%; border: 0;" value="{{ requested_by.designation }}">
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <!-- Recommending Approval -->
+    <div style="margin-bottom: 2rem;">
+        <label style="font-weight: bold; display: block; margin-bottom: 2rem;">Recommending Approval:</label>
+        {% if noted_by %}
+            <input type="text" style="width: 100%; border: 0; font-weight: bold; text-transform: uppercase;" value="{{ noted_by.pi.user.get_fullname }}">
+            <input type="text" style="width: 100%; border: 0;" value="{{ noted_by.designation }}">
+        {% else %}
+            {% getemployeebyempid division_head.div_chief_id as division_head %}
+            <input type="text" style="width: 100%; border: 0; font-weight: bold; text-transform: uppercase;" value="{{ division_head.pi.user.get_fullname }}">
+            <input type="text" style="width: 100%; border: 0;" value="{{ division_head.designation }}">
+        {% endif %}
+    </div>
+
+    <!-- Approved By -->
+    <div style="margin-bottom: 2rem;">
+        <label style="font-weight: bold; display: block; margin-bottom: 2rem;">Approved/Disapproved By:</label>
+        {% if approved_by %}
+            <input type="text" style="width: 100%; border: 0; font-weight: bold; text-transform: uppercase;" value="{{ approved_by.pi.user.get_fullname }}">
+            <input type="text" style="width: 100%; border: 0;" value="{{ approved_by.designation }}">
+        {% else %}
+			{% getemployeebyempid designation.emp_id as designation_head %}
+
+			<input type="text" style="width: 100%; border: 0; font-weight: bold; text-transform: uppercase;" value="{{ designation_head.pi.user.get_fullname }}">
+            <input type="text" style="width: 100%; border: 0;" value="{{ designation_head.designation }}">
+
+			
+		{% endif %}
+		
+    		</div>
+		</div>
+		<!-- Footer -->
+					
+			<div class="print-footer">
+				<p style="font-size: 8px; margin-top: 15px;" class="text-center">
+					Page {{ page|add:1 }} of {{ pagination }}
+				</p>
+				<br>
+				<hr width="100%" style="margin-top: -10px;">
+				<p style="font-size: 9.3px; margin-top: -15px; font-family: Times New Roman;" class="text-center">
+					DSWD Field Office X, Masterson Ave, Upper Carmen, 9000 Cagayan de Oro City, Philippines<br>
+					Website: www.fo10.dswd.gov.ph Telefax (63)(88)858-6333
+				</p>
+			</div>
+
+	</page>
+	{% endfor %}
+	
+	<div class="modal" id="edit-modal" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+		<div class="modal-dialog modal-xl">
+			<div class="modal-content animated bounceInDown">
+				<div class="modal-header bg-info">
+					<h3 class="modal-title">TRAVEL REQUEST DETAILS</h3>
+					<button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+				</div>
+				<div class="modal-body"></div>
+			</div>
+		</div>
+	</div>
+	<script src="{% static 'js/jquery-3.1.1.min.js' %}"></script>
+	<script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'js/adminlte.min.js' %}"></script>
+	<script src="{% static 'js/plugins/select2/select2.full.min.js' %}"></script>
+	<script src="{% static 'js/plugins/typehead/bootstrap3-typeahead.min.js' %}"></script>
+    <script src="{% static 'js/plugins/sweetalert/sweetalert2.all.min.js' %}"></script>
+    <script src="{% static 'js/functions.js' %}"></script>
+	<script type="text/javascript">
+		{#$('#signatory-modal').modal('show');#}
+
+		$(".filter_employee_leave").typeahead({
+			source: function(query, process){
+				return $.get({
+					url: '{% url "filter_employee" %}',
+					data: { query: query },
+					datatype: 'json',
+					success: function (data) {
+						return process(data);
+					}
+				});
+			},
+			highlight: true,
+		});
+
+		$('#setSignatureForm').on('submit', function(e){
+			e.preventDefault();
+			var form = new FormData(this);
+			$.ajax({
+				data: form,
+				url: '{% url "set_signature_leave" %}',
+				type: 'POST',
+				success: function(response) {
+					$('#first_level').val(response.first_level);
+					$('#first_level_pos').val(response.first_level_pos);
+					$('#second_level').val(response.second_level);
+					$('#second_level_pos').val(response.second_level_pos);
+					$('#signatory-modal').modal('hide');
+				},
+				cache       : false,
+				contentType : false,
+				processData : false,
+			});
+		});
+
+		var page = $('.page').height();
+		var container = $('.containerX').height();
+
+		if (container > page) {
+			$('.page').css('height', container + 45);
+		}
+
+		$('#floatprint_mod').on('click', function(){
+			if ($('#name1').val() == "" | $('#name2').val() == "" | $('#designate1').val() == "" | $('#designate2').val() == ""){
+				Swal.fire("Print Warning",
+				"Please fill in the 'Requested by' field and 'Recommending approval' field before printing. Thank you.",
+				"warning");
+			} else {
+			    window.setTimeout(function() { printObject(); }, 0);
+			}
+		});
+
+		$('#edit-modal').on('hidden.bs.modal', function () {
+			window.location.reload();
+		});
+
+		$('#btn-edit').on('click', function(){
+			$('#edit-modal').modal('toggle');
+			$('#edit-modal').modal('show').find('.modal-body').empty();
+			$('#edit-modal').modal('show').find('.modal-body').load("{% if name.tracking_merge %}{% url 'view_rito_details' name.tracking_merge %}{% else %}{% url 'view_rito_details' name.tracking_no %}{% endif %}");
+		});
+
+		/* $('#btn_request_vehicle').on('click', function(){
+			$.post({
+				url: '{% url "get_vehicle_request_token" %}',
+				data: {
+					'id': '{{ name.tracking_no }}'
+				},
+                success: function(response) {
+                	window.open(
+					'https://crg-finance-svr.entdswd.local/gstracking/print_request_multiple?id={{ name.tracking_no }}&token=' + response.data,
+					'_blank'
+					);
+                }
+			});
+		});*/
+	</script>
+</body>
+</html>

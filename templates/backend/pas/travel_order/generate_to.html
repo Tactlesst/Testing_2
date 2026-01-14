@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+{% load tags %}
+{% load static %}
+{% load frontend_tags %}
+{% load qr_code %}
+<html>
+<head>
+	<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>DSWD My PORTAL | Generate Special Order</title>
+	<link rel="shortcut icon" type="image/png" href="{% static 'image/hrpearlogo_192.png' %}"/>
+	<link href="{% static 'font-awesome/css/all.css' %}" rel="stylesheet">
+    <link href="{% static 'css/adminlte.min.css' %}" rel="stylesheet">
+	<link href="{% static 'css/plugins/select2/select2.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/plugins/sweetalert/sweetalert2.min.css' %}" rel="stylesheet">
+	<link rel="stylesheet" type="text/css" href="{% static 'css/adjustments.css' %}">
+	<link href="{% static 'css/plugins/textSpinners/spinners.css' %}" rel="stylesheet">
+	<link href="{% static 'css/print.css' %}" rel="stylesheet">
+	
+<style type="text/css">
+    /* Hide ISO logo */
+    #iso-logo {
+        display: none;
+    }
+
+    /* Base layout */
+    .containerX {
+        zoom: 95%;
+    }
+
+    body {
+        font-size: 12px;
+        font-family: 'Inter', Arial, sans-serif;
+        color: black;
+    }
+
+    /* Page setup */
+    page[size="A4"][layout="portrait"] {
+        position: relative;
+        min-height: 297mm;
+        page-break-after: always;
+    }
+
+    /* Table styles */
+    #table2, thead, tr, td {
+        border: 0px !important;
+    }
+
+    #table2 ol {
+        padding-left: -5px !important;
+        margin: 5px 0 !important;
+    }
+
+    #table2 ol li {
+        padding-left: 8px !important;
+        margin-bottom: 3px !important;
+        line-height: 1.4 !important;
+    }
+
+    #table2 td[width="35%"] {
+        padding: 0px !important;
+        margin: 0px !important;
+    }
+
+    /* Signature area */
+    .signature-area {
+        text-align: center;
+        margin-top: -30px;
+    }
+
+    .signature-container {
+        display: inline-block;
+        text-align: center;
+        margin: 5px;
+    }
+
+    .signature-container img {
+        display: block !important;
+        visibility: visible !important;
+        margin: 0 auto;
+    }
+
+    .rd-signature-image {
+        max-height: 100px;
+        max-width: 200px;
+    }
+
+    .rd-signature-container {
+        padding: -10px;
+        margin: -26px;
+    }
+
+    #signatory-content {
+        margin-top: 10px;
+    }
+
+    #signatory-content > small:first-of-type {
+        display: block;
+        margin-bottom: 20px;
+    }
+
+    .center {
+        text-align: center;
+    }
+
+    .wrap-text {
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    /* Generated section */
+    .generated {
+        margin-top: -15px;
+    }
+
+    .separator-line {
+        margin: 10px 0;
+    }
+
+    /* QR and Signatory sections */
+    .qr-code-container {
+        float: right;
+        margin: 15px 0;
+    }
+
+    .signatory-bottom-section {
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+
+    /* Page numbering */
+    .page-number,
+    .pdf-generation .page-number {
+        font-size: 10px;
+        text-align: center;
+        margin-bottom: -20px;
+    }
+
+    /* PDF generation specific styles */
+    .pdf-generation page[size="A4"][layout="portrait"] {
+        padding: 40px 45px 20px 45px !important;
+        min-height: 315mm;
+        page-break-after: always !important;
+    }
+
+    .pdf-generation page[size="A4"][layout="portrait"]:last-of-type {
+        page-break-after: auto !important;
+    }
+
+    .pdf-generation .rd-signature-image {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    .pdf-generation #rd-signature-area {
+        display: none !important;
+    }
+
+    .pdf-generation #designation_name,
+    .pdf-generation #designation {
+        display: none !important;
+    }
+
+    .pdf-generation .signature-area > center > p:first-child {
+        display: none !important;
+    }
+
+    .pdf-generation #signatory-content > small {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    .pdf-generation .generated {
+        display: block !important;
+        visibility: visible !important;
+        margin-top: 160px !important;
+    }
+
+    .pdf-generation .separator-line {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    .pdf-generation body,
+    .pdf-generation p,
+    .pdf-generation div,
+    .pdf-generation td,
+    .pdf-generation span {
+        letter-spacing: 0.3px !important;
+        word-spacing: 1px !important;
+    }
+
+
+	
+.pdf-generation #table2 ol {
+        list-style-type: decimal;
+        list-style-position: outside !important;
+        counter-reset: item;
+		font-size: 11px !important;
+		margin-left: -10px !important;
+		padding-left: 28px !important;
+    }
+
+
+    .pdf-generation #table2 ol li {
+        position: relative;
+        line-height: 1.35 !important;
+        text-indent: 0 !important;
+		padding-left: 17px !important;
+    }
+
+
+    .pdf-generation #table2 ol li::marker {
+        display: inline-block;
+        text-align: right;
+    	min-width: 1.5em; /* Uses relative sizing based on font size */
+    }
+
+    .pdf-generation #table2 td[width="40%"] {
+        padding: 0px 0px 0px -3px !important;
+        margin: 0 !important;
+    }
+
+    .pdf-generation .page {
+        page-break-after: always;
+        display: block;
+    }
+
+    .pdf-generation .page:last-child {
+        page-break-after: auto !important;
+    }
+
+    /* Footer text */
+    .page .footer-text {
+        position: absolute;
+        bottom: 50px;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        background: none;
+    }
+</style>
+
+</head>
+
+
+<nav class="main-header navbar navbar-expand navbar-light navbar-white m-0">
+	<div class="container">
+		<a class="navbar-brand" href="javascript:;">Special Order No. {% if name.tracking_merge %}{{ name.tracking_merge }}{% else %}{{ name.tracking_no }}{% endif %}</a>
+		<ul class="navbar-nav ml-auto">
+			{% if user|check_permission:'travel_order' or user|check_permission:'superadmin' %}
+				{% if current_user_approved %}
+				<li><button type="button" disabled class="btn btn-info" id="check-edit-modal"><i class="fas fa-pen"></i> Edit</button>&emsp;</li>
+				{% else %}
+				<li><button type="button" class="btn btn-info" id="check-edit-modal"><i class="fas fa-pen"></i> Edit</button>&emsp;</li>
+				{% endif %}
+			{% endif %}
+			
+			{% if current_user_approved %}
+				<button class="btn btn-success" disabled><i class="fas fa-check-circle"></i> Already Approved<br><small style="font-size: 10px;">Previously Approved</small></button>
+			{% else %}
+				<button type="button" id="sign-travel-button" data-signatory-id="{{ current_user_signatory.id }}" data-rito-id="{{ pk.id }}" class="btn btn-success"><i class="fas fa-signature"></i>&emsp;Approve</button>
+			{% endif %}
+			 	&emsp;
+			<li><button type="button" class="btn btn-info" id="download-official-travel"><i class="fas fa-file-pdf"></i> Download Official Copy</button></li>&emsp;<li>
+			<button type="button" id="disapprove-travel" data-id="{% if name.tracking_merge %}{{ name.tracking_merge }}{% else %}{{ name.tracking_no }}{% endif %}" class="btn btn-danger" {% if current_user_approved %}disabled{% endif %}><i class="fas fa-signature"></i>&emsp;Disapprove</button></li>
+		</ul>
+	</div>
+</nav>
+<body>
+
+<div id="print-container">
+	{% for page in pagination|times %}
+	<page size="A4" layout="portrait" class="page" style="padding: 45px;">
+		<div class="containerX">
+			{% if forloop.first %}
+			<header style="width: 100%; margin-bottom: 0;">
+				<div style="display: flex; align-items: center; justify-content: space-between;">
+					<div style="display: flex; align-items: center; gap: 10px;">
+						<img loading="lazy" src="{% static 'image/dswd_logo_3.png' %}" width="22%">
+						<img loading="lazy" src="{% static 'image/bagong_pilipinas.png' %}" width="8%" style="margin-top: -25px; margin-left: -10px;">
+					</div>
+
+					<div class="qr-code-container" style="max-width: 16vh; max-height: 16vh; margin: 0;">
+						{% if workflow_count == 0 and workflow %}
+							{% qr_from_text authenticity_url size="T" format_dark_color="red" finder_dark_color="#1d58a6" %}
+						{% else %}
+							<div style="width: 16vh; height: 16vh;"></div>
+						{% endif %}
+					</div>
+				</div>
+			</header>
+
+				<table width="100%">
+					<tr>
+						<td width="40%"><p class="font-weight-bold" style="margin: -10px 0px 20px 0px; font-size: 18px;">REGIONAL SPECIAL ORDER</p></td>
+						<td class="text-right">
+							{% if name.tracking_merge %}
+								{% get_to_tracking_merge_number name.tracking_merge as tracking_numbers_merge %}
+							{% else %}
+								{% get_to_tracking_merge_number name.tracking_no as tracking_numbers_merge %}
+							{% endif %}
+							{% if tracking_numbers_merge %}
+								<small>Merge RSO:
+								{% for row in tracking_numbers_merge %}
+									{% if not row.tracking_no == name.tracking_merge %}
+										{% if forloop.last %}{{ row.tracking_no }}{% else %}{{ row.tracking_no }},{% endif %}
+									{% endif %}
+								{% endfor %}</small>
+							{% endif %}
+						</td>
+					</tr>
+
+
+					<tr>
+						<td><p style="margin-top: -25px;">No. <u>{% if name.tracking_merge %}{{ name.tracking_merge }}{% else %}{{ name.tracking_no }}{% endif %}</u></p></td>
+					</tr>
+					<tr>
+						<td><p style="margin-top: -18px;">Series of {{ year }}</p></td>
+					</tr>
+				</table>
+
+				<div style="margin-top: 20px;">
+					<center>
+						<p class="font-weight-bold" style="margin-top: -15px;">
+							SUBJECT:
+							<input type="text" style="outline: 0; border: 0; border-bottom: 1px solid black; font-weight: bold; text-transform: uppercase;" class="center" value="{{ rito.first.subject.name }}" id="subject-value" readonly>
+						</p>
+						<br>
+					</center>
+
+					{% get_to_people pk as total_people %}
+					<p style="margin-top: -15px;">This is to <span>{{ rito.first.subject.sub_name }}</span> the travel of the following DSWD FO-X Staff/s whose {% if total_people > 1 %}names are{% else %}name is{% endif %} written below with the purpose of travel, places and dates indicated opposite their names, to wit:</p>
+				</div>
+			</header>
+			{% endif %}
+
+			<!-- <div class="content" style="margin-top: 15px; margin-right: 10px;">
+				<table id="table2" border="1" width="100%">
+					<thead>
+						<tr><td><div class="header-space"></div></td></tr>
+					</thead>
+					<tbody style="border: 1px solid black !important">
+						<tr>
+							<td class="text-center" style="border: 1px solid black !important"><small class="font-weight-bold">Names - Position/Area of Assignment</small><br><small style="margin-top:-5px; font-weight:lighter;">R(SN, FN M. II)</small></td>
+							<td class="text-center" style="border: 1px solid black !important"><small class="font-weight-bold">Place/s of Visit</small></td>
+							<td class="text-center" style="border: 1px solid black !important"><small class="font-weight-bold">Duration of Travel</small></td>
+							<td class="text-center" style="border: 1px solid black !important"><small class="font-weight-bold">Purpose</small></td>
+							<td class="text-center" style="border: 1px solid black !important"><small class="font-weight-bold">Means of <br>Transportation</small><br><small style="margin-top:-5px; font-weight:lighter; font-size: 9px;"><b>1</b> PUV Vice-Versa <br> <b>2</b> RP Vice-Versa <br> <b>3</b> RP-one-way PUV one-way <br> <b>4</b> Hired Van</small></td>
+							<td class="text-center" style="border: 1px solid black !important"><small class="font-weight-bold">Claims</small><br><small style="margin-top:-5px; font-weight:lighter; font-size: 9px;"><b>1</b> without per diem <br> <b>2</b> with per diem <br><b>3</b> Official Time Only <br><b>4</b> Compensatory Day off</small></td>
+						</tr>
+						
+						{% with page_index=forloop.counter0 %}
+						{% with page_info=paginated_data|get_item:page_index %}
+							{% regroup page_info.people by detail as grouped_details %}
+							{% for detail_group in grouped_details %}
+								<tr id="{{ detail_group.grouper.id }}">
+									<td width="35%" style="border: 1px solid black !important">
+										<ol>
+											{% for item in detail_group.list %}
+												<li>{{ item.person.name.pi.user.first_name|title }} {{ item.person.name.pi.user.middle_name|to_middleinitial }} {{ item.person.name.pi.user.last_name|title }} - {{ item.person.name.position.acronym }} / {{ item.person.name.aoa.name }}</li>
+											{% endfor %}
+										</ol>
+									</td>
+									<td class="text-center" width="15%" style="border: 1px solid black !important">{{ detail_group.grouper.place }}</td>
+									<td class="text-center" width="15%" style="border: 1px solid black !important">
+										{% if detail_group.grouper.inclusive_from == detail_group.grouper.inclusive_to %}
+											{{ detail_group.grouper.inclusive_from }}
+										{% else %}
+											{{ detail_group.grouper.inclusive_from }} - {{ detail_group.grouper.inclusive_to }}
+										{% endif %}
+									</td>
+									<td class="wrap-text text-center" width="16%" style="border: 1px solid black !important">{{ detail_group.grouper.purpose }}</td>
+									<td class="text-center" style="border: 1px solid black !important">{{ detail_group.grouper.mot.name }}</td>
+									<td class="text-center" width="10%" style="border: 1px solid black !important">{{ detail_group.grouper.claims.name }}</td>
+								</tr>
+							{% endfor %}
+						{% endwith %}
+					{% endwith %}
+					</tbody>
+				</table>
+			</div> -->
+
+			<div class="content" style="margin-top: 15px; margin-right: 10px;">
+    <table id="table2" border="1" width="100%">
+        <thead>
+            <tr><td><div class="header-space"></div></td></tr>
+        </thead>
+        <tbody style="border: 1px solid black !important">
+            <tr>
+                <td class="text-center" style="border: 1px solid black !important"><small class="font-weight-bold">Names - Position/Area of Assignment</small><br><small style="margin-top:-5px; font-weight:lighter;">R(SN, FN M. II)</small></td>
+                <td class="text-center" style="border: 1px solid black !important"><small class="font-weight-bold">Place/s of Visit</small></td>
+                <td class="text-center" style="border: 1px solid black !important"><small class="font-weight-bold">Duration of Travel</small></td>
+                <td class="text-center" style="border: 1px solid black !important"><small class="font-weight-bold">Purpose</small></td>
+                <td class="text-center" style="border: 1px solid black !important"><small class="font-weight-bold">Means of <br>Transportation</small><br><small style="margin-top:-5px; font-weight:lighter; font-size: 9px;"><b>1</b> PUV Vice-Versa <br> <b>2</b> RP Vice-Versa <br> <b>3</b> RP-one-way PUV one-way <br> <b>4</b> Hired Van</small></td>
+                <td class="text-center" style="border: 1px solid black !important"><small class="font-weight-bold">Claims</small><br><small style="margin-top:-5px; font-weight:lighter; font-size: 9px;"><b>1</b> without per diem <br> <b>2</b> with per diem <br><b>3</b> Official Time Only <br><b>4</b> Compensatory Day off</small></td>
+            </tr>
+            
+            {% with page_index=forloop.counter0 %}
+            {% with page_info=paginated_data|get_item:page_index %}
+                {% regroup page_info.people by detail as grouped_details %}
+                {% for detail_group in grouped_details %}
+                    <tr id="{{ detail_group.grouper.id }}">
+                        <td width="35%" style="border: 1px solid black !important">
+                            <ol start="{{ page_info.detail_start_numbers|get_item:detail_group.grouper.id }}">
+                                {% for item in detail_group.list %}
+                                    <li>{{ item.person.name.pi.user.first_name|title }} {{ item.person.name.pi.user.middle_name|to_middleinitial }} {{ item.person.name.pi.user.last_name|title }} - {{ item.person.name.position.acronym }} / {{ item.person.name.aoa.name }}</li>
+                                {% endfor %}
+                            </ol>
+                        </td>
+                        <td class="text-center" width="15%" style="border: 1px solid black !important">{{ detail_group.grouper.place }}</td>
+                        <td class="text-center" width="15%" style="border: 1px solid black !important">
+                         {% if detail_group.grouper.inclusive_from.date == detail_group.grouper.inclusive_to.date %}
+							{% if detail_group.grouper.inclusive_from == detail_group.grouper.inclusive_to %}
+								{{ detail_group.grouper.inclusive_from|date:"M d, Y g:i A" }}
+							{% else %}
+								{{ detail_group.grouper.inclusive_from|date:"M d, Y" }}<br>
+								{{ detail_group.grouper.inclusive_from|date:"g:i A" }} - {{ detail_group.grouper.inclusive_to|date:"g:i A" }}
+							{% endif %}
+						{% else %}
+							{# Different dates - show full datetime range #}
+							{{ detail_group.grouper.inclusive_from|date:"M d, Y g:i A" }} - {{ detail_group.grouper.inclusive_to|date:"M d, Y g:i A" }}
+						{% endif %}
+                        </td>
+                        <td class="wrap-text text-center" width="16%" style="border: 1px solid black !important">{{ detail_group.grouper.purpose }}</td>
+                        <td class="text-center" style="border: 1px solid black !important">{{ detail_group.grouper.mot.name }}</td>
+                        <td class="text-center" width="10%" style="border: 1px solid black !important">{{ detail_group.grouper.claims.name }}</td>
+                    </tr>
+                {% endfor %}
+            {% endwith %}
+        {% endwith %}
+        </tbody>
+    </table>
+</div>
+
+			{% if forloop.last %}
+				<div id="signatory-content">
+					<small>
+						It is understood that report shall be submitted upon completion of the Travel together with certificate of appearance from each place/s visited and other documentary evidences of travel.
+					</small>
+					{% if lap_included %}
+					<strong>Note:</strong><small> Learning Action Plan (LAP) is required 5 working days upon return to office. Submit one copy for the Accounting Section and one copy for the HRMDD-LDS
+					</small>
+					{% endif %}
+				<div class="signature-area" style="margin-top: 5px;">	
+					<center>
+						<p style="margin-bottom: 25px;">Approved by:</p>
+						<div class="rd-signature-container" id="rd-signature-area" ></div>
+						<input type="text" style="border: 0px !important; font-weight: bold; text-transform: uppercase;margin-top: 10px;" class="center" placeholder="Signatory" size="40" value="" id="designation_name"><br>
+						<input type="text" style="border: 0px !important;" class="center" placeholder="Designation / Position" size="40" value="" id="designation">
+					</center>
+				</div>
+				
+				<div class="signatory-bottom-section">
+					<div class="float-left" style="text-align: left;">
+						<div class="countersign-container">
+							<div class="countersign-signatures" id="countersign-signatures"></div>
+							<input type="hidden" id="countersign" value="">
+						</div>
+					</div>
+				</div>
+
+
+				<div class="generated" style="text-align:center; clear: both;">
+					<p class="separator-line">=============================================================================================</p>
+					<small style="font-size:xx-small; color:#555; display:block;  font-style:italic;margin-top: -10px;">
+						This is a system-generated document. The signatories that appear in the QR code have duly confirmed and authorized the personnel indicated herein to undertake official travel in accordance with the approved request. 
+					</small>
+				</div>
+			</div>
+			{% endif %}
+		</div>
+		
+			<div class="footer-text" id="footer">
+				<div class="page-number">
+					<p>Page {{ page|add:1 }} of {{ pagination }}</p>
+				</div>
+				{% if forloop.first %}
+					<p style="margin: 0;">______________________________________________________________________________________</p>
+
+					<div class="dswd-footer">
+					<p style="font-size: 10px; margin: 0; font-family: 'Times New Roman', serif;">
+						<b>DSWD Field Office X, Masterson Ave, Upper Carmen, 9000 Cagayan de Oro City, Philippines<br>
+						Website: <span style="color: blue;">www.fo10.dswd.gov.ph</span> Telefax (63)(88)858-6333</b>
+					</p>
+					</div>
+					
+				{% else %}
+					<p style="margin: 0;">______________________________________________________________________________________</p>
+					<p style="font-size: 10px; margin: 0; font-family: 'Times New Roman', serif; text-align: center;">
+						<b>
+					DSWD | FIELD OFFICE - X | 
+					{% if name.emp.section and name.emp.section.div %}
+						{{ name.emp.section.div.div_name|upper }}
+						 <!-- - {{ name.emp.section.sec_acronym|upper }} -->
+					{% else %}
+						OFFICE NAME
+					{% endif %}
+												
+					</b>
+					</p>
+				{% endif %}
+			</div>
+	</page>
+	{% endfor %}
+</div>
+
+
+<div class="modal" id="edit-modal" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog modal-xl">
+		<div class="modal-content animated bounceInDown">
+			<div class="modal-header bg-info">
+				<h3 class="modal-title" style="font-size: 16px;">TRAVEL REQUEST DETAILS</h3>
+				<button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+			</div>
+			<div class="modal-body"></div>
+		</div>
+	</div>
+</div>
+
+
+{% include 'frontend/pas/rito/modals/set_signatories.html' %}
+{% getemployeebyempid designation.1.emp_id as designation_rd %}
+{% getemployeebyempid designation.0.emp_id as designation_arda %}
+{% getemployeebyempid designation.2.emp_id as designation_ardo %}
+
+<script src="{% static 'js/jquery-3.1.1.min.js' %}"></script>
+<script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'js/adminlte.min.js' %}"></script>
+<script src="{% static 'js/plugins/select2/select2.full.min.js' %}"></script>
+<script src="{% static 'js/plugins/typehead/bootstrap3-typeahead.min.js' %}"></script>
+<script src="{% static 'js/plugins/sweetalert/sweetalert2.all.min.js' %}"></script>
+<script src="{% static 'js/functions.js' %}"></script>
+<script src="{% static 'js/html2pdf.bundle.js' %}"></script>
+
+<script type="text/javascript">
+	const csrftoken = '{{ csrf_token }}';
+	
+	class SignatureManager {
+		constructor() {
+			this.signatoryOrder = {
+				0: 0, 
+				1: 1, 
+				2: 2,  
+				4:4
+
+
+			};
+			this.signatures = new Map();
+		}
+
+		// Initialize all signatures on page load
+		init() {
+			this.loadExistingSignatures();
+			this.setupCountersign();
+			this.setupEventListeners();
+			this.setDefaultDesignation();
+		}
+
+		// Load signatures from Django template data
+		loadExistingSignatures() {
+			{% for sig in signatories %}
+				{% if sig.status == 1 and sig.esignature %}
+					this.addSignature({
+						signatory_type: {{ sig.signatory_type }},
+						signature_img: '{{ sig.esignature|escapejs }}',
+						emp_name: '{{ sig.emp.pi.user.get_fullname|escapejs }}',
+						has_p12: {% if sig.has_p12 %}true{% else %}false{% endif %}
+					});
+				{% endif %}
+			{% endfor %}
+		}
+
+		// Add or update a signature
+		addSignature(data) {
+			this.signatures.set(data.signatory_type, data);
+			this.renderSignatures();
+		}
+
+		// Remove a signature
+		removeSignature(signatoryType) {
+			this.signatures.delete(signatoryType);
+			this.renderSignatures();
+		}
+
+		renderSignatures() {
+			this.renderRDSignature();
+			// this.renderCountersignSignatures();
+		}
+
+		renderRDSignature() {
+			const rdContainer = document.getElementById('rd-signature-area');
+			const rdSignature = this.signatures.get(3);
+			
+			if (rdSignature) {
+				const hasP12 = rdSignature.has_p12 || false;
+				const cssClass = hasP12 ? 'signatory-with-p12' : 'signatory-without-p12';
+				
+				rdContainer.innerHTML = `
+					<div class="signature-container ${cssClass}">
+						<img src="data:image/png;base64,${rdSignature.signature_img}" 
+							alt="RD Signature" 
+							class="rd-signature-image">
+					</div>
+				`;
+			} else {
+				rdContainer.innerHTML = '';
+			}
+		}
+
+
+// renderCountersignSignatures() {
+//     const container = document.getElementById('countersign-signatures');
+//     container.innerHTML = '';
+
+//     // Sort signatures by their designated order
+//     const sortedSignatures = Array.from(this.signatures.entries())
+//         .filter(([type]) => type !== 3) // Exclude RD signature
+//         .sort(([typeA], [typeB]) => {
+//             const orderA = this.signatoryOrder[typeA] ?? 999;
+//             const orderB = this.signatoryOrder[typeB] ?? 999;
+//             return orderA - orderB;
+//         });
+
+//     // Get the current initials from the input (for reference)
+//     const countersignValue = document.getElementById('countersign').value;
+//     const initials = countersignValue.split('/').filter(initial => initial.trim() !== '');
+
+//     // Render signatures with their corresponding initials
+//     sortedSignatures.forEach(([type, data], index) => {
+//         const hasP12 = data.has_p12 || false;
+//         const cssClass = hasP12 ? 'signatory-with-p12' : 'signatory-without-p12';
+//         const initial = initials[index] || '';
+        
+//         const signatureElement = document.createElement('div');
+//         signatureElement.className = `signature-item signature-container ${cssClass}`;
+//         signatureElement.innerHTML = `
+//             <img src="data:image/png;base64,${data.signature_img}" 
+//                 alt="Signature" 
+//                 class="signature-image">
+//             <div class="signature-initial">${initial}</div>
+//         `;
+//         container.appendChild(signatureElement);
+//     });
+// }
+
+			renderCountersignSignatures() {
+				const container = document.getElementById('countersign-signatures');
+				container.innerHTML = '';
+				
+			}
+		// Setup countersign initials
+		setupCountersign() {
+			{% if signatories_data %}
+				const initials = [];
+				
+				{% if signatories_data.division_chief %}
+					initials.push(this.getInitials('{{ signatories_data.division_chief.pi.user.first_name }}', 
+													'{{ signatories_data.division_chief.pi.user.middle_name }}', 
+													'{{ signatories_data.division_chief.pi.user.last_name }}'));
+				{% endif %}
+				
+				{% if signatories_data.section_head %}
+					initials.push(this.getInitials('{{ signatories_data.section_head.pi.user.first_name }}', 
+													'{{ signatories_data.section_head.pi.user.middle_name }}', 
+													'{{ signatories_data.section_head.pi.user.last_name }}'));
+				{% endif %}
+				
+				{% if signatories_data.requester %}
+					initials.push(this.getInitials('{{ signatories_data.requester.pi.user.first_name }}', 
+													'{{ signatories_data.requester.pi.user.middle_name }}', 
+													'{{ signatories_data.requester.pi.user.last_name }}'));
+				{% endif %}
+				
+				document.getElementById('countersign').value = initials.join('/') + '/';
+			{% endif %}
+		}
+
+		// Generate initials from name components
+		getInitials(firstName, middleName, lastName) {
+			const first = firstName ? firstName.charAt(0).toLowerCase() : '';
+			const middle = middleName ? middleName.charAt(0).toLowerCase() : '';
+			const last = lastName ? lastName.charAt(0).toLowerCase() : '';
+			return first + middle + last;
+		}
+
+		// Update initials display under signatures
+		updateInitialsDisplay() {
+			const countersignValue = document.getElementById('countersign').value;
+			const initials = countersignValue.split('/').filter(initial => initial.trim() !== '');
+			const signatureItems = document.querySelectorAll('#countersign-signatures .signature-item');
+			
+			// Update existing signature items with initials
+			signatureItems.forEach((item, index) => {
+				const initialDiv = item.querySelector('.signature-initial');
+				if (initialDiv && index < initials.length) {
+					initialDiv.textContent = initials[index];
+				}
+			});
+		}
+
+		// Setup event listeners
+		setupEventListeners() {
+			// Countersign input change
+			document.getElementById('countersign').addEventListener('input', () => {
+				this.updateInitialsDisplay();
+			});
+		}
+
+		// Set default designation values
+		setDefaultDesignation() {
+			document.getElementById('designation_name').value = "{{ designation_rd.pi.user.get_fullname }}";
+			document.getElementById('designation').value = "{{ designation.1.name }}";
+		}
+	}
+
+	// ===== APPROVAL SYSTEM =====
+	class ApprovalManager {
+		constructor(signatureManager) {
+			this.signatureManager = signatureManager;
+			this.setupEventListeners();
+			this.checkCurrentUserStatus();
+		}
+
+		checkCurrentUserStatus() {
+			const currentUserEmpId = {{ request.session.emp_id }};
+			
+			{% for sig in signatories %}
+				{% if sig.status == 1 %}
+					if ({{ sig.emp.id }} == currentUserEmpId) {
+						this.updateButtonToApproved();
+						return;
+					}
+				{% endif %}
+			{% endfor %}
+		}
+
+		setupEventListeners() {
+			document.addEventListener('click', (e) => {
+				if (e.target.matches('#sign-travel-button, #sign-travel-button *')) {
+					const button = e.target.closest('#sign-travel-button');
+					if (button) this.handleApproval(button);
+				}
+			});
+		}
+
+		handleApproval(button) {
+			const signatoryId = button.dataset.signatoryId;
+			const ritoId = button.dataset.ritoId;
+			
+			this.showPasswordModal(signatoryId, ritoId);
+		}
+
+		showPasswordModal(signatoryId, ritoId) {
+			Swal.fire({
+				title: '<i class="fas fa-signature" style="color: #20c997; margin-right: 10px;"></i>Digital Signature',
+				html: `
+					<div style="text-align: center; margin-bottom: 20px;">
+						<p style="color: #666; font-size: 14px; margin: 10px 0;">
+						   Enter your password to approve and sign this RSO digitally.
+						</p>
+					</div>
+					<div style="position: relative; margin: 20px 0;">
+						<input 
+							id="password-input" 
+							type="password" 
+							placeholder="Enter your .p12 certificate password"
+							autocomplete="new-password"
+							style="width:100%; padding:15px 20px 15px 50px; border:1px solid #e0e0e0; border-radius:10px; font-size:16px; outline:none; transition:all 0.3s ease; background:#f8f9fa; box-sizing:border-box;"
+							onfocus="this.style.borderColor='#17a2b8'; this.style.background='#fff'"
+							onblur="this.style.borderColor='#e0e0e0'; this.style.background='#f8f9fa'" />
+				
+						<button 
+							type="button" 
+							id="toggle-password"
+							onclick="
+								const input = document.getElementById('password-input');
+								const icon = this.querySelector('i');
+								if (input.type === 'password') {
+									input.type = 'text';
+									icon.className = 'fas fa-eye-slash';
+								} else {
+									input.type = 'password';
+									icon.className = 'fas fa-eye';
+								}
+							"
+							style="position:absolute; right:15px; top:50%; transform:translateY(-50%); background:none; border:none; color:#999; cursor:pointer; padding:5px; font-size:16px;">
+							<i class="fas fa-eye"></i>
+						</button>
+					</div>
+				   <div style="margin-top:10px;"><small style="color:#888; font-size:12px;"><i class="fas fa-lock" style="margin-right:5px;"></i>Your password is encrypted and secure</small></div>
+				`,
+				showCancelButton: true,
+				confirmButtonText: '<i class="fas fa-check-circle" style="margin-right: 8px;"></i>Sign & Approve',
+				cancelButtonText: '<i class="fas fa-times" style="margin-right: 8px;"></i>Cancel',
+				confirmButtonColor: '#28a745',
+				cancelButtonColor: '#dc3545',
+				showLoaderOnConfirm: true,
+				allowOutsideClick: () => !Swal.isLoading(),
+				didOpen: () => document.getElementById('password-input').focus(),
+				preConfirm: () => this.processApproval(signatoryId)
+			}).then((result) => {
+				if (result.isConfirmed && result.value) {
+					this.signatureManager.addSignature(result.value);
+					this.showSuccessModal();
+					this.updateButtonToApproved();
+				}
+			}).catch((error) => {
+				this.showErrorModal(error);
+			});
+		}
+
+		async processApproval(signatoryId) {
+			const password = document.getElementById('password-input').value.trim();
+			
+			if (!password) {
+				Swal.showValidationMessage('Certificate password is required!');
+				return false;
+			}
+			if (password.length < 4) {
+				Swal.showValidationMessage('Password must be at least 4 characters long!');
+				return false;
+			}
+
+			try {
+				const response = await $.ajax({
+					url: '{% url "approved_rito_signatories" %}',
+					type: 'POST',
+					dataType: 'json',
+					data: { 
+						signatory_id: signatoryId,
+						p12_password: password
+					},
+					headers: { "X-CSRFToken": csrftoken },
+					timeout: 30000
+				});
+
+				if (!response.success) {
+					throw new Error(response.error || 'Unknown error occurred.');
+				}
+
+				return response;
+			} catch (error) {
+				let errorMessage = 'An unexpected error occurred.';
+				
+				if (error.status === 'timeout') {
+					errorMessage = 'Request timed out. Please try again.';
+				} else if (error.status === 0) {
+					errorMessage = 'Network error. Please check your connection.';
+				} else if (error.status === 403) {
+					errorMessage = 'Access denied. You may not have permission.';
+				} else if (error.status === 400) {
+					errorMessage = error.responseJSON?.error || 'Invalid password or request.';
+				} else if (error.responseJSON && error.responseJSON.error) {
+					errorMessage = error.responseJSON.error;
+				}
+				
+				// Close the current modal and show error modal
+				Swal.close();
+				setTimeout(() => {
+					this.showErrorModal(new Error(errorMessage));
+				}, 100);
+				return false;
+			}
+		}
+		showSuccessModal() {
+		Swal.fire({
+			icon: 'success',
+			title: 'Approval Complete!',
+			html: `
+				<div style="text-align: center; padding: 15px;">
+					<div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 15px; margin: 15px 0;">
+						<i class="fas fa-check-circle" style="color: #28a745; font-size: 24px; margin-right: 8px;"></i>
+						<strong>Travel order has been digitally signed and approved</strong>
+					</div>
+				</div>
+			`,
+			confirmButtonText: 'OK',
+			confirmButtonColor: '#28a745',
+			timer: 4000,
+			timerProgressBar: true,
+			willClose: () => {
+				location.reload();
+			}
+		}).then(() => {
+			location.reload();
+		});
+	}
+
+
+		showErrorModal(error) {
+			Swal.fire({
+				icon: 'error',
+				title: 'Approval Failed',
+				html: `
+					<div style="text-align: center; padding: 15px;">
+						<div style="background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 15px; margin: 15px 0;">
+							<p style="color: #721c24; margin: 0; font-size: 15px;">
+								${error.message || 'An unexpected error occurred during the approval process.'}
+							</p>
+						</div>
+						<small style="color: #666;">Please check your certificate password and try again</small>
+					</div>
+				`,
+				confirmButtonText: 'Try Again',
+				confirmButtonColor: '#28a745',
+				showCancelButton: true,
+				cancelButtonText: 'Close',
+				cancelButtonColor: '#6c757d'
+			}).then((result) => {
+				if (result.isConfirmed) {
+					document.getElementById('sign-travel-button').click();
+				}
+			});
+		}
+
+		updateButtonToApproved() {
+			const signButton = document.getElementById('sign-travel-button');
+			if (signButton) {
+				const currentDate = new Date().toLocaleDateString('en-US', {
+					month: 'short', 
+					day: '2-digit',
+					year: 'numeric',
+					hour: '2-digit',
+					minute: '2-digit'
+				});
+				
+				signButton.outerHTML = `
+					<button class="btn btn-success" disabled>
+						<i class="fas fa-check-circle"></i> Already Approved
+						<br><small style="font-size: 10px;">${currentDate}</small>
+					</button>
+				`;
+			}
+		}
+	}
+
+	// ===== DOCUMENT MANAGER =====
+	class DocumentManager {
+		constructor() {
+			this.setupEventListeners();
+		}
+
+		setupEventListeners() {
+			document.addEventListener('click', (e) => {
+				if (e.target.matches('#download-official-travel, #download-official-travel *')) {
+					const button = e.target.closest('#download-official-travel');
+					if (button) this.handleDownload();
+				}
+				
+				if (e.target.matches('#disapprove-travel, #disapprove-travel *')) {
+					const button = e.target.closest('#disapprove-travel');
+					if (button) this.handleDisapproval(button.dataset.id);
+				}
+			});
+		}
+		
+	async handleDownload() {
+    const confirmed = await this.showDownloadConfirmation();
+    if (!confirmed) return;
+
+    this.showDownloadProgress();
+
+    let countersignArea = null;
+    let rdSignatureBackup = null;
+    let designationNameBackup = null;
+    let designationBackup = null;
+
+    try {
+        const formElement = document.querySelector('#print-container');
+        if (!formElement) {
+            throw new Error('Form container not found. Please refresh the page.');
+        }
+
+        const rdSignatureArea = document.getElementById('rd-signature-area');
+        
+        // --- BACKUP ORIGINAL CONTENTS ---
+        rdSignatureBackup = rdSignatureArea.innerHTML;
+        designationNameBackup = document.getElementById('designation_name').value;
+        designationBackup = document.getElementById('designation').value;
+
+        // --- HIDE COUNTERSIGN ---
+        countersignArea = document.querySelector('.countersign-container');
+        if (countersignArea) {
+            countersignArea.style.display = 'none';
+        }
+
+        // --- ACTIVATE PDF MODE ---
+        document.body.classList.add('pdf-generation');
+        formElement.classList.add('hide-signatures-for-pdf');
+
+        // --- PREVENT EXTRA PAGE BREAK ---
+        formElement.querySelectorAll('page[size="A4"][layout="portrait"]').forEach(p => {
+            p.style.pageBreakAfter = 'auto';
+        });
+
+        // --- WAIT FOR LAYOUT TO STABILIZE ---
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // --- CALCULATE SIGNATURE POSITIONS ---
+        const signaturePositions = this.calculateSignaturePositions(formElement, rdSignatureArea);
+        console.log('Calculated signature positions:', signaturePositions);
+
+        // --- CLEAR SIGNATURES FOR PDF ---
+        rdSignatureArea.innerHTML = '';
+        document.getElementById('designation_name').value = '';
+        document.getElementById('designation').value = '';
+
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        // --- GET SUBJECT NAME ---
+        const subjectInput = document.getElementById('subject-value');
+        let subjectName = 'Unknown';
+        if(subjectInput) {
+            subjectName = subjectInput.value.trim().replace(/\s+/g, '-').toUpperCase(); // spaces to dash, uppercase
+        }
+
+        // --- GENERATE DATE ---
+        const now = new Date();
+        const dateStr = now.toISOString().slice(0, 10); // YYYY-MM-DD
+
+        const filename = `Regional-Special-Order-for-${subjectName}-${dateStr}.pdf`;
+
+        const pdfOptions = {
+            margin: [-6, 0, 0, 0], 
+            filename: filename,
+            image: { 
+                type: 'jpeg', 
+                quality: 0.98
+            },
+            html2canvas: { 
+                scale: 2,
+                useCORS: true, 
+                allowTaint: true,
+                letterRendering: true,
+                logging: false,
+                height: formElement.scrollHeight - 10, 
+                windowHeight: formElement.scrollHeight - 10,
+                imageTimeout: 0,
+                removeContainer: false
+            },
+            jsPDF: { 
+                unit: 'mm', 
+                format: [210,315], 
+                orientation: 'portrait'
+            },
+            pagebreak: { 
+                mode: ['avoid-all'],
+                avoid: ['header', '.content', '#signatory-content', '.generated', 'footer']
+            }
+        };
+
+        const pdfBlob = await html2pdf()
+            .set(pdfOptions)
+            .from(formElement)
+            .outputPdf("blob");
+
+        document.body.classList.remove('pdf-generation');
+        formElement.classList.remove('hide-signatures-for-pdf');
+
+        if (rdSignatureBackup) rdSignatureArea.innerHTML = rdSignatureBackup;
+        if (designationNameBackup) document.getElementById('designation_name').value = designationNameBackup;
+        if (designationBackup) document.getElementById('designation').value = designationBackup;
+        if (countersignArea) countersignArea.style.display = '';
+
+        // SEND PDF TO BACKEND FOR SIGNING 
+        const formData = new FormData();
+        formData.append('pdf_file', pdfBlob, filename);
+        formData.append('signature_positions', JSON.stringify(signaturePositions));
+
+        const response = await fetch("{% url 'sign_uploaded_travel_pdf' pk=name.id %}", {
+            method: "POST",
+            body: formData,
+            headers: { 'X-CSRFToken': csrftoken }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Download failed (Error ${response.status})`);
+        }
+
+        const signedBlob = await response.blob();
+        this.downloadFile(signedBlob, filename);
+        this.showDownloadSuccess();
+
+    } catch (error) {
+        // restor incase mag error
+        document.body.classList.remove('pdf-generation');
+        document.querySelector('#print-container')?.classList.remove('hide-signatures-for-pdf');
+        
+        const rdSignatureArea = document.getElementById('rd-signature-area');
+        if (rdSignatureBackup && rdSignatureArea) rdSignatureArea.innerHTML = rdSignatureBackup;
+        if (designationNameBackup) document.getElementById('designation_name').value = designationNameBackup;
+        if (designationBackup) document.getElementById('designation').value = designationBackup;
+        if (countersignArea) countersignArea.style.display = '';
+
+        this.showDownloadError(error);
+    }
+}
+
+
+calculateSignaturePositions(container, rdSignatureElement) {
+    const allPages = container.querySelectorAll('page');
+    const lastPage = allPages[allPages.length - 1];
+    
+    if (!lastPage) {
+        console.error('Last page not found');
+        return null;
+    }
+    
+    const pageRect = lastPage.getBoundingClientRect();
+    
+    // Get the disclaimer text from the last page
+    const signatoryContent = lastPage.querySelector('#signatory-content');
+    if (!signatoryContent) {
+        console.error('Signatory content not found on last page');
+        return null;
+    }
+    
+    const disclaimerText = signatoryContent.querySelector('small');
+    if (!disclaimerText) {
+        console.error('Disclaimer text not found');
+        return null;
+    }
+    
+    const disclaimerRect = disclaimerText.getBoundingClientRect();
+    
+    const pdfWidth = 595;
+    const pdfHeight = 842;
+    
+    // Calculate scale factors
+    const scaleX = pdfWidth / pageRect.width;
+    const scaleY = pdfHeight / pageRect.height;
+    
+    const gapAfterDisclaimer = -15;
+    const actualImageHeight = 125;
+    const actualImageWidth = 385;
+
+    const signatureTopFromPage = (disclaimerRect.bottom - pageRect.top) + gapAfterDisclaimer;
+    
+    // Center horizontally
+    const pageWidthPx = pageRect.width;
+    const centeredLeft = (pageWidthPx - actualImageWidth) / 2;
+    
+    // Convert to PDF coordinates - calculate for the LAST page
+    // PDF pages are 0-indexed in most libraries
+    const totalPages = allPages.length;
+    const lastPageNumber = totalPages; // 1-indexed for backend
+    
+    const x1 = centeredLeft * scaleX;
+    const x2 = (centeredLeft + actualImageWidth) * scaleX;
+    
+    // PDF Y-axis is inverted (0 is at bottom)
+    const y2 = pdfHeight - (signatureTopFromPage * scaleY);
+    const y1 = pdfHeight - ((signatureTopFromPage + actualImageHeight) * scaleY);
+    
+    console.log('Signature Position Calculation:', {
+        totalPages: totalPages,
+        targetPageNumber: lastPageNumber,
+        disclaimerBottom: disclaimerRect.bottom,
+        pageTop: pageRect.top,
+        gap: gapAfterDisclaimer,
+        signatureTop: signatureTopFromPage,
+        pdfCoords: {
+            page_number: lastPageNumber,
+            x1: Math.round(x1),
+            y1: Math.round(y1),
+            x2: Math.round(x2),
+            y2: Math.round(y2)
+        }
+    });
+    
+    return {
+        total_pages: totalPages,
+        rd_signature: {
+            page_number: lastPageNumber,  // Which page to sign (1-indexed)
+            x1: Math.round(x1),
+            y1: Math.round(y1),
+            x2: Math.round(x2),
+            y2: Math.round(y2),
+            target_width: actualImageWidth,
+            target_height: actualImageHeight
+        }
+    };
+}
+
+		showDownloadConfirmation() {
+			return Swal.fire({
+				title: 'Download Document',
+				text: "Do you want to download this file?",
+				icon: 'info',
+				showCancelButton: true,
+				confirmButtonColor: '#28a745',
+				cancelButtonColor: '#6c757d',
+				confirmButtonText: 'Yes, download it'
+			}).then(result => result.isConfirmed);
+		}
+
+		showDownloadProgress() {
+			  Swal.fire({
+				width:'300px',
+				html: `
+					<div style="text-align: center; padding: 30px 20px;">
+						<!-- Animated dots -->
+						<div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 30px;">
+							<div style="width: 16px; height: 16px; background: #007bff; border-radius: 50%; animation: bounce 1.4s ease-in-out infinite;"></div>
+							<div style="width: 16px; height: 16px; background: #007bff; border-radius: 50%; animation: bounce 1.4s ease-in-out 0.2s infinite;"></div>
+							<div style="width: 16px; height: 16px; background: #007bff; border-radius: 50%; animation: bounce 1.4s ease-in-out 0.4s infinite;"></div>
+						</div>
+						
+						<h3 style="color: #2c3e50; font-size: 18px; font-weight: 600; margin: 0 0 8px 0;">
+							Generating PDF
+						</h3>
+						<p style="color: #95a5a6; font-size: 13px; margin: 0;">
+							Please wait a moment
+						</p>
+					</div>
+					
+					<style>
+						@keyframes bounce {
+							0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+							40% { transform: scale(1); opacity: 1; }
+						}
+					</style>
+				`,
+				showConfirmButton: false,
+				allowOutsideClick: false,
+				allowEscapeKey: false,
+				customClass: {
+					popup: 'rounded-lg'
+				}
+			});
+		}
+
+		downloadFile(blob, filename) {
+			const blobUrl = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = blobUrl;
+			a.download = filename;
+			document.body.appendChild(a);
+			a.click();
+			a.remove();
+			URL.revokeObjectURL(blobUrl);
+		}
+
+		
+showDownloadSuccess() {
+    Swal.fire({
+        html: `
+            <div style="text-align: center; padding: 20px;">
+                <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3); animation: successPop 0.5s ease-out;">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+                <h2 style="color: #28a745; font-size: 24px; font-weight: 600; margin: 0 0 10px 0;">Download Complete!</h2>
+                <p style="color: #6c757d; font-size: 14px; margin: 0;">Your travel document is ready</p>
+            </div>
+            <style>
+                @keyframes successPop {
+                    0% { transform: scale(0); opacity: 0; }
+                    50% { transform: scale(1.1); }
+                    100% { transform: scale(1); opacity: 1; }
+                }
+            </style>
+        `,
+        showConfirmButton: true,
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#28a745',
+        timer: 4000,
+        customClass: {
+            popup: 'swal-success-popup'
+        }
+    });
+}
+
+		showDownloadError(error) {
+			Swal.fire({
+				icon: 'error',
+				title: 'Download Failed',
+				html: `
+					<div style="text-align: center; padding: 15px;">
+						<div style="background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 15px; margin: 15px 0;">
+							<p style="color: #721c24; margin: 0; font-size: 15px;">
+								${error.message || 'An unexpected error occurred while downloading the document.'}
+							</p>
+						</div>
+					</div>
+				`,
+				confirmButtonText: 'Try Again',
+				confirmButtonColor: '#007bff',
+				showCancelButton: true,
+				cancelButtonText: 'Close',
+				cancelButtonColor: '#6c757d'
+			}).then((result) => {
+				if (result.isConfirmed) {
+					this.handleDownload();
+				}
+			});
+		}
+
+		handleDisapproval(id) {
+			Swal.fire({
+				title: 'Disapprove Travel Request',
+				text: "Do you want to disapprove this travel request?",
+				icon: 'warning',
+				showCancelButton: true,
+				confirmButtonColor: '#dc3545',
+				cancelButtonColor: '#6c757d',
+				confirmButtonText: 'Yes, disapprove it!'
+			}).then((result) => {
+				if (result.isConfirmed) {
+					// Add disapproval logic here
+					Swal.fire('Disapproved!', 'The travel request has been disapproved.', 'success');
+				}
+			});
+		}
+	}
+
+	// ===== MODAL MANAGER =====
+	class ModalManager {
+		constructor() {
+			this.setupEventListeners();
+		}
+
+		setupEventListeners() {
+			// Edit modal
+			document.addEventListener('click', (e) => {
+				if (e.target.matches('#check-edit-modal, #check-edit-modal *')) {
+					this.showEditModal();
+				}
+			});
+
+			// Signatory selection
+			document.addEventListener('click', (e) => {
+				if (e.target.matches('a[data-role=signatory]')) {
+					this.handleSignatorySelection(e.target);
+				}
+			});
+		}
+
+		showEditModal() {
+			$('#edit-modal').modal('show').find('.modal-body').load("{% if name.tracking_merge %}{% url 'view_rito_details' name.tracking_merge %}{% else %}{% url 'view_rito_details' name.tracking_no %}{% endif %}");
+		}
+
+		handleSignatorySelection(element) {
+			const filter = element.dataset.filter;
+			const designationName = document.getElementById('designation_name');
+			const designation = document.getElementById('designation');
+			
+			switch(filter) {	
+				case 'arda':
+					designationName.value = "{{ designation_arda.pi.user.get_fullname }}";
+					designation.value = "{{ designation.0.name }}";
+					break;
+				case 'ardo':
+					designationName.value = "{{ designation_ardo.pi.user.get_fullname }}";
+					designation.value = "{{ designation.2.name }}";
+					break;
+				case 'rd':
+					designationName.value = "{{ designation_rd.pi.user.get_fullname }}";
+					designation.value = "{{ designation.1.name }}";
+					break;
+			}
+		}
+	}
+
+	// ===== UTILITY FUNCTIONS =====
+	function updateRemarks() {
+		$.post({
+			url: '/backend/travel-remark/update/{% if name.tracking_merge %}{{ name.tracking_merge }}{% else %}{{ name.tracking_no }}{% endif %}',
+			data: {
+				subject: $('#subject-value').val(),
+				designation_name: $('#designation_name').val(),
+				designation: $('#designation').val()
+			}
+		});
+	}
+
+	// ===== INITIALIZATION =====
+	$(document).ready(function() {
+		// Initialize all managers
+		const signatureManager = new SignatureManager();
+		const approvalManager = new ApprovalManager(signatureManager);
+		const documentManager = new DocumentManager();
+		const modalManager = new ModalManager();
+		
+		// Initialize signature system
+		signatureManager.init();
+		
+		// Setup edit modal close event
+		$("#edit-modal").on('hide.bs.modal', function(){
+			window.location.href = "{% if name.tracking_merge %}{% url 'generate-to' name.tracking_merge %}{% else %}{% url 'generate-to' name.tracking_no %}{% endif %}";
+		});
+		
+		$('.print-button').on('click', updateRemarks);
+	});
+
+
+</script>
+</body>
+</html>

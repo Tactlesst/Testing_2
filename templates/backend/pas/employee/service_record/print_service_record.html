@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+{% load static %}
+{% load humanize %}
+{% load frontend_tags %}
+{% load tags %}
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSWD My PORTAL | Regional Special Order</title>
+    <link rel="shortcut icon" type="image/png" href="{% static 'image/hrpearlogo_192.png' %}" />
+    <link href="{% static 'font-awesome/css/all.css' %}" rel="stylesheet">
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/plugins/sweetalert/sweetalert2.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/mod.css' %}" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/adjustments.css' %}">
+    <link href="{% static 'css/print.css' %}" rel="stylesheet">
+    <style>
+        @media print {
+            page {
+                padding: 15px 15px 15px 15px !important;
+                border: 0.5px solid transparent;
+                height: 297mm !important;
+                width: 100% !important;
+                zoom: 130% !important;
+            }
+
+            ::-webkit-input-placeholder {
+                /* WebKit browsers */
+                color: transparent;
+            }
+
+            :-moz-placeholder {
+                /* Mozilla Firefox 4 to 18 */
+                color: transparent;
+            }
+
+            ::-moz-placeholder {
+                /* Mozilla Firefox 19+ */
+                color: transparent;
+            }
+
+            :-ms-input-placeholder {
+                /* Internet Explorer 10+ */
+                color: transparent;
+            }
+
+            .footer {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 30mm;
+                padding: 5px 15px;
+                font-size: 10px;
+                background: white;
+            }
+
+
+
+            .border-black {
+                background-color: black;
+                border: none;
+                height: 1px;
+                margin: 7px;
+            }
+        }
+
+        footer {
+            margin-bottom: 0px !important;
+        }
+
+        .border-black {
+            background-color: black !important;
+            border: none;
+            height: 1px;
+            margin: 7px;
+        }
+
+        .v-align-center {
+            height: 30px;
+            vertical-align: center;
+        }
+    </style>
+</head>
+<!-- <nav class="main-header navbar navbar-expand navbar-light m-0" style="background-color: white;">
+	<div class="container">
+		<div class="navbar-header">
+			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+				<i class="fas fa-bars"></i>
+			</button>
+			<a class="navbar-brand" href="javascript:;">Service Record</a>
+		</div>
+		<div id="navbar" class="navbar-collapse collapse">
+			<ul class="nav navbar-nav navbar-right">
+                <li><button type="button" class="btn btn-success" data-toggle="modal" data-target="#update-drn-modal" style="font-size: 14px; margin-top: 8px;"><i class="fas fa-file"></i> Update DRN</button>&emsp;</li>
+				<li><button type="button" class="btn btn-info print-button" id="floatprint" style="font-size: 14px; margin-top: 8px;"><i class="fas fa-print"></i> Print</button></li>
+			</ul>
+		</div>
+	</div>
+</nav> -->
+
+
+<nav class="main-header navbar navbar-expand navbar-light m-0" style="background-color: white;">
+    <div class="container">
+        <a class="navbar-brand" href="javascript:;"><strong>Service Record</strong></a>
+        <ul class="navbar-nav ml-auto">
+            <li><a href="javascript:;" class="btn btn-info print-button" style="background-color: rgba(8, 8, 161, 0.76)"
+                    id="floatprint" title="Print"><i class="fas fa-print"></i> Print</a></li>
+        </ul>
+    </div>
+</nav>
+
+<body>
+
+
+
+    {% with row_limit=15 %}
+    {% for row in work_experience_list %}
+    {% if forloop.first or forloop.counter0|divisibleby:row_limit %}
+    {% if not forloop.first %}
+    </tbody>
+    </table>
+    <!-- FOOTER PER PAGE -->
+    <div class="footer">
+        <center>
+            <small>----------------------------------------------- continuation on next page
+                -----------------------------------------------</small>
+            <br><br>
+            <small style="font-weight: bold;">Page {{ forloop.counter0|divisibleby:row_limit|yesno:"1,1" }} of
+                {{ pagination }}</small>
+            <hr style="width: 80%; height: 2px; background-color: black; border: none;">
+            <p style="margin: 0 10vh; font-size: 10px; font-weight: bold;">
+                DSWD Field Office X, Masterson Ave, Upper Carmen, 9000 Cagayan de Oro City, Philippines<br>
+                Website: <a href="#">www.fo10.dswd.gov.ph</a> Telefax: (63)(88)858-6333
+            </p>
+        </center>
+    </div>
+    </div>
+    </page>
+    {% endif %}
+
+    <!-- NEW PAGE START -->
+    <page size="A4flex" class="page" style="position: relative; padding: 30px; color: black !important;">
+        <div class="containerX">
+
+            {% if forloop.first %}
+            <!-- ONLY ONCE HEADER -->
+            <img src="{% static 'image/dswd_logo_3.png' %}" width="20%" loading="lazy">
+            <img src="{% static 'image/bagong_pilipinas.png' %}" width="7%" loading="lazy"
+                style="margin-top: -25px;"><br>
+            <span style="font-family: 'Times New Roman'; font-size: 10.7px;">
+                {% get_doc_version 20 as doc_version %}
+                {{ doc_version|safe }}
+            </span>
+
+            <br><br>
+            <h4 class="text-center" style="letter-spacing: 10px;">SERVICE RECORD</h4>
+            <br><br>
+
+            <!-- Employee Details -->
+            <table width="100%" style="font-size: 12px !important;">
+                <tr>
+                    <td>NAME</td>
+                    <th class="text-center">{{ data.emp.pi.user.last_name|upper }}</th>
+                    <th class="text-center">{{ data.emp.pi.user.first_name|upper }}</th>
+                    <th class="text-center">
+                        {% if data.emp.pi.user.middle_name %}
+                        {{ data.emp.pi.user.middle_name|upper }}
+                        {% endif %}
+                    </th>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td colspan="3">
+                        <hr class="border-black">
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="text-center">(Surname)</td>
+                    <td class="text-center">(Given Name)</td>
+                    <td class="text-center">(Middle Name)</td>
+                    <td>
+                        {% if data.maiden_name %}
+                        <div style="position: absolute; margin-top: -50px; margin-left: 20px;">
+                            (If Married, give also full maiden name)<br>
+                            <b><u>{{ data.maiden_name }}</u></b>
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="5">&nbsp;</td>
+                </tr>
+                <tr>
+                    <td>BIRTH</td>
+                    <th class="text-center">{{ data.emp.pi.dob|date:'d F Y'|upper }}</th>
+                    <th class="text-center" colspan="2">{{ data.emp.pi.pob|upper }}</th>
+                    <td width="32%"></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td colspan="3">
+                        <hr class="border-black">
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="text-center">(Date of Birth)</td>
+                    <td class="text-center" colspan="2">(Place of Birth)</td>
+                    <td>
+                        <div style="position: absolute; margin-top: -40px; margin-left: 20px;">
+                            (Date herein should be checked<br>from birth or some other related<br>documents)
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <br>
+            <br>
+            <p style="font-size: 9.7px;">
+               This is to certify that the employee named herein above actually rendered services in
+                this office and approved by the authorities concerned.
+            </p>
+            {% endif %}
+
+            <table width="100%" border="1" style="white-space: normal !important;">
+                
+                <tbody>
+                    <tr style="font-size: 10.67px !important">
+                        <th colspan="2" class="text-center" width="20%">SERVICE</th>
+                        <th colspan="3" class="text-center" width="27%">RECORD OF APPOINTMENT</th>
+                        <th colspan="2" class="text-center" width="20%">OFFICE ENTITY/DIV</th>
+                        <th rowspan="3" class="text-center" width="8%">L/V ABS <br>W/O<br>PAY</th>
+                        <th colspan="2" class="text-center" width="20%">SEPARATION<br>(4)</th>
+                    </tr>
+                    <tr style="font-size: 9.33px !important">
+                        <td colspan="2" class="text-center">Inclusive Dates</td>
+                        <td rowspan="2" class="text-center">Designation</td>
+                        <td rowspan="2" class="text-center">Status<br>(1)</td>
+                        <td rowspan="2" class="text-center">Salary<br>(2)</td>
+                        <td rowspan="2" class="text-center">Place<br>of Assignment</td>
+                        <td rowspan="2" class="text-center">Branch<br>(3)</td>
+                        <td rowspan="2" class="text-center">Date</td>
+                        <td rowspan="2" class="text-center">Cause</td>
+                    </tr>
+                    <tr style="font-size: 9.33px !important">
+                        <td class="text-center" width="10%">From</td>
+                        <td class="text-center" width="10%">To</td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- DATA ROWS -->
+                    <tr style="font-size: 9.33px !important">
+                        <td class="text-center v-align-center">
+                            {{ row.we_from|date:'m/d/Y' }}</td>
+                        <td class="text-center v-align-center">
+
+                            {% if row.we_to == "Present" or row.we_to == None %}
+                            Present
+                            {% else %}
+                            {{ row.we_to|date:'m/d/Y' }}
+                            {% endif %}
+                        </td>
+                        <td class="text-center v-align-center">
+                            {{ row.position }}</td>
+                        <td class="text-center v-align-center">
+                            {{ row.empstatus }}</td>
+                        <td class="text-center v-align-center">
+
+                            {% widthratio row.salary_rate 1 12 as annual_sr %}
+                            {{ annual_sr|floatformat:2|intcomma }}
+                        </td>
+                        <td class="text-center v-align-center">
+                            {{ row.aoa }}</td>  
+                        <td class="text-center v-align-center">
+
+                            {% if row.branch == "0" or row.branch == 0 %}National
+                            {% elif row.branch == "1" or row.branch == 1 %}City LGU
+                            {% elif row.branch == "2" or row.branch == 2 %}Municipal LGU
+                            {% elif row.branch == "3" or row.branch == 3 %}Barangay LGU
+                            {% endif %}
+                        </td>
+                        <td class="text-center v-align-center">
+
+                            {% if row.is_leave_wo_pay == 1 %}No L/V w/o pay
+                            {% else %}{{ row.leave_w_pay_date }}
+                            {% endif %}
+                        </td>
+                        <td class="text-center v-align-center">
+                            {{ row.separation_date|date:'m/d/Y' }}</td>
+                        <td class="text-center v-align-center">
+                            {{ row.separation_cause }}</td>
+                    </tr>
+
+                    {% if forloop.last %}
+                </tbody>
+            </table>
+            <br>
+            <p style="font-size: 9.7px;">
+                Issued in compliance with Executive Order No. 54 dated August 10, 1954, and in accordance with Circular
+                No. 58, dated August 10, 1954 of the Government Service Insurance System.
+            </p>
+            <br><br><br>
+
+
+
+            <table width="100%" style="font-size: 12px !important;">
+                <tr>
+                    <td width="50%" class="text-center">
+                        <div style="position: absolute; margin-top: 40px; font-size: 10.7px;">
+                            <strong>{{ data.document_date|date:'d F, Y' }}</strong><br>
+                            Date<br>
+                            <input type="text" class="form-control" name="other_signatures"
+                                value="{{ footnote.key_acronym }}"
+                                style="font-size: 10.7px; text-transform: uppercase; text-align: center; border: 0;"
+                                required>
+                        </div>
+                    </td>
+
+                    <td class="text-center" width="60%">
+                        <p>CERTIFIED CORRECT</p>
+                        <br>
+                        <strong><u contenteditable="true">CHARMAINE SUZZETTE LEANORE P. TADLAS</u></strong><br>
+                        <span contenteditable="true">AO V / HRMDD CHIEF</span>
+                    </td>
+                </tr>
+            </table>
+
+
+            <div class="footer">
+                <center>
+                    <br><br>
+                    <small style="font-weight: bold;">Page 1 of {{ pagination|add:"1" }}</small>
+                    <hr style="width: 80%; height: 2px; background-color: black; border: none;">
+                    <p style="margin: 0 10vh; font-size: 10px; font-weight: bold;">
+                        DSWD Field Office X, Masterson Ave, Upper Carmen, 9000 Cagayan de Oro City, Philippines<br>
+                        Website: <a href="#">www.fo10.dswd.gov.ph</a> Telefax: (63)(88)858-6333
+                    </p>
+                </center>
+            </div>
+
+    </page>
+    {% endif %}
+    {% endfor %}
+    {% endwith %}
+
+
+
+    <div class="modal" id="update-drn-modal" role="dialog" aria-hidden="true" data-backdrop="static"
+        data-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content animated bounceInDown">
+                <div class="modal-header bg-info">
+                    <button type="button" class="close text-white" data-dismiss="modal"
+                        style="color: white !important; opacity: 1;"><span aria-hidden="true">&times;</span><span
+                            class="sr-only">Close</span></button>
+                    <h3 class="modal-title">UPDATE DRN</h3>
+                </div>
+                <form id="updateDRNForm">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label style="font-size: 13px; color: #1b2a33;">DRN<span
+                                    class="asteriskField">*</span></label>
+                            <input type="text" class="form-control" name="drn" id="drn" value="{{ data.drn }}"
+                                autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-info">Apply</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'js/jquery-3.1.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'js/plugins/sweetalert/sweetalert2.all.min.js' %}"></script>
+    <script src="{% static 'js/functions.js' %}"></script>
+    <script src="{% static 'js/app.js' %}"></script>
+    <script>
+        $(document).ready(function () {
+            $('#updateDRNForm').on('submit', function (e) {
+                var form = this;
+
+                var url = '{% url "print_service_record" data.id %}';
+                var title = "Are you sure";
+                var text = "You want to update this DRN";
+                var link_attr = '{% url "print_service_record" data.id %}';
+
+                submitFormWithConfirmation(form, url, title, text, {
+                    link_attr: link_attr
+                });
+
+                e.preventDefault();
+            });
+
+            $('#drn-text').html('DRN: ' + '<span id="decorate_drn">{{ data.drn }}</span>');
+            $('#decorate_drn').css({
+                'text-decoration': 'underline',
+                'font-weight': 'bold'
+            });
+        });
+    </script>
+</body>
+
+</html>

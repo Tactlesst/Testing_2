@@ -1,0 +1,270 @@
+{% load tags %}
+<form id="submitEditLeaveForm">
+<div class="modal-body">
+    {% csrf_token %}
+    {% if user|check_permission:'leave' or user|check_permission:'superadmin' %}
+    <div class="form-group">
+        <label>Date of Filing<span class="asteriskField">*</span></label>
+        <input type="datetime-local" name="date_of_filing" id="date_of_filing" class="form-control b-r-sm" value="{{ leave.leaveapp.date_of_filing|date:'Y-m-d\TH:i' }}" required>
+    </div>
+    {% endif %}
+    
+    <div class="form-group">
+        <label>Type of Leave<span class="asteriskField">*</span></label>
+        <select class="form-control select" name="leavesubtype" id="edit_leavesubtype">
+            <option></option>
+            {% for row in leavesubtype %}
+            <option value="{{ row.leavesubtype.id }}">{{ row.leavesubtype.name }} {% if row.leavesubtype.description %}({{ row.leavesubtype.description}}){% endif %}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="edit_content-wrapper"></div>
+
+    <div class="form-group" id="edit_filter_content" style="display: none;">
+        <label>Filter Dates By<span class="asteriskField">*</span></label>
+        <select class="form-control select" id="edit_filter_dates" required>
+            <option></option>
+            <option value="range" {% if leave.leaveapp.start_date %}selected{% endif %}>Range</option>
+            <option value="random" {% if not leave.leaveapp.start_date %}selected{% endif %}>Custom</option>
+        </select>
+    </div>
+
+    <div id="edit_inclusive_dates" style="display:none;">
+        <div class="form-group">
+            <label>Start Date<span class="asteriskField">*</span></label>
+            <input type="date" name="start_date" id="edit_start_date" value="{{ leave.leaveapp.start_date|date:'Y-m-d' }}" class="form-control b-r-sm">
+        </div>
+        <div class="form-group">
+            <label>End Date<span class="asteriskField">*</span></label>
+            <input type="date" name="end_date" id="edit_end_date" value="{{ leave.leaveapp.end_date|date:'Y-m-d' }}" class="form-control b-r-sm">
+        </div>
+    </div>
+
+    {% if leave_random_dates %}
+    <div id="edit_random_dates">
+        <div id="edit_items">
+            {% for row in leave_random_dates %}
+                {% if forloop.first %}
+                <div class="form-group">
+                    <label>Dates<span class="asteriskField">*</span></label>
+                    <div class="input-group">
+                        <input type="date" class="form-control b-r-sm edit_dates" value="{{ row.date|date:'Y-m-d' }}" name="dates[]" required>
+                        <div class="input-group-append"> <button type="button" class="btn btn-info edit_add"><i class="fas fa-plus"></i></button> </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="form-group">
+                    <div class="input-group">
+                        <input type="date" class="form-control b-r-sm edit_dates" value="{{ row.date|date:'Y-m-d' }}" name="dates[]" required> 
+                        <span class="input-group-btn"> <button type="button" class="btn btn-danger edit_remove_field" style="height: 34px;"><i class="fas fa-minus"></i></button> </span>
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div id="edit_random_dates" style="display: none;">
+        <div id="edit_items">
+            <div class="form-group">
+                <label>Dates<span class="asteriskField">*</span></label>
+                <div class="input-group">
+                    <input type="date" class="form-control b-r-sm edit_dates" name="dates[]">
+                    <div class="input-group-append"> <button type="button" class="btn btn-info edit_add"><i class="fas fa-plus"></i></button> </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if leave_credits %}
+    <div class="form-group">
+        <label>Leave Credits</label>
+        <table class="table table-bordered table-sm">
+            <thead>
+                <tr>
+                    <th>Leave Type</th>
+                    <th class="text-center">Total Balance</th>
+                    <th class="text-right">Updated on</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in leave_credits %}
+                    <tr>
+                        <td>{{ row.leavetype.name }}</td>
+                        <td class="text-center">{{ row.leave_total }}</td>
+                        <td class="text-right">{{ row.updated_on|date:'F d, Y' }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+
+<div class="modal-footer">
+    <button type="submit" class="btn btn-info">Submit</button>
+</div>
+</form>
+
+{% block script %}
+<script>
+    $(document).ready(function(){
+        // Initialize select2
+        $('.select').select2({
+            'width': '100%',
+            'allowClear': true,
+            'placeholder': 'Choose'
+        });
+
+        $('#submitEditLeaveForm').on('submit', function(e){
+            e.preventDefault();
+            var form = new FormData(this);
+            
+            Swal.fire({
+                title: "Are you sure?",
+                text: "You want to submit this leave application?",
+                icon: "info",
+                showCancelButton: true,
+                confirmButtonColor: "#3498DB",
+                confirmButtonText: "Yes",
+                allowOutsideClick: false,
+                showLoaderOnConfirm: true,
+                preConfirm: function (){
+                    return $.ajax({
+                        data: form,
+                        url: "{% url 'edit_leave_application' pk %}",
+                        type: 'POST',
+                        cache: false,
+                        contentType: false,
+                        processData: false
+                    });
+                },
+            }).then(function (data){
+                if (data.value && data.value.data == "success"){
+                    Swal.fire({
+                        title: "Good job!",
+                        text: "You have successfully edited your leave application with tracking no. " + data.value.tracking_no + ". Please wait for the reviewal of your leave application. Thank you.",
+                        icon: "success",
+                        confirmButtonColor: "#3498DB",
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            $('#submitEditLeaveForm').trigger('reset');
+                            $('#edit-leave').modal('hide');
+                            $('#leave-table').DataTable().ajax.reload();
+                            if ($.fn.DataTable.isDataTable('#leave-admin-table')) {
+                                $('#leave-admin-table').DataTable().ajax.reload();
+                            }
+                        }
+                    });
+                }
+            }).catch(function(error) {
+                Swal.fire('Error', 'Something went wrong. Please try again.', 'error');
+            });
+        });
+
+        initializeFilterDisplay();
+
+        $('#edit_filter_dates').on('change', function(){
+            if($(this).val() == "range"){
+                $('#edit_random_dates').css('display', 'none');
+                $('.edit_dates').removeAttr('required');
+                $('#edit_inclusive_dates').css('display', 'block');
+                $('#edit_start_date').attr('required', 'required');
+                $('#edit_end_date').attr('required', 'required');
+            } else if ($(this).val() == "random") {
+                $('#edit_inclusive_dates').css('display', 'none');
+                $('#edit_start_date').removeAttr('required');
+                $('#edit_end_date').removeAttr('required');
+                $('#edit_random_dates').css('display', 'block');
+                $('.edit_dates').attr('required', 'required');
+            }
+        });
+
+        $('.edit_add').on('click', function(){
+            $('#edit_items').append('<div class="form-group"><div class="input-group"><input type="date" class="form-control b-r-sm edit_dates" name="dates[]" required> <span class="input-group-btn"> <button type="button" class="btn btn-danger edit_remove_field" style="height: 34px;"><i class="fas fa-minus"></i></button> </span></div></div>');
+        });
+
+        $(document).on('click', '.edit_remove_field', function(e){
+            e.preventDefault();
+            $(this).closest('.form-group').remove();
+        });
+
+        $('#edit_leavesubtype').on('change', function(){
+            $.ajax({
+                url: "{% url 'get_leavespent' %}",
+                data: { id: $(this).val() },
+                type: "POST"
+            })
+            .done(function(data){
+                var value = data.data;
+                var template = '';
+                $('.edit_content-wrapper').empty();
+
+                if (value.length > 0){
+                    for(var row = 0; row < value.length; row++){
+                        template += '<div class="form-group">';
+                        if("{{ leave.leavespent_id }}" == value[row]['id']) {
+                            template += '<input type="checkbox" class="edit_leavespent_check" name="leavespent_check" value="' + value[row]['id'] + '" checked> &nbsp;<strong>' + value[row]['name'] + '</strong>';
+                            if (value[row]['is_specify'] == 1){
+                                template += '<input type="text" value="{{ leave.specify }}" class="form-control b-r-sm edit_leavespent_specify mt-2" id="leavespent_specify' + value[row]['id'] + '" name="leavespent_specify' + value[row]['id'] + '" placeholder="Specify" autocomplete="off" required>';
+                            }
+                        } else {
+                            template += '<input type="checkbox" class="edit_leavespent_check" name="leavespent_check" value="' + value[row]['id'] + '"> &nbsp;' + value[row]['name'];
+                            if (value[row]['is_specify'] == 1){
+                                template += '<input type="text" class="form-control b-r-sm edit_leavespent_specify mt-2" id="leavespent_specify' + value[row]['id'] + '" name="leavespent_specify' + value[row]['id'] + '" placeholder="Specify" autocomplete="off">';
+                            }
+                        }
+                        template += '</div>';
+                    }
+                }
+            
+                if (data.has_reason){
+                    template += '<div class="form-group"><label>Reason for Leave<span class="asteriskField">*</span></label><textarea class="form-control" name="reasons" placeholder="Write reason for leave" required>{{ leave.leaveapp.reasons }}</textarea></div>';
+                }
+
+                if (data.remarks_text){
+                    template += '<div class="form-group"><label>' + data.remarks_text + '<span class="asteriskField">*</span></label><input type="text" class="form-control" name="remarks" value="{{ leave.leaveapp.remarks }}" required></div>';
+                }
+
+                if (data.with_days){
+                    $('#edit_filter_content').css('display', 'block');
+                    $('#edit_filter_dates').attr('required', 'required');
+                } else {
+                    $('#edit_filter_content').css('display', 'none');
+                    $('#edit_filter_dates').removeAttr('required');
+                }
+
+                $('.edit_content-wrapper').html(template);
+            });
+        });
+
+        $(document).on('click', '.edit_leavespent_check', function(){
+            $(".edit_leavespent_check").prop('checked', false);
+            $('.edit_leavespent_specify').removeAttr("required");
+            $("#leavespent_specify" + $(this).val()).prop("required", "true");
+            $(this).prop('checked', true);
+        });
+
+        $('#edit_leavesubtype').val('{{ leave.leaveapp.leavesubtype_id }}').trigger('change');
+    });
+
+    function initializeFilterDisplay() {
+        var filterValue = $('#edit_filter_dates').val();
+        if (filterValue == "range") {
+            $('#edit_random_dates').css('display', 'none');
+            $('.edit_dates').removeAttr('required');
+            $('#edit_inclusive_dates').css('display', 'block');
+            $('#edit_start_date').attr('required', 'required');
+            $('#edit_end_date').attr('required', 'required');
+        } else if (filterValue == "random") {
+            $('#edit_inclusive_dates').css('display', 'none');
+            $('#edit_start_date').removeAttr('required');
+            $('#edit_end_date').removeAttr('required');
+            $('#edit_random_dates').css('display', 'block');
+            $('.edit_dates').attr('required', 'required');
+        }
+    }
+</script>
+{% endblock %}
