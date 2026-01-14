@@ -1,0 +1,11 @@
+lds_rso where the training is created and be approved
+lds_participants where the participants of the training is created 
+lds_facilitator table of the facilitator
+emp_id employee id pi_id personal id
+there are pds_trainingtitle a title but idk what the connection with training 
+
+
+
+what to do is to make a new trainings in the lds_rso the thing is that the LDI plan is not yet implemented which i was currently working on in that plan where i can see first is the datatable of the training 
+
+
