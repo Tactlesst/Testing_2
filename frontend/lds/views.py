@@ -24,16 +24,21 @@ load_dotenv()
 
 
 @permission_required('auth.training_requester')
+# nazef working in this code start
 def lds_rrso(request):
     if request.method == "POST":
         with transaction.atomic():
             check = LdsRso.objects.filter(id=request.POST.get('rso_id'))
-            if check:
-                Trainingtitle.objects.filter(id=check.first().training_id).update(
-                    tt_name=request.POST.get('title')
-                )
+            training_id = (request.POST.get('training_id') or '').strip()
+            if not training_id:
+                return JsonResponse({'error': True, 'msg': 'Training title is required.'}, status=400)
 
+            if not Trainingtitle.objects.filter(id=training_id).exists():
+                return JsonResponse({'error': True, 'msg': 'Selected training title does not exist.'}, status=400)
+
+            if check:
                 check.update(
+                    training_id=training_id,
                     venue=request.POST.get('venue'),
                     start_date=request.POST.get('start_date'),
                     end_date=request.POST.get('end_date'),
@@ -42,16 +47,8 @@ def lds_rrso(request):
 
                 return JsonResponse({'data': 'success', 'msg': 'You have successfully updated the training'})
             else:
-                training = Trainingtitle(
-                    tt_name=request.POST.get('title'),
-                    tt_status=0,
-                    pi_id=request.session['pi_id']
-                )
-
-                training.save()
-
                 LdsRso.objects.create(
-                    training_id=training.id,
+                    training_id=training_id,
                     venue=request.POST.get('venue'),
                     start_date=request.POST.get('start_date'),
                     end_date=request.POST.get('end_date'),
@@ -72,6 +69,30 @@ def lds_rrso(request):
         'sub_title': 'lds_rrso'
     }
     return render(request, 'frontend/lds/rrso.html', context)
+
+
+@permission_required('auth.training_requester')
+def lds_trainingtitle_search(request):
+    term = (request.GET.get('q') or '').strip()
+
+    qs = Trainingtitle.objects.all()
+    if term:
+        qs = qs.filter(tt_name__icontains=term)
+
+    if term:
+        qs = qs.order_by('tt_name')[:25]
+    else:
+        qs = qs.order_by('tt_name')[:10]
+
+    results = []
+    for row in qs:
+        results.append({
+            'id': row.id,
+            'text': row.tt_name,
+        })
+
+    return JsonResponse({'results': results})
+# nazef working in this code end
 
 
 def training_details(request, pk):

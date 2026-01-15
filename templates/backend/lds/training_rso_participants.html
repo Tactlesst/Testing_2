@@ -1,0 +1,81 @@
+{% if rso and rso.training %}
+<div class="mb-3">
+    <h5 class="font-weight-bold">{{ rso.training.tt_name }}</h5>
+</div>
+{% endif %}
+
+<div class="mb-2">
+    <h6 class="font-weight-bold">Facilitators Assigned</h6>
+</div>
+
+<div class="table-responsive mb-3">
+    <table class="table table-bordered table-hover" width="100%">
+        <thead>
+            <tr>
+                <th width="20%" class="text-center">Type</th>
+                <th>Facilitator</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if internal_facilitators %}
+                {% for f in internal_facilitators %}
+                    <tr>
+                        <td class="text-center">Internal</td>
+                        <td>{% if f.emp and f.emp.pi and f.emp.pi.user %}{{ f.emp.pi.user.get_fullname }}{% endif %}</td>
+                    </tr>
+                {% endfor %}
+            {% endif %}
+
+            {% if external_facilitators %}
+                {% for f in external_facilitators %}
+                    <tr>
+                        <td class="text-center">External</td>
+                        <td>{{ f.rp_name|default_if_none:"" }}</td>
+                    </tr>
+                {% endfor %}
+            {% endif %}
+
+            {% if not internal_facilitators and not external_facilitators %}
+                <tr>
+                    <td colspan="2" class="text-center">No facilitators found.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-bordered table-hover" width="100%">
+        <thead>
+            <tr>
+                <th width="20%" class="text-center">Type</th>
+                <th>Participant</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if internal_participants %}
+                {% for p in internal_participants %}
+                    <tr>
+                        <td class="text-center">Internal</td>
+                        <td>{% if p.emp and p.emp.pi and p.emp.pi.user %}{{ p.emp.pi.user.get_fullname }}{% endif %}</td>
+                    </tr>
+                {% endfor %}
+            {% endif %}
+
+            {% if external_participants %}
+                {% for p in external_participants %}
+                    <tr>
+                        <td class="text-center">External</td>
+                        <td>{{ p.participants_name|default_if_none:"" }}</td>
+                    </tr>
+                {% endfor %}
+            {% endif %}
+
+            {% if not internal_participants and not external_participants %}
+                <tr>
+                    <td colspan="2" class="text-center">No participants found.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>

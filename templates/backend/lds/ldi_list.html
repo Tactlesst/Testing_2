@@ -23,7 +23,7 @@
             <select class="form-control" id="plan">
                 {% for plan in plans %}
                     <option value="{{ plan.id }}">
-                        [{{ plan.id }}] {{ plan.title }} ({{ plan.quarter }})
+                        [{{ plan.id }}] {{ plan.proposed_ldi_activity }} ({{ plan.quarter }})
                     </option>
                 {% empty %}
                     <option disabled>No approved plans yet</option>
@@ -40,6 +40,28 @@
         </div>
     </div>
 
+    <div class="card mt-3">
+        <div class="card-header bg-info text-white">LDI Plans</div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="ldi-plans-table" width="100%">
+                    <thead>
+                        <tr>
+                            <th width="10%">Action</th>
+                            <th width="15%">ID</th>
+                            <th>Proposed LDI Activity</th>
+                            <th width="10%" class="text-center">Quarter</th>
+                            <th width="15%" class="text-center">Platform</th>
+                            <th width="20%">Training Category</th>
+                            <th width="15%" class="text-center">Budget</th>
+                            <th width="15%" class="text-center">Status</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <!-- Create/Edit Modal -->
@@ -52,10 +74,12 @@
       </div>
       <div class="modal-body">
         <form id="ldi-form">
+          {% csrf_token %}
+          <input type="hidden" name="ldi_id" id="ldi-id">
           <div class="form-row">
             <div class="form-group col-md-6">
               <label>Training Category <span class="text-danger">*</span></label>
-              <select class="form-control" name="category" required>
+              <select class="form-control" name="training_category" id="ldi-training-category" required>
                   {% for c in categories %}
                   <option value="{{ c }}">{{ c }}</option>
                   {% endfor %}
@@ -81,32 +105,42 @@
 
           <div class="form-group">
             <label>Proposed LDI / Activities <span class="text-danger">*</span></label>
-            <textarea class="form-control" name="activities" rows="3"></textarea>
+            <textarea class="form-control" name="proposed_ldi_activity" id="ldi-proposed-ldi-activity" rows="3"></textarea>
           </div>
 
           <div class="form-row">
             <div class="form-group col-md-4">
               <label>Proposed Date <span class="text-danger">*</span></label>
-              <input type="date" name="proposed_date" class="form-control">
+              <input type="date" name="proposed_date" id="ldi-proposed-date" class="form-control">
             </div>
             <div class="form-group col-md-4">
               <label>Target Participants <span class="text-danger">*</span></label>
-              <input type="text" name="participants" class="form-control">
+              <input type="text" name="target_participants" id="ldi-target-participants" class="form-control">
             </div>
             <div class="form-group col-md-4">
               <label>Budget <span class="text-danger">*</span></label>
-              <input type="number" step="0.01" name="budget" class="form-control">
+              <input type="number" step="0.01" name="budgetary_requirements" id="ldi-budgetary-requirements" class="form-control">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-md-6">
+              <label>Platform <span class="text-danger">*</span></label>
+              <select class="form-control" name="platform" id="ldi-platform">
+                <option value="Face-to-Face">Face-to-Face</option>
+                <option value="Online">Online</option>
+                <option value="Hybrid">Hybrid</option>
+              </select>
+            </div>
+            <div class="form-group col-md-6">
+              <label>Venue</label>
+              <input type="text" class="form-control" name="venue" id="ldi-venue">
             </div>
           </div>
 
           <div class="form-group">
             <label>Target Competencies <span class="text-danger">*</span></label>
-            <textarea class="form-control" name="competencies" rows="3"></textarea>
-          </div>
-
-          <div class="form-group">
-            <label>Aim <span class="text-danger">*</span></label>
-            <textarea class="form-control" name="aim" rows="3"></textarea>
+            <textarea class="form-control" name="target_competencies" id="ldi-target-competencies" rows="3"></textarea>
           </div>
 
           <div class="text-right">
@@ -122,7 +156,7 @@
 
 {% block script %}
 <script>
-const LDI_DATA = {{ plans|safe }};
+const LDI_DATA = {{ plans_json|safe }};
 const planSelect = document.getElementById('plan');
 const activities = document.getElementById('activities');
 const createBtn = document.getElementById('create-btn');
@@ -130,16 +164,14 @@ const modal = $('#ldiModal');
 
 function renderActivities() {
     const planId = planSelect.value;
-    const plan = LDI_DATA.find(p => p.id === planId);
+    const plan = LDI_DATA.find(p => String(p.id) === String(planId));
     activities.innerHTML = '';
-    if (!plan || !plan.activities) return;
-    plan.activities.forEach((act, idx) => {
-        const li = document.createElement('li');
-        li.className = 'list-group-item d-flex justify-content-between align-items-center';
-        li.innerHTML = `<div><strong>${idx+1}.</strong> ${act}</div>
-                        <span class="badge badge-secondary">${plan.status || 'Planned'}</span>`;
-        activities.appendChild(li);
-    });
+    if (!plan || !plan.proposed_ldi_activity) return;
+    const li = document.createElement('li');
+    li.className = 'list-group-item d-flex justify-content-between align-items-center';
+    li.innerHTML = `<div>${plan.proposed_ldi_activity}</div>
+                    <span class="badge badge-secondary">${plan.status || ''}</span>`;
+    activities.appendChild(li);
 }
 
 planSelect.addEventListener('change', renderActivities);
@@ -147,14 +179,83 @@ renderActivities();
 
 // Open modal for new/edit
 createBtn.addEventListener('click', function() {
+    $('#ldi-id').val('');
+    $('#ldi-form').trigger('reset');
     modal.modal('show');
 });
 
-// Handle form submission (mock)
+var ldiPlansTable = $('#ldi-plans-table').DataTable({
+    serverSide: true,
+    processing: true,
+    deferRender: true,
+    order: [[ 1, 'desc' ]],
+    lengthMenu: [25,50,100],
+    ajax: {
+        url: '{% url "ldi_list_ajax" %}',
+        type: 'GET',
+    },
+    fnCreatedRow: function(row, data, index){
+        $(row).attr('id', data['id']);
+    },
+    columns: [
+        {
+            data: 'id',
+            render: function(data, type, row, meta){
+                var openUrl = '{% url "ldi_plan" "__PLAN_ID__" %}'.replace('__PLAN_ID__', data);
+                var editBtn = '<a href="javascript:;" data-role="ldi-edit" data-id="' + data + '">Edit</a>';
+                return '<a href="' + openUrl + '">Open</a> | ' + editBtn;
+            }
+        },
+        { data: 'id' },
+        { data: 'proposed_ldi_activity' },
+        { data: 'quarter', className: 'text-center' },
+        { data: 'platform', className: 'text-center' },
+        { data: 'training_category' },
+        { data: 'budgetary_requirements', className: 'text-center' },
+        { data: 'status', className: 'text-center' },
+    ],
+});
+
+$(document).on('click', 'a[data-role=ldi-edit]', function(){
+    var id = $(this).data('id');
+    $.ajax({
+        url: '{% url "ldi_plan_get" 0 %}'.replace('/0/', '/' + id + '/'),
+        type: 'GET',
+    }).done(function(resp){
+        if (resp && resp.data === 'success' && resp.row){
+            $('#ldi-id').val(resp.row.id);
+            $('#ldi-training-category').val(resp.row.training_category).trigger('change');
+            $('select[name=quarter]').val(resp.row.quarter);
+            $('#ldi-platform').val(resp.row.platform);
+            $('#ldi-proposed-ldi-activity').val(resp.row.proposed_ldi_activity);
+            $('#ldi-proposed-date').val(resp.row.proposed_date);
+            $('#ldi-target-participants').val(resp.row.target_participants);
+            $('#ldi-budgetary-requirements').val(resp.row.budgetary_requirements);
+            $('#ldi-target-competencies').val(resp.row.target_competencies);
+            $('#ldi-venue').val(resp.row.venue);
+            modal.modal('show');
+        }
+    });
+});
+
 $('#ldi-form').on('submit', function(e){
     e.preventDefault();
-    alert('This is a mock. Form would save to mock_data.json here.');
-    modal.modal('hide');
+    var form = new FormData(this);
+
+    $.ajax({
+        url: '{% url "ldi_plan_save" %}',
+        type: 'POST',
+        data: form,
+        cache: false,
+        contentType: false,
+        processData: false,
+    }).done(function(resp){
+        if (resp && resp.data === 'success'){
+            modal.modal('hide');
+            ldiPlansTable.ajax.reload(null, false);
+            window.location.reload();
+        }
+    });
 });
 </script>
 {% endblock %}

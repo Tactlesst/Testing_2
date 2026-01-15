@@ -18,7 +18,11 @@
                             <div class="form-group">
                                 <label>Title<span class="asteriskField">*</span></label>
                                 <div class="pull-right"><input type="checkbox" name="is_online_platform" {% if training.is_online_platform %}checked{% endif %}> Is online platform?</div>
-                                <input type="text" class="form-control" name="title" value="{{ training.training.tt_name }}" autocomplete="off" required>
+                                {# nazef working in this code start #}
+                                <select class="form-control" name="training_id" id="training-id-update" style="width: 100%;" required>
+                                    <option value="{{ training.training_id }}" selected>{{ training.training.tt_name }}</option>
+                                </select>
+                                {# nazef working in this code end #}
                             </div>
                             <div class="form-group">
                                 <label id="venue">Venue </label> (if online platform please indicate if it's Zoom, Google Meet or any other online platform) <label><span class="asteriskField">*</span></label>
@@ -220,6 +224,28 @@
 {% block script %}
 <script>
     $(document).ready(function(){
+        {# nazef working in this code start #}
+        $('#training-id-update').select2({
+            width: '100%',
+            allowClear: true,
+            placeholder: 'Type to search training title..',
+            minimumInputLength: 0,
+            dropdownParent: $('#training_details'),
+            ajax: {
+                url: '{% url "lds_trainingtitle_search" %}',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return { q: params.term };
+                },
+                processResults: function (data) {
+                    return data;
+                },
+                cache: true
+            }
+        });
+        {# nazef working in this code end #}
+
         $(".filter_employee, .filter_employee_facilitator").typeahead({
             source: function(query, process){
                 return $.get({
@@ -253,6 +279,12 @@
                         cache       : false,
                         contentType : false,
                         processData : false,
+                    }).catch(function(xhr){
+                        var msg = 'Unable to submit.';
+                        if (xhr && xhr.responseJSON && xhr.responseJSON.msg){
+                            msg = xhr.responseJSON.msg;
+                        }
+                        Swal.showValidationMessage(msg);
                     });
                 },
             }).then(function (response){

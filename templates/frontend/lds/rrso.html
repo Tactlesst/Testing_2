@@ -71,7 +71,9 @@
                 <div class="form-group">
                     <label>Title<span class="asteriskField">*</span></label>
                     <div class="pull-right"><input type="checkbox" name="is_online_platform"> Is online platform?</div>
-                    <input type="text" class="form-control" name="title" autocomplete="off" required>
+                    {# nazef working in this code start #}
+                    <select class="form-control" name="training_id" id="training-id" style="width: 100%;" required></select>
+                    {# nazef working in this code end #}
                 </div>
                 <div class="form-group">
                     <label id="venue">Venue </label> (if online platform please indicate if it's Zoom, Google Meet or any other online platform) <label><span class="asteriskField">*</span></label>
@@ -114,6 +116,27 @@
 {% block script %}
 <script>
 $(document).ready(function(){
+    {# nazef working in this code start #}
+    $('#training-id').select2({
+        width: '100%',
+        allowClear: true,
+        placeholder: 'Type to search training title..',
+        minimumInputLength: 0,
+        ajax: {
+            url: '{% url "lds_trainingtitle_search" %}',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return { q: params.term || '' };
+            },
+            processResults: function (data) {
+                return data;
+            },
+            cache: true
+        }
+    });
+    {# nazef working in this code end #}
+
     $('#submitForm').on('submit', function(e){
         var form = new FormData(this);
         Swal.fire({
@@ -126,14 +149,22 @@ $(document).ready(function(){
             allowOutsideClick: false,
             showLoaderOnConfirm: true,
 		    preConfirm: function (){
-                return $.ajax({
-                    data        : form,
-                    url         : '{% url "lds_rrso" %}',
-                    type        : 'POST',
-                    cache       : false,
-                    contentType : false,
-                    processData : false,
-                });
+				{# nazef working in this code start #}
+				return $.ajax({
+					data        : form,
+					url         : '{% url "lds_rrso" %}',
+					type        : 'POST',
+					cache       : false,
+					contentType : false,
+					processData : false,
+				}).catch(function(xhr){
+					var msg = 'Unable to submit.';
+					if (xhr && xhr.responseJSON && xhr.responseJSON.msg){
+						msg = xhr.responseJSON.msg;
+					}
+					Swal.showValidationMessage(msg);
+				});
+				{# nazef working in this code end #}
 		    },
         }).then(function (response){
             if (response.value.data == "success"){

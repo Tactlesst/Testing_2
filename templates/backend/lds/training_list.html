@@ -1,0 +1,245 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+{# nazef working in this code start #}
+{% block style %}
+<style>
+    .training-title-cell {
+        max-width: 520px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: inline-block;
+        vertical-align: bottom;
+    }
+</style>
+{% endblock %}
+{# nazef working in this code end #}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row px-3 pt-3">
+        <div class="col-lg-8">
+            <h1 class="font-weight-bold">Training list</h1>
+            <ol class="breadcrumb bg-transparent p-0">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'backend-dashboard' %}">Home</a>
+                </li>
+                <li class="breadcrumb-item">
+                    Admin
+                </li>
+                <li class="breadcrumb-item">
+                    Learning and Development Management
+                </li>
+                <li class="breadcrumb-item active">
+                    <strong>Training list</strong>
+                </li>
+            </ol>
+        </div>
+        {# nazef working in this code start #}
+        <div class="col-lg-4 pt-3">
+            <div class="float-md-right">
+                <button class="btn btn-info" data-toggle="modal" data-target="#add_training_title"><i class="fas fa-plus"></i> Add Training Title</button>
+            </div>
+        </div>
+        {# nazef working in this code end #}
+    </div>
+</div>
+
+<div class="content-wrapper p-4 ml-0">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card card-info card-outline">
+                <div class="card-body">
+                    {# nazef working in this code start #}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" id="training-titles-table" width="100%">
+                            <thead>
+                                <tr>
+                                    <th width="7%">Action</th>
+                                    <th width="10%" class="text-center" style="display:none;">ID</th>
+                                    <th>Training Title</th>
+                                    <th width="15%" class="text-center">tt_status</th>
+                                    <th width="25%">Added by</th>
+                                    <th width="10%" class="text-center">Requests</th>
+                                    <th width="10%" class="text-center">Facilitators</th>
+                                    <th width="10%" class="text-center">Trainees</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                    {# nazef working in this code end #}
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# nazef working in this code start #}
+<div class="modal" id="training_title_details" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-info">
+                <h3 class="modal-title">TRAINING TITLE DETAILS</h3>
+                <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body" id="details-content"></div>
+        </div>
+    </div>
+</div>
+{# nazef working in this code end #}
+
+{# nazef working in this code start #}
+<div class="modal" id="training_rso_participants" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-info">
+                <h3 class="modal-title">PARTICIPANTS</h3>
+                <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body" id="participants-content"></div>
+        </div>
+    </div>
+</div>
+{# nazef working in this code end #}
+
+{# nazef working in this code start #}
+<div class="modal" id="add_training_title" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-info">
+                <h3 class="modal-title">ADD TRAINING TITLE</h3>
+                <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <form id="createTrainingTitleForm">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label>Title<span class="asteriskField">*</span></label>
+                        <input type="text" class="form-control" name="title" autocomplete="off" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-info">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{# nazef working in this code end #}
+{% endblock %}
+
+{% block script %}
+<script>
+$(document).ready(function(){
+    {# nazef working in this code start #}
+    var trainingTitlesTable = $('#training-titles-table').DataTable({
+        'processing': true,
+        'deferRender': true,
+        'order': [[ 1, 'desc' ]],
+        'lengthMenu': [25,50,100],
+        'ajax': {
+            'url': '{% url "lds_training_list_ajax" %}',
+            'type': 'GET',
+        },
+        'columnDefs': [
+            { 'targets': [1], 'visible': false, 'searchable': false },
+        ],
+        'columns': [
+            {
+                'data': null,
+                'orderable': false,
+                'searchable': false,
+                'render': function(data, type, row, meta){
+                    return '<a href="javascript:;" class="training-details-toggle" data-id="' + row.id + '">Details</a>';
+                }
+            },
+            { 'data': 'id' },
+            {
+                'data': 'tt_name',
+                'render': function(data, type, row, meta){
+                    if (type === 'display'){
+                        return '<span class="training-title-cell" title="' + (data || '') + '">' + (data || '') + '</span>';
+                    }
+                    return data;
+                }
+            },
+            { 'data': 'tt_status', 'className': 'text-center' },
+            { 'data': 'added_by' },
+            { 'data': 'requests_count', 'className': 'text-center' },
+            { 'data': 'facilitators_count', 'className': 'text-center' },
+            { 'data': 'trainees_count', 'className': 'text-center' },
+        ],
+    });
+
+    $(document).on('click', 'a.training-details-toggle', function(){
+        var trainingId = $(this).data('id');
+
+        $('#training_title_details').modal('show').find('#details-content').load(
+            '{% url "lds_training_list_details" 0 %}'.replace('/0/', '/' + trainingId + '/')
+        );
+    });
+
+    $(document).on('click', 'a[data-role=view-participants]', function(){
+        var rsoId = $(this).data('rso-id');
+        $('#training_rso_participants').modal('show').find('#participants-content').load(
+            '{% url "lds_training_list_participants" 0 %}'.replace('/0/', '/' + rsoId + '/')
+        );
+    });
+    {# nazef working in this code end #}
+
+    {# nazef working in this code start #}
+    $('#createTrainingTitleForm').on('submit', function(e){
+        e.preventDefault();
+        var form = new FormData(this);
+
+        Swal.fire({
+            title: "Are you sure",
+            text: "You want to add this training title?",
+            icon: "info",
+            showCancelButton: true,
+            confirmButtonColor: "#3498DB",
+            confirmButtonText: "Yes",
+            allowOutsideClick: false,
+            showLoaderOnConfirm: true,
+            preConfirm: function (){
+                return $.ajax({
+                    data        : form,
+                    url         : '{% url "lds_training_list_create" %}',
+                    type        : 'POST',
+                    cache       : false,
+                    contentType : false,
+                    processData : false,
+                });
+            },
+        }).then(function (response){
+            if (response.value && response.value.data === "success"){
+                Swal.fire({
+                    title: "Saved!",
+                    text: "Training title saved.",
+                    icon: "success",
+                    confirmButtonColor: "#3498DB",
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $('#createTrainingTitleForm').trigger('reset');
+                        $('#add_training_title').modal('hide');
+                        trainingTitlesTable.ajax.reload(null, false);
+                    }
+                });
+            } else {
+                Swal.fire({
+                    title: "Error",
+                    text: (response.value && response.value.msg) ? response.value.msg : "Unable to save.",
+                    icon: "error",
+                    confirmButtonColor: "#3498DB",
+                });
+            }
+        });
+    });
+    {# nazef working in this code end #}
+});
+</script>
+{% endblock %}

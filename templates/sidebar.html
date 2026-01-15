@@ -221,12 +221,13 @@
             <ul class="nav nav-treeview" style="font-size: 12px;">
                 <li class="nav-item ">
                     <a class="nav-link {% if sub_title == 'train_request' %}active{% endif %}" href="{% url 'ld_admin' %}">Training Requests</a>
+                </li>
                 <li class="nav-item">
-<a class="nav-link {% if sub_title == 'ldi_plan' %}active{% endif %}"
-   href="{% url 'ldi_list' %}">
-   LDI Plan
-</a>
-        </li>
+                    <a class="nav-link {% if sub_title == 'ldi_plan' %}active{% endif %}" href="{% url 'ldi_list' %}">LDI Plan</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if sub_title == 'lds_training_list' %}active{% endif %}" href="{% url 'lds_training_list' %}">Training list</a>
+                </li>
             </ul>
         </li>
         <li class="nav-item {% if title == 'performance' %}menu-open{% endif %}">

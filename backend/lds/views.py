@@ -1,16 +1,22 @@
 import math
+import json
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
 
 from django.contrib.auth.decorators import login_required, permission_required
 from django.http import JsonResponse
 from django.shortcuts import render
+from django.db.models import Count
+from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
 
 from backend.documents.models import DtsDocument, DtsDrn, DtsTransaction, DtsDivisionCc
 from backend.models import Designation, Empprofile, DRNTracker
+from backend.lds.models import LdsLdiPlan
 from backend.views import generate_serial_string
 from frontend.lds.models import LdsFacilitator, LdsParticipants, LdsRso
-from frontend.models import PortalConfiguration
+from frontend.models import PortalConfiguration, Trainingtitle
 from frontend.templatetags.tags import generateDRN, gamify
 
 
@@ -25,8 +31,163 @@ def ld_admin(request):
     return render(request, 'backend/lds/rso.html', context)
 
 
-#Nazef Added Functions
-import os, json
+# nazef working in this code start
+@login_required
+def lds_training_list(request):
+    # nazef working in this code start
+    training_titles = Trainingtitle.objects.select_related('pi__user').all().order_by('-id')
+    # nazef working in this code end
+    context = {
+        'tab_title': 'Learning and Development',
+        'management': True,
+        'title': 'ld_admin',
+        'sub_title': 'lds_training_list',
+        # nazef working in this code start
+        'training_titles': training_titles,
+        # nazef working in this code end
+    }
+    return render(request, 'backend/lds/training_list.html', context)
+
+
+@login_required
+def lds_training_list_search(request):
+    term = (request.GET.get('q') or '').strip()
+
+    qs = Trainingtitle.objects.all()
+    if term:
+        qs = qs.filter(tt_name__icontains=term)
+
+    qs = qs.order_by('tt_name')[:25]
+
+    results = []
+    for row in qs:
+        results.append({
+            'id': row.id,
+            'text': row.tt_name,
+        })
+
+    return JsonResponse({'results': results})
+
+
+@login_required
+def lds_training_list_ajax(request):
+    qs = Trainingtitle.objects.select_related('pi__user').annotate(
+        requests_count=Count('ldsrso', distinct=True),
+        trainees_count=Count('ldsrso__ldsparticipants', distinct=True),
+        facilitators_count=Count('ldsrso__ldsfacilitator', distinct=True),
+    ).all().order_by('-id')
+
+    data = []
+    for row in qs:
+        data.append({
+            'id': row.id,
+            'tt_name': row.tt_name,
+            'tt_status': row.tt_status,
+            'added_by': row.pi.user.get_fullname if row.pi_id and row.pi and row.pi.user_id else '',
+            'requests_count': row.requests_count,
+            'trainees_count': row.trainees_count,
+            'facilitators_count': row.facilitators_count,
+        })
+
+    return JsonResponse({'data': data})
+
+
+@login_required
+def lds_training_list_details(request, training_id):
+    training = Trainingtitle.objects.filter(id=training_id).first()
+    qs = LdsRso.objects.select_related('created_by__pi__user').filter(training_id=training_id).annotate(
+        participants_count=Count('ldsparticipants', distinct=True),
+    ).order_by('-id')
+
+    return render(request, 'backend/lds/training_title_details.html', {
+        'training': training,
+        'rows': qs,
+    })
+
+
+@login_required
+def lds_training_list_participants(request, rso_id):
+    rso = LdsRso.objects.select_related('training').filter(id=rso_id).first()
+
+    internal_facilitators = LdsFacilitator.objects.select_related('emp__pi__user').filter(
+        rso_id=rso_id,
+        is_external=0,
+    ).order_by('order', 'id')
+
+    external_facilitators = LdsFacilitator.objects.filter(
+        rso_id=rso_id,
+        is_external=1,
+    ).order_by('order', 'id')
+
+    internal_participants = LdsParticipants.objects.select_related('emp__pi__user').filter(
+        rso_id=rso_id,
+        type=0,
+    ).order_by('order', 'id')
+
+    external_participants = LdsParticipants.objects.filter(
+        rso_id=rso_id,
+        type=1,
+    ).order_by('order', 'id')
+
+    return render(request, 'backend/lds/training_rso_participants.html', {
+        'rso': rso,
+        'internal_facilitators': internal_facilitators,
+        'external_facilitators': external_facilitators,
+        'internal_participants': internal_participants,
+        'external_participants': external_participants,
+    })
+
+
+@login_required
+def lds_training_list_details_ajax(request, training_id):
+    qs = LdsRso.objects.select_related('created_by__pi__user').filter(training_id=training_id).annotate(
+        participants_count=Count('ldsparticipants', distinct=True),
+    ).order_by('-id')
+
+    data = []
+    for rso in qs:
+        requester = ''
+        if rso.created_by_id and getattr(rso.created_by, 'pi', None) and getattr(rso.created_by.pi, 'user', None):
+            requester = rso.created_by.pi.user.get_fullname
+
+        data.append({
+            'id': rso.id,
+            'requester': requester,
+            'venue': rso.venue or '',
+            'inclusive_dates': rso.get_inclusive_dates_v2,
+            'participants_count': rso.participants_count,
+        })
+
+    return JsonResponse({'data': data})
+
+
+@login_required
+def lds_training_list_create(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': True, 'msg': 'Method not allowed'}, status=405)
+
+    title = (request.POST.get('title') or '').strip()
+    if not title:
+        return JsonResponse({'error': True, 'msg': 'Title is required.'}, status=400)
+
+    obj, created = Trainingtitle.objects.get_or_create(
+        tt_name=title,
+        defaults={
+            'tt_status': 1,
+            'pi_id': request.session.get('pi_id'),
+        },
+    )
+
+    return JsonResponse({
+        'data': 'success',
+        'created': created,
+        'id': obj.id,
+        'text': obj.tt_name,
+    })
+# nazef working in this code end
+
+
+import os
 from django.shortcuts import render, redirect
 from django.conf import settings
 
@@ -51,8 +212,190 @@ def read_categories():
     return ["Leadership Development", "Functional / Technical", "Values / Culture"]
 
 def ldi_list(request):
-    plans = read_plans()
-    return render(request, 'backend/lds/ldi_list.html', {'plans': plans})
+    plans = list(LdsLdiPlan.objects.all().order_by('-id').values(
+        'id',
+        'training_category',
+        'quarter',
+        'platform',
+        'proposed_ldi_activity',
+        'proposed_date',
+        'target_participants',
+        'budgetary_requirements',
+        'target_competencies',
+        'venue',
+        'status',
+        'date_created',
+        'date_updated',
+        'date_approved',
+        'division_id',
+        'section_id',
+    ))
+    plans_json = json.dumps(plans, default=str)
+    categories = read_categories()
+    return render(request, 'backend/lds/ldi_list.html', {
+        'plans': plans,
+        'plans_json': plans_json,
+        'categories': categories,
+        'tab_title': 'Learning and Development',
+        'management': True,
+        'title': 'ld_admin',
+        'sub_title': 'ldi_plan',
+    })
+
+@login_required
+def ldi_list_ajax(request):
+    draw = int(request.GET.get('draw', '1') or 1)
+    start = int(request.GET.get('start', '0') or 0)
+    length = int(request.GET.get('length', '25') or 25)
+    search_value = (request.GET.get('search[value]') or '').strip()
+
+    base_qs = LdsLdiPlan.objects.all()
+    records_total = base_qs.count()
+
+    qs = base_qs
+    if search_value:
+        qs = qs.filter(
+            Q(proposed_ldi_activity__icontains=search_value)
+            | Q(training_category__icontains=search_value)
+            | Q(platform__icontains=search_value)
+            | Q(quarter__icontains=search_value)
+            | Q(target_participants__icontains=search_value)
+            | Q(venue__icontains=search_value)
+        )
+
+    records_filtered = qs.count()
+
+    column_map = {
+        1: 'id',
+        2: 'proposed_ldi_activity',
+        3: 'quarter',
+        4: 'platform',
+        5: 'training_category',
+        6: 'budgetary_requirements',
+        7: 'status',
+    }
+
+    order_col = int(request.GET.get('order[0][column]', '1') or 1)
+    order_dir = request.GET.get('order[0][dir]', 'desc')
+    order_field = column_map.get(order_col, 'id')
+    if order_dir == 'desc':
+        order_field = '-' + order_field
+    qs = qs.order_by(order_field)
+
+    qs = qs[start:start + length]
+
+    data = []
+    for row in qs:
+        data.append({
+            'id': row.id,
+            'proposed_ldi_activity': row.proposed_ldi_activity or '',
+            'quarter': row.quarter or '',
+            'platform': row.platform or '',
+            'training_category': row.training_category or '',
+            'budgetary_requirements': str(row.budgetary_requirements) if row.budgetary_requirements is not None else '',
+            'status': row.status if row.status is not None else '',
+        })
+
+    return JsonResponse({
+        'draw': draw,
+        'recordsTotal': records_total,
+        'recordsFiltered': records_filtered,
+        'data': data,
+    })
+
+@login_required
+def ldi_plan_get(request, pk):
+    row = LdsLdiPlan.objects.filter(id=pk).values(
+        'id',
+        'training_category',
+        'quarter',
+        'platform',
+        'proposed_ldi_activity',
+        'proposed_date',
+        'target_participants',
+        'budgetary_requirements',
+        'target_competencies',
+        'venue',
+        'status',
+    ).first()
+
+    if not row:
+        return JsonResponse({'error': True, 'msg': 'Plan not found.'}, status=404)
+
+    row['budgetary_requirements'] = str(row['budgetary_requirements']) if row.get('budgetary_requirements') is not None else ''
+    row['proposed_date'] = str(row['proposed_date']) if row.get('proposed_date') else ''
+
+    return JsonResponse({'data': 'success', 'row': row})
+
+@login_required
+def ldi_plan_save(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': True, 'msg': 'Method not allowed'}, status=405)
+
+    pk = (request.POST.get('ldi_id') or '').strip()
+    training_category = (request.POST.get('training_category') or '').strip()
+    new_category = (request.POST.get('new_category') or '').strip()
+    quarter = (request.POST.get('quarter') or '').strip()
+    platform = (request.POST.get('platform') or '').strip()
+    proposed_ldi_activity = (request.POST.get('proposed_ldi_activity') or '').strip()
+    proposed_date = (request.POST.get('proposed_date') or '').strip()
+    target_participants = (request.POST.get('target_participants') or '').strip()
+    budgetary_requirements = (request.POST.get('budgetary_requirements') or '').strip()
+    target_competencies = (request.POST.get('target_competencies') or '').strip()
+    venue = (request.POST.get('venue') or '').strip()
+
+    proposed_date_value = None
+    if proposed_date:
+        try:
+            proposed_date_value = datetime.strptime(proposed_date, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({'error': True, 'msg': 'Invalid proposed date.'}, status=400)
+
+    budget_value = None
+    if budgetary_requirements:
+        try:
+            budget_value = Decimal(budgetary_requirements)
+        except (InvalidOperation, ValueError):
+            return JsonResponse({'error': True, 'msg': 'Invalid budgetary requirements.'}, status=400)
+
+    if training_category == '_new':
+        if not new_category:
+            return JsonResponse({'error': True, 'msg': 'New training category is required.'}, status=400)
+        training_category = new_category
+
+    if not training_category:
+        return JsonResponse({'error': True, 'msg': 'Training category is required.'}, status=400)
+    if not quarter:
+        return JsonResponse({'error': True, 'msg': 'Quarter is required.'}, status=400)
+    if not platform:
+        return JsonResponse({'error': True, 'msg': 'Platform is required.'}, status=400)
+    if not proposed_ldi_activity:
+        return JsonResponse({'error': True, 'msg': 'Proposed LDI activity is required.'}, status=400)
+
+    defaults = {
+        'division_id': None,
+        'section_id': None,
+        'training_category': training_category,
+        'quarter': quarter,
+        'platform': platform,
+        'proposed_ldi_activity': proposed_ldi_activity,
+        'proposed_date': proposed_date_value,
+        'target_participants': target_participants,
+        'budgetary_requirements': budget_value,
+        'target_competencies': target_competencies,
+        'venue': venue,
+        'created_by_id': request.session.get('emp_id'),
+        'status': 1,
+        'date_updated': timezone.now(),
+    }
+
+    if pk:
+        LdsLdiPlan.objects.filter(id=pk).update(**defaults)
+        return JsonResponse({'data': 'success', 'msg': 'LDI plan updated.'})
+
+    defaults['date_created'] = timezone.now()
+    obj = LdsLdiPlan.objects.create(**defaults)
+    return JsonResponse({'data': 'success', 'msg': 'LDI plan created.', 'id': obj.id})
 
 def ldi_plan(request, plan_id):
     categories = read_categories()
@@ -100,10 +443,15 @@ def ldi_plan(request, plan_id):
     return render(request, 'backend/lds/ldi_plan.html', {
         'categories': categories,
         'plan_id': plan_id,
-        'message': message
+        'message': message,
+        'tab_title': 'Learning and Development',
+        'management': True,
+        'title': 'ld_admin',
+        'sub_title': 'ldi_plan',
     })
 
 #End Nazef Added Functions
+
 @login_required
 @permission_required('auth.training_requester')
 

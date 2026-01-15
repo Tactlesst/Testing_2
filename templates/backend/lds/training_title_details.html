@@ -1,0 +1,51 @@
+{% if training %}
+<div class="mb-3">
+    <h4 class="font-weight-bold">{{ training.tt_name }}</h4>
+</div>
+{% endif %}
+
+<style>
+    .training-title-details-table {
+        table-layout: fixed;
+        width: 100%;
+    }
+    .training-title-details-table th {
+        white-space: nowrap;
+    }
+    .training-title-details-table td {
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+</style>
+
+<div class="table-responsive">
+    <table class="table table-bordered table-hover training-title-details-table" width="100%">
+        <thead>
+            <tr>
+                <th width="12%" class="text-center">Action</th>
+                <th width="25%">Requester</th>
+                <th width="35%">Venue</th>
+                <th width="22%" class="text-center">Inclusive Dates</th>
+                <th width="18%" class="text-center">Participants</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if rows %}
+                {% for row in rows %}
+                    <tr>
+                        <td class="text-center"><a href="javascript:;" data-role="view-participants" data-rso-id="{{ row.id }}">Participants</a></td>
+                        <td class="text-center">{% if row.created_by and row.created_by.pi and row.created_by.pi.user %}{{ row.created_by.pi.user.get_fullname }}{% endif %}</td>
+                        <td>{{ row.venue|default_if_none:"" }}</td>
+                        <td class="text-center">{{ row.get_inclusive_dates_v2 }}</td>
+                        <td class="text-center">{{ row.participants_count }}</td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="5" class="text-center">No requests found.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
