@@ -125,21 +125,20 @@
         </div>
     </div>
 </div>
-<div class="modal" id="ldi_plan_info" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content animated bounceInDown">
-	        <div class="modal-header bg-info">
-	            <h3 class="modal-title">LDI PLAN DETAILS</h3>
-                <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-	        </div>
-            <div class="modal-body" id="ldi-plan-info-content"></div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 {% block script %}
 <script>
 $(document).ready(function(){
+    // Set min date for all date inputs to today (disable past dates)
+    var today = new Date().toISOString().split('T')[0];
+    $('input[type="date"]').attr('min', today);
+    
+    // Dynamic end date constraint based on start date
+    $(document).on('change', 'input[name="start_date"]', function() {
+        var startDate = $(this).val();
+        $('input[name="end_date"]').attr('min', startDate);
+    });
+    
     {# nazef working in this code start #}
     $('#training-id').select2({
         width: '100%',
@@ -169,30 +168,6 @@ $(document).ready(function(){
         var endDate = new Date($('input[name="end_date"]').val());
         var startTime = $('input[name="time_start"]').val();
         var endTime = $('input[name="time_end"]').val();
-        var today = new Date();
-        today.setHours(0, 0, 0, 0); // Set to start of day for comparison
-        
-        // Check if start date is in the past
-        if (startDate < today) {
-            Swal.fire({
-                title: "Invalid Date",
-                text: "Start date cannot be in the past. Please select today or a future date.",
-                icon: "warning",
-                confirmButtonColor: "#3498DB",
-            });
-            return false;
-        }
-        
-        // Check if end date is in the past
-        if (endDate < today) {
-            Swal.fire({
-                title: "Invalid Date",
-                text: "End date cannot be in the past. Please select today or a future date.",
-                icon: "warning",
-                confirmButtonColor: "#3498DB",
-            });
-            return false;
-        }
         
         // Check if end date is before start date
         if (endDate < startDate) {
@@ -308,7 +283,7 @@ $(document).ready(function(){
             {'data': 'training_title', 'name': 'training.tt_name'},
             {'data': 'venue', 'className': 'text-center'},
             {'data': 'inclusive_dates', 'searchable': false, 'className': 'text-center'},
-            {'data': 'time_range', 'searchable': false, 'className': 'text-center',
+            {'data': 'time_range', 'searchable': false, 'orderable': false, 'className': 'text-center',
                 'render': function(data, type, row, meta){
                     if (!data || data === '') {
                         return 'No Time Range Yet';
@@ -330,18 +305,29 @@ $(document).ready(function(){
 
     $(document).on('click', 'a[data-role=details]', function(){
         var id = $(this).data('id');
-        $('#training_details').modal('show').find('#details-content').load('/learning-and-development/details/' + id);
-    });
-
-    $(document).on('click', 'a.ldi-plan-info-toggle', function(){
-        var trainingId = $(this).data('training-id');
-        if (!trainingId){
-            return;
-        }
-
-        $('#ldi_plan_info').modal('show').find('#ldi-plan-info-content').load(
-            '{% url "ldi_plan_details" 0 %}'.replace('/0/', '/' + trainingId + '/')
-        );
+        $('#training_details').modal('show').find('#details-content').load('/learning-and-development/details/' + id, function() {
+            // Set min date for date inputs in the loaded content
+            var today = new Date().toISOString().split('T')[0];
+            var currentStartDate = $('#training_details input[name="start_date"]').val();
+            
+            // Check if current start date is in the past
+            var isStartDateInPast = currentStartDate < today;
+            
+            if (isStartDateInPast) {
+                // Disable start date input if it's in the past
+                $('#training_details input[name="start_date"]').prop('readonly', true);
+                // Set end date min to current start date (can't go before it)
+                $('#training_details input[name="end_date"]').attr('min', currentStartDate);
+            } else {
+                // Enable start date input and set min to today
+                $('#training_details input[name="start_date"]').prop('readonly', false);
+                $('#training_details input[type="date"]').attr('min', today);
+                // Set end date min to current start date
+                if (currentStartDate) {
+                    $('#training_details input[name="end_date"]').attr('min', currentStartDate);
+                }
+            }
+        });
     });
 });
 </script>

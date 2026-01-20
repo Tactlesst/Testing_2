@@ -45,16 +45,26 @@
                             <div class="row">
                                 <div class="col-lg-5">
                                     <label>Start Date<span class="asteriskField">*</span></label>
-                                    <input type="date" class="form-control" name="start_date" value="{{ training.start_date|date:'Y-m-d' }}" required>
+                                    <input type="date" class="form-control" name="start_date" value="{{ training.start_date|date:'Y-m-d' }}" required min="{{ date.today|date:'Y-m-d' }}">
                                 </div>
                                 <div class="col-lg-7">
                                     <label>End Date<span class="asteriskField">*</span></label>
                                     <div class="input-group">
-                                        <input type="date" class="form-control" name="end_date" value="{{ training.end_date|date:'Y-m-d' }}" required>
+                                        <input type="date" class="form-control" name="end_date" value="{{ training.end_date|date:'Y-m-d' }}" required min="{{ date.today|date:'Y-m-d' }}">
                                         <div class="input-group-append">
                                             <button type="submit" class="btn btn-info">Update</button>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <label>Time Start</label>
+                                    <input type="time" class="form-control" name="time_start" value="{{ training.start_date|date:'H:i' }}">
+                                </div>
+                                <div class="col-lg-6">
+                                    <label>Time End</label>
+                                    <input type="time" class="form-control" name="time_end" value="{{ training.end_date|date:'H:i' }}">
                                 </div>
                             </div>
                         </form>
@@ -292,6 +302,53 @@
         });
 
         $('#updateForm').on('submit', function(e){
+            e.preventDefault();
+            
+            // Validate date range
+            var startDate = new Date($('input[name="start_date"]').val());
+            var endDate = new Date($('input[name="end_date"]').val());
+            var startTime = $('input[name="time_start"]').val();
+            var endTime = $('input[name="time_end"]').val();
+            
+            // Check if end date is before start date
+            if (endDate < startDate) {
+                Swal.fire({
+                    title: "Invalid Date Range",
+                    text: "End date cannot be before start date. Adjusting end date to next day.",
+                    icon: "warning",
+                    confirmButtonColor: "#3498DB",
+                });
+                
+                // Set end date to next day
+                var nextDay = new Date(startDate);
+                nextDay.setDate(nextDay.getDate() + 1);
+                $('input[name="end_date"]').val(nextDay.toISOString().split('T')[0]);
+                return false;
+            }
+            
+            // Check if same day but end time is before start time
+            if (startDate.toDateString() === endDate.toDateString() && startTime && endTime) {
+                var startHour = parseInt(startTime.split(':')[0]);
+                var startMin = parseInt(startTime.split(':')[1]);
+                var endHour = parseInt(endTime.split(':')[0]);
+                var endMin = parseInt(endTime.split(':')[1]);
+                
+                if ((endHour < startHour) || (endHour === startHour && endMin < startMin)) {
+                    Swal.fire({
+                        title: "Invalid Time Range",
+                        text: "End time cannot be before start time on the same day. Adjusting end date to next day.",
+                        icon: "warning",
+                        confirmButtonColor: "#3498DB",
+                    });
+                    
+                    // Set end date to next day
+                    var nextDay = new Date(startDate);
+                    nextDay.setDate(nextDay.getDate() + 1);
+                    $('input[name="end_date"]').val(nextDay.toISOString().split('T')[0]);
+                    return false;
+                }
+            }
+            
             var form = new FormData(this);
             Swal.fire({
                 title: "Are you sure",
