@@ -48,10 +48,8 @@ class LdsParticipants(models.Model):
 class LdsRso(models.Model):
     training = models.ForeignKey(Trainingtitle, models.DO_NOTHING)
     venue = models.CharField(max_length=1024, blank=True, null=True)
-    start_date = models.DateField(blank=True, null=True)
-    end_date = models.DateField(blank=True, null=True)
-    start_time = models.TimeField(blank=True, null=True)
-    end_time = models.TimeField(blank=True, null=True)
+    start_date = models.DateTimeField(blank=True, null=True)
+    end_date = models.DateTimeField(blank=True, null=True)
     rrso_status = models.IntegerField(blank=True, null=True)
     rso_status = models.IntegerField(blank=True, null=True)
     date_approved = models.DateTimeField(blank=True, null=True)
@@ -62,49 +60,61 @@ class LdsRso(models.Model):
 
     @property
     def get_inclusive_dates(self):
-        if self.start_date != self.end_date:
-            if self.start_date.month == self.end_date.month:
+        if not self.start_date or not self.end_date:
+            return ""
+
+        start = self.start_date.date()
+        end = self.end_date.date()
+
+        if start != end:
+            if start.month == end.month:
                 return "{} - {}".format(
-                    self.start_date.strftime("%B %d"),
-                    self.end_date.strftime("%d, %Y")
+                    start.strftime("%B %d"),
+                    end.strftime("%d, %Y")
                 )
             else:
                 return "{} - {}".format(
-                    self.start_date.strftime("%B %d, %Y"),
-                    self.end_date.strftime("%B %d, %Y")
+                    start.strftime("%B %d, %Y"),
+                    end.strftime("%B %d, %Y")
                 )
         else:
-            return self.start_date.strftime("%B %d, %Y")
+            return start.strftime("%B %d, %Y")
 
     @property
     def get_inclusive_dates_v2(self):
-        if self.start_date != self.end_date:
-            if self.start_date.year == self.end_date.year:
+        if not self.start_date or not self.end_date:
+            return ""
+
+        start = self.start_date.date()
+        end = self.end_date.date()
+
+        if start != end:
+            if start.year == end.year:
                 return "{} - {}".format(
-                    self.start_date.strftime("%B %d"),
-                    self.end_date.strftime("%B %d, %Y")
+                    start.strftime("%B %d"),
+                    end.strftime("%B %d, %Y")
                 )
             else:
                 return "{} - {}".format(
-                    self.start_date.strftime("%B %d, %Y"),
-                    self.end_date.strftime("%B %d, %Y")
+                    start.strftime("%B %d, %Y"),
+                    end.strftime("%B %d, %Y")
                 )
         else:
-            return self.start_date.strftime("%B %d, %Y")
-        
+            return start.strftime("%B %d, %Y")
+
     @property
     def training_hours(self):
         if self.start_date and self.end_date:
-            days = (self.end_date - self.start_date).days + 1
+            days = (self.end_date.date() - self.start_date.date()).days + 1
             return days * 8
         return 0
 
     @property
     def get_time_range(self):
-        if self.start_time and self.end_time:
+        if self.start_date and self.end_date:
             return "{} - {}".format(
-                self.start_time.strftime("%I:%M %p"),
-                self.end_time.strftime("%I:%M %p")
+                self.start_date.strftime("%I:%M %p"),
+                self.end_date.strftime("%I:%M %p")
             )
         return ""
 

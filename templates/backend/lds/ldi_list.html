@@ -34,7 +34,7 @@
         </div>
         <div class="col-lg-4 pt-3">
             <div class="float-md-right">
-                <button class="btn btn-info" id="create-btn"><i class="fas fa-plus"></i> Create / Edit LDI Plan</button>
+                <button class="btn btn-info" id="create-btn"><i class="fas fa-plus"></i> Create LDI Plan</button>
             </div>
         </div>
     </div>
@@ -122,10 +122,7 @@
               <label>Training Title <span class="text-danger">*</span></label>
               <input type="text" class="form-control" name="training_title" id="ldi-training-title" required>
             </div>
-            <div class="form-group col-md-3">
-              <label>Training Category <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" name="training_category" id="ldi-training-category" required>
-            </div>
+            <input type="hidden" name="training_category" id="ldi-training-category" value="General">
             <div class="form-group col-md-3">
               <label>Quarter <span class="text-danger">*</span></label>
               <select class="form-control" name="quarter">
@@ -211,6 +208,97 @@ createBtn.addEventListener('click', function() {
     modal.modal('show');
 });
 
+$(document).on('click', 'a[data-role=training-title-edit]', function(){
+    var id = $(this).data('id');
+    var currentTitle = $(this).data('title') || '';
+
+    Swal.fire({
+        title: 'Edit Training Title',
+        input: 'text',
+        inputValue: currentTitle,
+        showCancelButton: true,
+        confirmButtonColor: '#3498DB',
+        confirmButtonText: 'Save',
+        allowOutsideClick: false,
+        showLoaderOnConfirm: true,
+        preConfirm: function (value){
+            var title = (value || '').trim();
+            if (!title){
+                Swal.showValidationMessage('Title is required.');
+                return false;
+            }
+            return $.ajax({
+                url: '{% url "lds_training_title_update" 0 %}'.replace('/0/', '/' + id + '/'),
+                type: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}',
+                    'title': title,
+                }
+            });
+        },
+    }).then(function (response){
+        if (response.value && response.value.data === 'success'){
+            Swal.fire({
+                title: 'Saved!',
+                text: 'Training title updated.',
+                icon: 'success',
+                confirmButtonColor: '#3498DB',
+            }).then(function(){
+                trainingTitlesTable.ajax.reload(null, false);
+            });
+        } else if (response.value && response.value.msg) {
+            Swal.fire({
+                title: 'Error',
+                text: response.value.msg,
+                icon: 'error',
+                confirmButtonColor: '#3498DB',
+            });
+        }
+    });
+});
+
+$(document).on('click', 'a[data-role=training-title-delete]', function(){
+    var id = $(this).data('id');
+
+    Swal.fire({
+        title: 'Are you sure?',
+        text: 'This will delete the training title.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#E74C3C',
+        confirmButtonText: 'Delete',
+        allowOutsideClick: false,
+        showLoaderOnConfirm: true,
+        preConfirm: function (){
+            return $.ajax({
+                url: '{% url "lds_training_title_delete" 0 %}'.replace('/0/', '/' + id + '/'),
+                type: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}',
+                }
+            });
+        },
+    }).then(function (response){
+        if (response.value && response.value.data === 'success'){
+            Swal.fire({
+                title: 'Deleted!',
+                text: 'Training title deleted.',
+                icon: 'success',
+                confirmButtonColor: '#3498DB',
+            }).then(function(){
+                trainingTitlesTable.ajax.reload(null, false);
+            });
+        } else if (response.value && response.value.msg) {
+            Swal.fire({
+                title: 'Error',
+                text: response.value.msg,
+                icon: 'error',
+                confirmButtonColor: '#3498DB',
+            });
+        }
+    });
+});
+
 $(document).on('click', 'a.ldi-plan-title-toggle', function(){
     var trainingId = $(this).data('training-id');
     $('#ldi_plan_details').modal('show').find('#ldi-plan-details-content').load(
@@ -250,7 +338,10 @@ var trainingTitlesTable = $('#training-titles-table').DataTable({
             'orderable': false,
             'searchable': false,
             'render': function(data, type, row, meta){
-                return '<a href="javascript:;" class="training-details-toggle" data-id="' + row.id + '">Details</a>';
+                return (
+                    '<a href="javascript:;" class="mr-2" data-role="training-title-edit" data-id="' + row.id + '" data-title="' + (row.tt_name || '') + '">Edit</a>' +
+                    '<a href="javascript:;" class="text-danger" data-role="training-title-delete" data-id="' + row.id + '">Delete</a>'
+                );
             }
         },
     ],

@@ -22,6 +22,8 @@ urlpatterns = [
     path('training-list/participants/<int:rso_id>/', views.lds_training_list_participants, name='lds_training_list_participants'),
     path('training-list/search/', views.lds_training_list_search, name='lds_training_list_search'),
     path('training-list/create/', views.lds_training_list_create, name='lds_training_list_create'),
+    path('training-list/update/<int:training_id>/', views.lds_training_title_update, name='lds_training_title_update'),
+    path('training-list/delete/<int:training_id>/', views.lds_training_title_delete, name='lds_training_title_delete'),
     # nazef working in this code end
     #end added paths for LDI plan by Nazef
 

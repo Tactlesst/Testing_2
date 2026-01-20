@@ -196,6 +196,38 @@ def lds_training_list_create(request):
         'id': obj.id,
         'text': obj.tt_name,
     })
+
+
+@login_required
+def lds_training_title_update(request, training_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': True, 'msg': 'Method not allowed'}, status=405)
+
+    title = (request.POST.get('title') or '').strip()
+    if not title:
+        return JsonResponse({'error': True, 'msg': 'Title is required.'}, status=400)
+
+    updated = Trainingtitle.objects.filter(id=training_id).update(tt_name=title)
+    if not updated:
+        return JsonResponse({'error': True, 'msg': 'Training title not found.'}, status=404)
+
+    return JsonResponse({'data': 'success', 'msg': 'Training title updated.'})
+
+
+@login_required
+def lds_training_title_delete(request, training_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': True, 'msg': 'Method not allowed'}, status=405)
+
+    if LdsRso.objects.filter(training_id=training_id).exists():
+        return JsonResponse({'error': True, 'msg': 'Unable to delete. This training title has existing requests.'}, status=400)
+
+    obj = Trainingtitle.objects.filter(id=training_id).first()
+    if not obj:
+        return JsonResponse({'error': True, 'msg': 'Training title not found.'}, status=404)
+
+    obj.delete()
+    return JsonResponse({'data': 'success', 'msg': 'Training title deleted.'})
 # nazef working in this code end
 
 

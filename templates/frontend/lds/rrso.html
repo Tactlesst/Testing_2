@@ -125,6 +125,17 @@
         </div>
     </div>
 </div>
+<div class="modal" id="ldi_plan_info" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content animated bounceInDown">
+	        <div class="modal-header bg-info">
+	            <h3 class="modal-title">LDI PLAN DETAILS</h3>
+                <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+	        </div>
+            <div class="modal-body" id="ldi-plan-info-content"></div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 {% block script %}
 <script>
@@ -320,6 +331,17 @@ $(document).ready(function(){
     $(document).on('click', 'a[data-role=details]', function(){
         var id = $(this).data('id');
         $('#training_details').modal('show').find('#details-content').load('/learning-and-development/details/' + id);
+    });
+
+    $(document).on('click', 'a.ldi-plan-info-toggle', function(){
+        var trainingId = $(this).data('training-id');
+        if (!trainingId){
+            return;
+        }
+
+        $('#ldi_plan_info').modal('show').find('#ldi-plan-info-content').load(
+            '{% url "ldi_plan_details" 0 %}'.replace('/0/', '/' + trainingId + '/')
+        );
     });
 });
 </script>

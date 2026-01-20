@@ -36,14 +36,20 @@ def lds_rrso(request):
             if not Trainingtitle.objects.filter(id=training_id).exists():
                 return JsonResponse({'error': True, 'msg': 'Selected training title does not exist.'}, status=400)
 
+            start_date = (request.POST.get('start_date') or '').strip()
+            end_date = (request.POST.get('end_date') or '').strip()
+            time_start = (request.POST.get('time_start') or '').strip()
+            time_end = (request.POST.get('time_end') or '').strip()
+
+            start_dt = f"{start_date} {time_start or '08:00'}" if start_date else None
+            end_dt = f"{end_date} {time_end or '17:00'}" if end_date else None
+
             if check:
                 check.update(
                     training_id=training_id,
                     venue=request.POST.get('venue'),
-                    start_date=request.POST.get('start_date'),
-                    end_date=request.POST.get('end_date'),
-                    start_time=request.POST.get('time_start'),
-                    end_time=request.POST.get('time_end'),
+                    start_date=start_dt,
+                    end_date=end_dt,
                     is_online_platform=1 if request.POST.get('is_online_platform') else 0
                 )
 
@@ -52,10 +58,8 @@ def lds_rrso(request):
                 LdsRso.objects.create(
                     training_id=training_id,
                     venue=request.POST.get('venue'),
-                    start_date=request.POST.get('start_date'),
-                    end_date=request.POST.get('end_date'),
-                    start_time=request.POST.get('time_start'),
-                    end_time=request.POST.get('time_end'),
+                    start_date=start_dt,
+                    end_date=end_dt,
                     rrso_status=0,
                     rso_status=0,
                     date_approved=None,
