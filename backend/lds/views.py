@@ -6,6 +6,7 @@ from decimal import Decimal, InvalidOperation
 from django.contrib.auth.decorators import login_required, permission_required
 from django.http import JsonResponse
 from django.shortcuts import render
+from django.db import IntegrityError, transaction
 from django.db.models import Count
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
@@ -280,7 +281,7 @@ def ldi_list(request):
         p['training_category'] = p.get('category__category_name') or ''
         p['training_title'] = p.get('training__tt_name') or ''
     plans_json = json.dumps(plans, default=str)
-    categories = read_categories()
+    categories = list(LdsCategory.objects.filter(approve=1).order_by('category_name').values('id', 'category_name'))
     return render(request, 'backend/lds/ldi_list.html', {
         'plans': plans,
         'plans_json': plans_json,
@@ -383,6 +384,42 @@ def ldi_plan_get(request, pk):
     return JsonResponse({'data': 'success', 'row': row})
 
 @login_required
+def ldi_plan_get_by_training(request, training_id):
+    row = (
+        LdsLdiPlan.objects.select_related('category', 'training')
+        .filter(training_id=training_id)
+        .order_by('-id')
+        .values(
+            'id',
+            'category_id',
+            'category__category_name',
+            'training_id',
+            'training__tt_name',
+            'quarter',
+            'platform',
+            'proposed_ldi_activity',
+            'proposed_date',
+            'target_participants',
+            'budgetary_requirements',
+            'target_competencies',
+            'venue',
+            'status',
+        )
+        .first()
+    )
+
+    if not row:
+        return JsonResponse({'error': True, 'msg': 'No plan found for this training title.'}, status=404)
+
+    row['budgetary_requirements'] = str(row['budgetary_requirements']) if row.get('budgetary_requirements') is not None else ''
+    row['proposed_date'] = str(row['proposed_date']) if row.get('proposed_date') else ''
+    row['training_category'] = row.get('category__category_name') or ''
+    row['training_title'] = row.get('training__tt_name') or ''
+    row['proposed_ldi_activity'] = row.get('proposed_ldi_activity') or ''
+
+    return JsonResponse({'data': 'success', 'row': row})
+
+@login_required
 def ldi_plan_details(request, training_id):
     training = Trainingtitle.objects.filter(id=training_id).first()
     rows = LdsLdiPlan.objects.select_related('category', 'training').filter(training_id=training_id).order_by('-id')
@@ -404,6 +441,8 @@ def ldi_plan_save(request):
         return JsonResponse({'error': True, 'msg': 'Method not allowed'}, status=405)
 
     pk = (request.POST.get('ldi_id') or '').strip()
+    training_id = (request.POST.get('training_id') or '').strip()
+    category_id = (request.POST.get('category_id') or '').strip()
     training_title = (request.POST.get('training_title') or '').strip()
     training_category = (request.POST.get('training_category') or '').strip()
 
@@ -420,10 +459,8 @@ def ldi_plan_save(request):
         except ValueError:
             return JsonResponse({'error': True, 'msg': 'Invalid proposed date.'}, status=400)
 
-    if not training_title:
+    if not training_id and not training_title:
         return JsonResponse({'error': True, 'msg': 'Training title is required.'}, status=400)
-    if not training_category:
-        return JsonResponse({'error': True, 'msg': 'Training category is required.'}, status=400)
     if not quarter:
         return JsonResponse({'error': True, 'msg': 'Quarter is required.'}, status=400)
     if not platform:
@@ -431,19 +468,33 @@ def ldi_plan_save(request):
     if not proposed_ldi_activity:
         return JsonResponse({'error': True, 'msg': 'Proposed LDI / activities is required.'}, status=400)
 
-    category_obj, _ = LdsCategory.objects.get_or_create(
-        category_name=training_category,
-        defaults={'approve': 1},
-    )
+    category_obj = None
+    if category_id:
+        category_obj = LdsCategory.objects.filter(id=category_id).first()
+        if not category_obj:
+            return JsonResponse({'error': True, 'msg': 'Selected training category not found.'}, status=400)
+    elif training_category:
+        category_obj, _ = LdsCategory.objects.get_or_create(
+            category_name=training_category,
+            defaults={'approve': 1},
+        )
 
-    training_obj = Trainingtitle.objects.create(
-        tt_name=training_title,
-        tt_status=1,
-        pi_id=request.session.get('pi_id'),
-    )
+    training_obj = None
+    if training_id:
+        training_obj = Trainingtitle.objects.filter(id=training_id).first()
+        if not training_obj:
+            return JsonResponse({'error': True, 'msg': 'Selected training title not found.'}, status=400)
+    else:
+        training_obj = Trainingtitle.objects.filter(tt_name=training_title).first()
+        if not training_obj:
+            training_obj = Trainingtitle.objects.create(
+                tt_name=training_title,
+                tt_status=1,
+                pi_id=request.session.get('pi_id'),
+            )
 
     defaults = {
-        'category_id': category_obj.id,
+        'category_id': category_obj.id if category_obj else None,
         'quarter': quarter,
         'platform': platform,
         'training_id': training_obj.id,
@@ -466,15 +517,77 @@ def ldi_plan_save(request):
     obj = LdsLdiPlan.objects.create(**defaults)
     return JsonResponse({'data': 'success', 'msg': 'LDI plan created.', 'id': obj.id})
 
+@login_required
+def ldi_plan_delete(request, pk):
+    if request.method != 'POST':
+        return JsonResponse({'error': True, 'msg': 'Method not allowed'}, status=405)
+
+    obj = LdsLdiPlan.objects.filter(id=pk).first()
+    if not obj:
+        return JsonResponse({'error': True, 'msg': 'Plan not found.'}, status=404)
+
+    try:
+        with transaction.atomic():
+            for rel in obj._meta.related_objects:
+                accessor = rel.get_accessor_name()
+                if not accessor:
+                    continue
+
+                try:
+                    related_manager = getattr(obj, accessor, None)
+                except Exception:
+                    related_manager = None
+
+                if related_manager is None:
+                    continue
+
+                try:
+                    related_manager.all().delete()
+                except Exception:
+                    pass
+
+            obj.delete()
+    except IntegrityError:
+        return JsonResponse(
+            {
+                'error': True,
+                'msg': 'Unable to delete. This LDI plan is still referenced by other records.',
+            },
+            status=400,
+        )
+
 def ldi_plan(request, plan_id):
     categories = read_categories()
     message = None
 
+    plans = read_plans()
+    plan = None
+    for p in plans:
+        if str(p.get('id')) == str(plan_id):
+            plan = p
+            break
+
+    if plan is None:
+        plan = {
+            'id': '',
+            'training_title': '',
+            'quarter': 'Q1',
+            'year': timezone.now().year,
+            'category': categories[0] if categories else '',
+            'activities': [],
+            'participants': '',
+            'budget': '',
+            'competencies': '',
+            'aim': '',
+            'proposed_date': str(timezone.now().date()),
+            'status': 'Pending Approval',
+        }
+
     if request.method == "POST":
         category = request.POST.get('category')
         new_category = request.POST.get('new_category')
-        activities = request.POST.get('activities').split('\n')
-        title = activities[0] if activities else "New Plan"
+        training_title = (request.POST.get('training_title') or '').strip()
+        activities = (request.POST.get('activities') or '').split('\n')
         quarter = request.POST.get('quarter')
         year = request.POST.get('year')
 
@@ -492,9 +605,25 @@ def ldi_plan(request, plan_id):
         else:
             # Save plan to mock_data
             plans = read_plans()
+            existing_index = None
+            for i, p in enumerate(plans):
+                if str(p.get('id')) == str(plan_id):
+                    existing_index = i
+                    break
+
+            next_number = len(plans) + 1
+            try:
+                next_number = max([int(str(x.get('id', '')).split('-')[-1]) for x in plans if str(x.get('id', '')).startswith(f"LDI-{year}-")]) + 1
+            except Exception:
+                pass
+
+            new_id = str(plan_id)
+            if not new_id or new_id.lower() == 'new':
+                new_id = f"LDI-{year}-{str(next_number).zfill(4)}"
+
             new_plan = {
-                "id": f"LDI-{year}-000{len(plans)+1}",
-                "title": title,
+                "id": new_id,
+                "training_title": training_title,
                 "quarter": quarter,
                 "year": year,
                 "category": category,
@@ -503,16 +632,26 @@ def ldi_plan(request, plan_id):
                 "budget": request.POST.get('budget'),
                 "competencies": request.POST.get('competencies'),
                 "aim": request.POST.get('aim'),
+                "proposed_date": request.POST.get('proposed_date'),
                 "status": "Pending Approval"
             }
-            plans.append(new_plan)
+
+            if existing_index is not None:
+                plans[existing_index] = new_plan
+            else:
+                plans.append(new_plan)
             save_plans(plans)
             message = "LDI Plan saved successfully."
+
+            plan = new_plan
 
     return render(request, 'backend/lds/ldi_plan.html', {
         'categories': categories,
         'plan_id': plan_id,
+        'plan': plan,
         'message': message,
+        'today': str(timezone.now().date()),
+        'current_year': timezone.now().year,
         'tab_title': 'Learning and Development',
         'management': True,
         'title': 'ld_admin',

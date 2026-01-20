@@ -2,6 +2,10 @@
 <div class="mb-2">
     <strong>{{ training.tt_name }}</strong>
 </div>
+
+<div class="mb-3 text-right">
+    <button type="button" class="btn btn-info" data-role="ldi-add" data-training-id="{{ training.id }}" data-training-title="{{ training.tt_name }}">Add LDI Plan</button>
+</div>
 {% endif %}
 
 <div class="table-responsive">
@@ -14,6 +18,7 @@
                 <th width="25%">Target Participants</th>
                 <th width="15%">Budget</th>
                 <th width="21%">Category</th>
+                <th width="10%" class="text-center">Action</th>
             </tr>
         </thead>
         <tbody>
@@ -25,10 +30,14 @@
                 <td style="word-break: break-word;">{{ row.target_participants|default_if_none:'' }}</td>
                 <td style="word-break: break-word;">{{ row.budgetary_requirements|default_if_none:'' }}</td>
                 <td style="word-break: break-word;">{{ row.category.category_name|default_if_none:'' }}</td>
+                <td class="text-center">
+                    <a href="javascript:;" class="mr-2" data-role="ldi-row-edit" data-id="{{ row.id }}">Edit</a>
+                    <a href="javascript:;" class="text-danger" data-role="ldi-row-delete" data-id="{{ row.id }}">Delete</a>
+                </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="6" class="text-center">No LDI Plan record found for this Training Title.</td>
+                <td colspan="7" class="text-center">No LDI Plan record found for this Training Title.</td>
             </tr>
             {% endfor %}
         </tbody>

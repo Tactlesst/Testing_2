@@ -56,7 +56,7 @@
                                     <th width="10%" class="text-center">Requests</th>
                                     <th width="10%" class="text-center">Trainees</th>
                                     <th width="10%" class="text-center">Facilitators</th>
-                                    <th width="7%">Action</th>
+                                    <th width="10%">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -106,91 +106,90 @@
 </div>
 
 <!-- Create/Edit Modal -->
-<div class="modal fade" id="ldiModal" tabindex="-1" role="dialog" aria-hidden="true">
-  <div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content">
-      <div class="modal-header bg-info text-white">
-        <h5 class="modal-title">Create / Edit LDI Plan</h5>
-        <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form id="ldi-form">
-          {% csrf_token %}
-          <input type="hidden" name="ldi_id" id="ldi-id">
-          <div class="form-row">
-            <div class="form-group col-md-6">
-              <label>Training Title <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" name="training_title" id="ldi-training-title" required>
+<div class="modal" id="ldiModal" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-info">
+                <h3 class="modal-title">CREATE / EDIT LDI PLAN</h3>
+                <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
             </div>
-            <input type="hidden" name="training_category" id="ldi-training-category" value="General">
-            <div class="form-group col-md-3">
-              <label>Quarter <span class="text-danger">*</span></label>
-              <select class="form-control" name="quarter">
-                  <option value="Q1">1st Quarter</option>
-                  <option value="Q2">2nd Quarter</option>
-                  <option value="Q3">3rd Quarter</option>
-                  <option value="Q4">4th Quarter</option>
-              </select>
-            </div>
-            <div class="form-group col-md-3">
-              <label>Year <span class="text-danger">*</span></label>
-              <select class="form-control" name="year" id="ldi-year" required>
-                <option value="2024">2024</option>
-                <option value="2025">2025</option>
-                <option value="2026" selected>2026</option>
-                <option value="2027">2027</option>
-                <option value="2028">2028</option>
-              </select>
-            </div>
-          </div>
+            <div class="modal-body">
+                <form id="ldi-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="ldi_id" id="ldi-id">
+                    <input type="hidden" name="training_id" id="ldi-training-id">
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Training Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="training_title" id="ldi-training-title" required>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Training Category</label>
+                            <select class="form-control" name="category_id" id="ldi-category-id">
+                                <option value="">-- Pending / None --</option>
+                                {% for c in categories %}
+                                <option value="{{ c.id }}">{{ c.category_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Quarter <span class="text-danger">*</span></label>
+                            <select class="form-control" name="quarter" id="ldi-quarter">
+                                <option value="Q1">1st Quarter</option>
+                                <option value="Q2">2nd Quarter</option>
+                                <option value="Q3">3rd Quarter</option>
+                                <option value="Q4">4th Quarter</option>
+                            </select>
+                        </div>
+                    </div>
 
-          <div class="form-group">
-            <label>Proposed LDI / Activities <span class="text-danger">*</span></label>
-            <textarea class="form-control" name="proposed_ldi_activity" id="ldi-proposed-ldi-activity" rows="3"></textarea>
-          </div>
+                    <div class="form-group">
+                        <label>Proposed LDI / Activities <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="proposed_ldi_activity" id="ldi-proposed-ldi-activity" rows="3"></textarea>
+                    </div>
 
-          <div class="form-row">
-            <div class="form-group col-md-4">
-              <label>Proposed Date <span class="text-danger">*</span></label>
-              <input type="date" name="proposed_date" id="ldi-proposed-date" class="form-control">
-            </div>
-            <div class="form-group col-md-4">
-              <label>Target Participants <span class="text-danger">*</span></label>
-              <input type="text" name="target_participants" id="ldi-target-participants" class="form-control">
-            </div>
-            <div class="form-group col-md-4">
-              <label>Budget <span class="text-danger">*</span></label>
-              <input type="number" step="0.01" name="budgetary_requirements" id="ldi-budgetary-requirements" class="form-control">
-            </div>
-          </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Proposed Date <span class="text-danger">*</span></label>
+                            <input type="date" name="proposed_date" id="ldi-proposed-date" class="form-control">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Target Participants <span class="text-danger">*</span></label>
+                            <input type="text" name="target_participants" id="ldi-target-participants" class="form-control">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Budget <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" name="budgetary_requirements" id="ldi-budgetary-requirements" class="form-control">
+                        </div>
+                    </div>
 
-          <div class="form-row">
-            <div class="form-group col-md-6">
-              <label>Platform <span class="text-danger">*</span></label>
-              <select class="form-control" name="platform" id="ldi-platform">
-                <option value="Face-to-Face">Face-to-Face</option>
-                <option value="Online">Online</option>
-                <option value="Hybrid">Hybrid</option>
-              </select>
-            </div>
-            <div class="form-group col-md-6">
-              <label>Venue</label>
-              <input type="text" class="form-control" name="venue" id="ldi-venue">
-            </div>
-          </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Platform <span class="text-danger">*</span></label>
+                            <select class="form-control" name="platform" id="ldi-platform">
+                                <option value="Face-to-Face">Face-to-Face</option>
+                                <option value="Online">Online</option>
+                                <option value="Hybrid">Hybrid</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Venue</label>
+                            <input type="text" class="form-control" name="venue" id="ldi-venue">
+                        </div>
+                    </div>
 
-          <div class="form-group">
-            <label>Target Competencies <span class="text-danger">*</span></label>
-            <textarea class="form-control" name="target_competencies" id="ldi-target-competencies" rows="3"></textarea>
-          </div>
+                    <div class="form-group">
+                        <label>Target Competencies <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="target_competencies" id="ldi-target-competencies" rows="3"></textarea>
+                    </div>
 
-          <div class="text-right">
-            <button type="submit" class="btn btn-info">Save Plan</button>
-          </div>
-        </form>
-      </div>
+                    <div class="text-right">
+                        <button type="submit" class="btn btn-info">Save Plan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
 {% endblock %}
@@ -203,100 +202,13 @@ const modal = $('#ldiModal');
 // Open modal for new/edit
 createBtn.addEventListener('click', function() {
     $('#ldi-id').val('');
+    $('#ldi-training-id').val('');
     $('#ldi-form').trigger('reset');
     $('#ldi-proposed-date').val(new Date().toISOString().slice(0, 10));
+    $('#ldi-category-id').val('');
+    $('#ldi-quarter').val('Q1');
+    $('#ldi-platform').val('Face-to-Face');
     modal.modal('show');
-});
-
-$(document).on('click', 'a[data-role=training-title-edit]', function(){
-    var id = $(this).data('id');
-    var currentTitle = $(this).data('title') || '';
-
-    Swal.fire({
-        title: 'Edit Training Title',
-        input: 'text',
-        inputValue: currentTitle,
-        showCancelButton: true,
-        confirmButtonColor: '#3498DB',
-        confirmButtonText: 'Save',
-        allowOutsideClick: false,
-        showLoaderOnConfirm: true,
-        preConfirm: function (value){
-            var title = (value || '').trim();
-            if (!title){
-                Swal.showValidationMessage('Title is required.');
-                return false;
-            }
-            return $.ajax({
-                url: '{% url "lds_training_title_update" 0 %}'.replace('/0/', '/' + id + '/'),
-                type: 'POST',
-                data: {
-                    'csrfmiddlewaretoken': '{{ csrf_token }}',
-                    'title': title,
-                }
-            });
-        },
-    }).then(function (response){
-        if (response.value && response.value.data === 'success'){
-            Swal.fire({
-                title: 'Saved!',
-                text: 'Training title updated.',
-                icon: 'success',
-                confirmButtonColor: '#3498DB',
-            }).then(function(){
-                trainingTitlesTable.ajax.reload(null, false);
-            });
-        } else if (response.value && response.value.msg) {
-            Swal.fire({
-                title: 'Error',
-                text: response.value.msg,
-                icon: 'error',
-                confirmButtonColor: '#3498DB',
-            });
-        }
-    });
-});
-
-$(document).on('click', 'a[data-role=training-title-delete]', function(){
-    var id = $(this).data('id');
-
-    Swal.fire({
-        title: 'Are you sure?',
-        text: 'This will delete the training title.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#E74C3C',
-        confirmButtonText: 'Delete',
-        allowOutsideClick: false,
-        showLoaderOnConfirm: true,
-        preConfirm: function (){
-            return $.ajax({
-                url: '{% url "lds_training_title_delete" 0 %}'.replace('/0/', '/' + id + '/'),
-                type: 'POST',
-                data: {
-                    'csrfmiddlewaretoken': '{{ csrf_token }}',
-                }
-            });
-        },
-    }).then(function (response){
-        if (response.value && response.value.data === 'success'){
-            Swal.fire({
-                title: 'Deleted!',
-                text: 'Training title deleted.',
-                icon: 'success',
-                confirmButtonColor: '#3498DB',
-            }).then(function(){
-                trainingTitlesTable.ajax.reload(null, false);
-            });
-        } else if (response.value && response.value.msg) {
-            Swal.fire({
-                title: 'Error',
-                text: response.value.msg,
-                icon: 'error',
-                confirmButtonColor: '#3498DB',
-            });
-        }
-    });
 });
 
 $(document).on('click', 'a.ldi-plan-title-toggle', function(){
@@ -305,6 +217,40 @@ $(document).on('click', 'a.ldi-plan-title-toggle', function(){
         '{% url "ldi_plan_details" 0 %}'.replace('/0/', '/' + trainingId + '/')
     );
 });
+
+function openLdiModalForTraining(trainingId, trainingTitle){
+    $.ajax({
+        url: '{% url "ldi_plan_get_by_training" 0 %}'.replace('/0/', '/' + trainingId + '/'),
+        type: 'GET',
+    }).done(function(resp){
+        if (resp && resp.data === 'success' && resp.row){
+            $('#ldi-id').val(resp.row.id);
+            $('#ldi-training-id').val(resp.row.training_id || trainingId);
+            $('#ldi-training-title').val(resp.row.training_title || trainingTitle || '');
+            $('#ldi-category-id').val(resp.row.category_id || '');
+            $('#ldi-quarter').val(resp.row.quarter || 'Q1');
+            $('#ldi-platform').val(resp.row.platform || 'Face-to-Face');
+            $('#ldi-proposed-ldi-activity').val(resp.row.proposed_ldi_activity || '');
+            $('#ldi-proposed-date').val(resp.row.proposed_date || new Date().toISOString().slice(0, 10));
+            $('#ldi-target-participants').val(resp.row.target_participants || '');
+            $('#ldi-budgetary-requirements').val(resp.row.budgetary_requirements || '');
+            $('#ldi-target-competencies').val(resp.row.target_competencies || '');
+            $('#ldi-venue').val(resp.row.venue || '');
+            modal.modal('show');
+        }
+    }).fail(function(){
+        // no existing plan: create mode
+        $('#ldi-id').val('');
+        $('#ldi-form').trigger('reset');
+        $('#ldi-training-id').val(trainingId);
+        $('#ldi-training-title').val(trainingTitle || '');
+        $('#ldi-proposed-date').val(new Date().toISOString().slice(0, 10));
+        $('#ldi-category-id').val('');
+        $('#ldi-quarter').val('Q1');
+        $('#ldi-platform').val('Face-to-Face');
+        modal.modal('show');
+    });
+}
 var trainingTitlesTable = $('#training-titles-table').DataTable({
     'processing': true,
     'deferRender': true,
@@ -339,7 +285,7 @@ var trainingTitlesTable = $('#training-titles-table').DataTable({
             'searchable': false,
             'render': function(data, type, row, meta){
                 return (
-                    '<a href="javascript:;" class="mr-2" data-role="training-title-edit" data-id="' + row.id + '" data-title="' + (row.tt_name || '') + '">Edit</a>' +
+                    '<a href="javascript:;" class="mr-2 ldi-plan-edit-toggle" data-training-id="' + row.id + '">Edit</a>' +
                     '<a href="javascript:;" class="text-danger" data-role="training-title-delete" data-id="' + row.id + '">Delete</a>'
                 );
             }
@@ -347,21 +293,37 @@ var trainingTitlesTable = $('#training-titles-table').DataTable({
     ],
 });
 
-$(document).on('click', 'a.training-details-toggle', function(){
-    var trainingId = $(this).data('id');
+$(document).on('click', 'a.ldi-plan-edit-toggle', function(){
+    var trainingId = $(this).data('training-id');
 
-    $('#training_title_details').modal('show').find('#details-content').load(
-        '{% url "lds_training_list_details" 0 %}'.replace('/0/', '/' + trainingId + '/')
-    );
+    var tr = $(this).closest('tr');
+    if (tr.hasClass('child')){
+        tr = tr.prev();
+    }
+    var row = trainingTitlesTable.row(tr).data();
+    var trainingTitle = (row && row.tt_name) ? row.tt_name : '';
+
+    openLdiModalForTraining(trainingId, trainingTitle);
 });
 
-$(document).on('click', 'a[data-role=view-participants]', function(){
-    var rsoId = $(this).data('rso-id');
-    $('#training_rso_participants').modal('show').find('#participants-content').load(
-        '{% url "lds_training_list_participants" 0 %}'.replace('/0/', '/' + rsoId + '/')
-    );
+$(document).on('click', 'button[data-role=ldi-add]', function(){
+    var trainingId = $(this).data('training-id');
+    var trainingTitle = $(this).data('training-title') || '';
+
+    $('#ldi-id').val('');
+    $('#ldi-form').trigger('reset');
+    $('#ldi-training-id').val(trainingId);
+    $('#ldi-training-title').val(trainingTitle);
+    $('#ldi-proposed-date').val(new Date().toISOString().slice(0, 10));
+    $('#ldi-category-id').val('');
+    $('#ldi-quarter').val('Q1');
+    $('#ldi-platform').val('Face-to-Face');
+
+    $('#ldi_plan_details').modal('hide');
+    modal.modal('show');
 });
-$(document).on('click', 'a[data-role=ldi-edit]', function(){
+
+$(document).on('click', 'a[data-role=ldi-row-edit]', function(){
     var id = $(this).data('id');
     $.ajax({
         url: '{% url "ldi_plan_get" 0 %}'.replace('/0/', '/' + id + '/'),
@@ -369,9 +331,10 @@ $(document).on('click', 'a[data-role=ldi-edit]', function(){
     }).done(function(resp){
         if (resp && resp.data === 'success' && resp.row){
             $('#ldi-id').val(resp.row.id);
-            $('#ldi-training-title').val(resp.row.training_title);
-            $('#ldi-training-category').val(resp.row.training_category);
-            $('select[name=quarter]').val(resp.row.quarter);
+            $('#ldi-training-id').val(resp.row.training_id || '');
+            $('#ldi-training-title').val(resp.row.training_title || '');
+            $('#ldi-category-id').val(resp.row.category_id || '');
+            $('#ldi-quarter').val(resp.row.quarter);
             $('#ldi-platform').val(resp.row.platform);
             $('#ldi-proposed-ldi-activity').val(resp.row.proposed_ldi_activity);
             $('#ldi-proposed-date').val(resp.row.proposed_date);
@@ -379,7 +342,51 @@ $(document).on('click', 'a[data-role=ldi-edit]', function(){
             $('#ldi-budgetary-requirements').val(resp.row.budgetary_requirements);
             $('#ldi-target-competencies').val(resp.row.target_competencies);
             $('#ldi-venue').val(resp.row.venue);
+            $('#ldi_plan_details').modal('hide');
             modal.modal('show');
+        }
+    });
+});
+
+$(document).on('click', 'a[data-role=ldi-row-delete]', function(){
+    var id = $(this).data('id');
+
+    Swal.fire({
+        title: 'Are you sure?',
+        text: 'This will delete the LDI plan.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#E74C3C',
+        confirmButtonText: 'Delete',
+        allowOutsideClick: false,
+        showLoaderOnConfirm: true,
+        preConfirm: function (){
+            return $.ajax({
+                url: '{% url "ldi_plan_delete" 0 %}'.replace('/0/', '/' + id + '/'),
+                type: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}',
+                }
+            });
+        },
+    }).then(function (response){
+        if (response.value && response.value.data === 'success'){
+            Swal.fire({
+                title: 'Deleted!',
+                text: 'LDI plan deleted.',
+                icon: 'success',
+                confirmButtonColor: '#3498DB',
+            }).then(function(){
+                $('#ldi_plan_details').modal('show');
+                trainingTitlesTable.ajax.reload(null, false);
+            });
+        } else if (response.value && response.value.msg) {
+            Swal.fire({
+                title: 'Error',
+                text: response.value.msg,
+                icon: 'error',
+                confirmButtonColor: '#3498DB',
+            });
         }
     });
 });
@@ -397,9 +404,36 @@ $('#ldi-form').on('submit', function(e){
         processData: false,
     }).done(function(resp){
         if (resp && resp.data === 'success'){
-            modal.modal('hide');
-            trainingTitlesTable.ajax.reload(null, false);
+            Swal.fire({
+                title: 'Saved!',
+                text: resp.msg || 'LDI plan saved.',
+                icon: 'success',
+                confirmButtonColor: '#3498DB',
+            }).then(function(){
+                modal.modal('hide');
+                trainingTitlesTable.ajax.reload(null, false);
+            });
+        } else {
+            Swal.fire({
+                title: 'Error',
+                text: (resp && resp.msg) ? resp.msg : 'Unable to save LDI plan.',
+                icon: 'error',
+                confirmButtonColor: '#3498DB',
+            });
         }
+    }).fail(function(xhr){
+        var msg = 'Unable to save LDI plan.';
+        try {
+            if (xhr && xhr.responseJSON && xhr.responseJSON.msg){
+                msg = xhr.responseJSON.msg;
+            }
+        } catch (e) {}
+        Swal.fire({
+            title: 'Error',
+            text: msg,
+            icon: 'error',
+            confirmButtonColor: '#3498DB',
+        });
     });
 });
 </script>

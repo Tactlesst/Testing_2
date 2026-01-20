@@ -287,6 +287,27 @@
         });
         {# nazef working in this code end #}
 
+        $(document).on('mousedown', '.select2-selection__rendered .ldi-plan-info-toggle', function(e){
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        $(document).on('click', '.select2-selection__rendered .ldi-plan-info-toggle', function(e){
+            e.preventDefault();
+            e.stopPropagation();
+
+            var trainingId = $(this).data('training-id');
+            if (!trainingId){
+                return;
+            }
+
+            if ($('#ldi_plan_info').length){
+                $('#ldi_plan_info').modal('show').find('#ldi-plan-info-content').load(
+                    '{% url "ldi_plan_details" 0 %}'.replace('/0/', '/' + trainingId + '/')
+                );
+            }
+        });
+
         $(".filter_employee, .filter_employee_facilitator").typeahead({
             source: function(query, process){
                 return $.get({

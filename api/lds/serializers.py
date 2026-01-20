@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
 from frontend.lds.models import LdsRso, LdsParticipants, LdsFacilitator, LdsIDP
+from backend.lds.models import LdsLdiPlan, LdsCategory
+from frontend.models import Trainingtitle
 
 
 class LdsRsoSerializer(serializers.ModelSerializer):
@@ -42,3 +44,49 @@ class LdsIDPSerializer(serializers.ModelSerializer):
     class Meta:
         model = LdsIDP
         fields = '__all__'
+
+
+class LdsCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LdsCategory
+        fields = ['id', 'category_name', 'approve']
+
+
+class TrainingtitleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Trainingtitle
+        fields = ['id', 'tt_name', 'tt_status']
+
+
+class LdsLdiPlanSerializer(serializers.ModelSerializer):
+    training_title = serializers.CharField(source='training.tt_name', read_only=True)
+    training_id = serializers.IntegerField(required=False, allow_null=True)
+    training = TrainingtitleSerializer(read_only=True)
+
+    training_category = serializers.CharField(source='category.category_name', read_only=True)
+    category_id = serializers.IntegerField(required=False, allow_null=True)
+    category = LdsCategorySerializer(read_only=True)
+
+    class Meta:
+        model = LdsLdiPlan
+        fields = [
+            'id',
+            'training_id',
+            'training_title',
+            'training',
+            'category_id',
+            'training_category',
+            'category',
+            'quarter',
+            'platform',
+            'proposed_ldi_activity',
+            'proposed_date',
+            'target_participants',
+            'budgetary_requirements',
+            'target_competencies',
+            'venue',
+            'status',
+            'date_created',
+            'date_updated',
+            'date_approved',
+        ]
