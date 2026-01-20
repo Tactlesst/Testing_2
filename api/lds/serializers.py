@@ -6,13 +6,14 @@ from frontend.lds.models import LdsRso, LdsParticipants, LdsFacilitator, LdsIDP
 class LdsRsoSerializer(serializers.ModelSerializer):
     training_title = serializers.CharField(source='training.tt_name', read_only=True)
     inclusive_dates = serializers.CharField(source='get_inclusive_dates', read_only=True)
+    time_range = serializers.TimeField(source='get_time_range', read_only=True)
     date_added = serializers.DateTimeField(format="%b %d, %Y %H:%M:%S %p", read_only=True)
     status = serializers.CharField(source='get_status', read_only=True)
     created_by = serializers.CharField(source='created_by.pi.user.get_fullname', read_only=True)
 
     class Meta:
         model = LdsRso
-        fields = ['id', 'training_title', 'inclusive_dates', 'date_added', 'status', 'venue', 'created_by']
+        fields = ['id', 'training_title', 'inclusive_dates', 'date_added', 'status', 'venue', 'created_by', 'time_range']
 
 
 class LdsParticipantsSerializer(serializers.ModelSerializer):

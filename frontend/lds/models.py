@@ -50,6 +50,8 @@ class LdsRso(models.Model):
     venue = models.CharField(max_length=1024, blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
+    start_time = models.TimeField(blank=True, null=True)
+    end_time = models.TimeField(blank=True, null=True)
     rrso_status = models.IntegerField(blank=True, null=True)
     rso_status = models.IntegerField(blank=True, null=True)
     date_approved = models.DateTimeField(blank=True, null=True)
@@ -96,6 +98,15 @@ class LdsRso(models.Model):
             days = (self.end_date - self.start_date).days + 1
             return days * 8
         return 0
+
+    @property
+    def get_time_range(self):
+        if self.start_time and self.end_time:
+            return "{} - {}".format(
+                self.start_time.strftime("%I:%M %p"),
+                self.end_time.strftime("%I:%M %p")
+            )
+        return ""
 
     @property
     def get_status(self):

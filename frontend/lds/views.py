@@ -42,6 +42,8 @@ def lds_rrso(request):
                     venue=request.POST.get('venue'),
                     start_date=request.POST.get('start_date'),
                     end_date=request.POST.get('end_date'),
+                    start_time=request.POST.get('time_start'),
+                    end_time=request.POST.get('time_end'),
                     is_online_platform=1 if request.POST.get('is_online_platform') else 0
                 )
 
@@ -52,6 +54,8 @@ def lds_rrso(request):
                     venue=request.POST.get('venue'),
                     start_date=request.POST.get('start_date'),
                     end_date=request.POST.get('end_date'),
+                    start_time=request.POST.get('time_start'),
+                    end_time=request.POST.get('time_end'),
                     rrso_status=0,
                     rso_status=0,
                     date_approved=None,
