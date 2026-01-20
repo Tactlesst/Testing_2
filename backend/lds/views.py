@@ -13,7 +13,7 @@ from django.utils import timezone
 
 from backend.documents.models import DtsDocument, DtsDrn, DtsTransaction, DtsDivisionCc
 from backend.models import Designation, Empprofile, DRNTracker
-from backend.lds.models import LdsLdiPlan
+from backend.lds.models import LdsLdiPlan, LdsCategory
 from backend.views import generate_serial_string
 from frontend.lds.models import LdsFacilitator, LdsParticipants, LdsRso
 from frontend.models import PortalConfiguration, Trainingtitle
@@ -71,11 +71,30 @@ def lds_training_list_search(request):
 
 @login_required
 def lds_training_list_ajax(request):
+    date_from = (request.GET.get('date_from') or '').strip()
+    date_to = (request.GET.get('date_to') or '').strip()
+
     qs = Trainingtitle.objects.select_related('pi__user').annotate(
         requests_count=Count('ldsrso', distinct=True),
         trainees_count=Count('ldsrso__ldsparticipants', distinct=True),
         facilitators_count=Count('ldsrso__ldsfacilitator', distinct=True),
-    ).all().order_by('-id')
+    ).all()
+
+    if date_from:
+        try:
+            df = datetime.strptime(date_from, '%Y-%m-%d').date()
+            qs = qs.filter(ldsrso__date_added__date__gte=df)
+        except ValueError:
+            return JsonResponse({'error': True, 'msg': 'Invalid date_from.'}, status=400)
+
+    if date_to:
+        try:
+            dt = datetime.strptime(date_to, '%Y-%m-%d').date()
+            qs = qs.filter(ldsrso__date_added__date__lte=dt)
+        except ValueError:
+            return JsonResponse({'error': True, 'msg': 'Invalid date_to.'}, status=400)
+
+    qs = qs.distinct().order_by('-id')
 
     data = []
     for row in qs:
@@ -109,14 +128,8 @@ def lds_training_list_details(request, training_id):
 def lds_training_list_participants(request, rso_id):
     rso = LdsRso.objects.select_related('training').filter(id=rso_id).first()
 
-    internal_facilitators = LdsFacilitator.objects.select_related('emp__pi__user').filter(
+    facilitators = LdsFacilitator.objects.select_related('emp__pi__user').filter(
         rso_id=rso_id,
-        is_external=0,
-    ).order_by('order', 'id')
-
-    external_facilitators = LdsFacilitator.objects.filter(
-        rso_id=rso_id,
-        is_external=1,
     ).order_by('order', 'id')
 
     internal_participants = LdsParticipants.objects.select_related('emp__pi__user').filter(
@@ -131,8 +144,7 @@ def lds_training_list_participants(request, rso_id):
 
     return render(request, 'backend/lds/training_rso_participants.html', {
         'rso': rso,
-        'internal_facilitators': internal_facilitators,
-        'external_facilitators': external_facilitators,
+        'facilitators': facilitators,
         'internal_participants': internal_participants,
         'external_participants': external_participants,
     })
@@ -212,9 +224,12 @@ def read_categories():
     return ["Leadership Development", "Functional / Technical", "Values / Culture"]
 
 def ldi_list(request):
-    plans = list(LdsLdiPlan.objects.all().order_by('-id').values(
+    plans = list(LdsLdiPlan.objects.select_related('category', 'training').all().order_by('-id').values(
         'id',
-        'training_category',
+        'category_id',
+        'category__category_name',
+        'training_id',
+        'training__tt_name',
         'quarter',
         'platform',
         'proposed_ldi_activity',
@@ -227,9 +242,11 @@ def ldi_list(request):
         'date_created',
         'date_updated',
         'date_approved',
-        'division_id',
-        'section_id',
     ))
+
+    for p in plans:
+        p['training_category'] = p.get('category__category_name') or ''
+        p['training_title'] = p.get('training__tt_name') or ''
     plans_json = json.dumps(plans, default=str)
     categories = read_categories()
     return render(request, 'backend/lds/ldi_list.html', {
@@ -252,11 +269,11 @@ def ldi_list_ajax(request):
     base_qs = LdsLdiPlan.objects.all()
     records_total = base_qs.count()
 
-    qs = base_qs
+    qs = base_qs.select_related('category', 'training')
     if search_value:
         qs = qs.filter(
-            Q(proposed_ldi_activity__icontains=search_value)
-            | Q(training_category__icontains=search_value)
+            Q(training__tt_name__icontains=search_value)
+            | Q(category__category_name__icontains=search_value)
             | Q(platform__icontains=search_value)
             | Q(quarter__icontains=search_value)
             | Q(target_participants__icontains=search_value)
@@ -267,10 +284,10 @@ def ldi_list_ajax(request):
 
     column_map = {
         1: 'id',
-        2: 'proposed_ldi_activity',
+        2: 'training__tt_name',
         3: 'quarter',
         4: 'platform',
-        5: 'training_category',
+        5: 'category__category_name',
         6: 'budgetary_requirements',
         7: 'status',
     }
@@ -288,10 +305,10 @@ def ldi_list_ajax(request):
     for row in qs:
         data.append({
             'id': row.id,
-            'proposed_ldi_activity': row.proposed_ldi_activity or '',
+            'training_title': row.training.tt_name if row.training_id and row.training else '',
             'quarter': row.quarter or '',
             'platform': row.platform or '',
-            'training_category': row.training_category or '',
+            'training_category': row.category.category_name if row.category_id and row.category else '',
             'budgetary_requirements': str(row.budgetary_requirements) if row.budgetary_requirements is not None else '',
             'status': row.status if row.status is not None else '',
         })
@@ -305,9 +322,12 @@ def ldi_list_ajax(request):
 
 @login_required
 def ldi_plan_get(request, pk):
-    row = LdsLdiPlan.objects.filter(id=pk).values(
+    row = LdsLdiPlan.objects.select_related('category', 'training').filter(id=pk).values(
         'id',
-        'training_category',
+        'category_id',
+        'category__category_name',
+        'training_id',
+        'training__tt_name',
         'quarter',
         'platform',
         'proposed_ldi_activity',
@@ -324,8 +344,27 @@ def ldi_plan_get(request, pk):
 
     row['budgetary_requirements'] = str(row['budgetary_requirements']) if row.get('budgetary_requirements') is not None else ''
     row['proposed_date'] = str(row['proposed_date']) if row.get('proposed_date') else ''
+    row['training_category'] = row.get('category__category_name') or ''
+    row['training_title'] = row.get('training__tt_name') or ''
+    row['proposed_ldi_activity'] = row.get('proposed_ldi_activity') or ''
 
     return JsonResponse({'data': 'success', 'row': row})
+
+@login_required
+def ldi_plan_details(request, training_id):
+    training = Trainingtitle.objects.filter(id=training_id).first()
+    rows = LdsLdiPlan.objects.select_related('category', 'training').filter(training_id=training_id).order_by('-id')
+
+    activities_text = ''
+    first = rows.first()
+    if first and getattr(first, 'proposed_ldi_activity', None):
+        activities_text = first.proposed_ldi_activity
+
+    return render(request, 'backend/lds/ldi_plan_details.html', {
+        'training': training,
+        'rows': rows,
+        'activities_text': activities_text,
+    })
 
 @login_required
 def ldi_plan_save(request):
@@ -333,16 +372,14 @@ def ldi_plan_save(request):
         return JsonResponse({'error': True, 'msg': 'Method not allowed'}, status=405)
 
     pk = (request.POST.get('ldi_id') or '').strip()
+    training_title = (request.POST.get('training_title') or '').strip()
     training_category = (request.POST.get('training_category') or '').strip()
-    new_category = (request.POST.get('new_category') or '').strip()
+
     quarter = (request.POST.get('quarter') or '').strip()
     platform = (request.POST.get('platform') or '').strip()
     proposed_ldi_activity = (request.POST.get('proposed_ldi_activity') or '').strip()
     proposed_date = (request.POST.get('proposed_date') or '').strip()
     target_participants = (request.POST.get('target_participants') or '').strip()
-    budgetary_requirements = (request.POST.get('budgetary_requirements') or '').strip()
-    target_competencies = (request.POST.get('target_competencies') or '').strip()
-    venue = (request.POST.get('venue') or '').strip()
 
     proposed_date_value = None
     if proposed_date:
@@ -351,18 +388,8 @@ def ldi_plan_save(request):
         except ValueError:
             return JsonResponse({'error': True, 'msg': 'Invalid proposed date.'}, status=400)
 
-    budget_value = None
-    if budgetary_requirements:
-        try:
-            budget_value = Decimal(budgetary_requirements)
-        except (InvalidOperation, ValueError):
-            return JsonResponse({'error': True, 'msg': 'Invalid budgetary requirements.'}, status=400)
-
-    if training_category == '_new':
-        if not new_category:
-            return JsonResponse({'error': True, 'msg': 'New training category is required.'}, status=400)
-        training_category = new_category
-
+    if not training_title:
+        return JsonResponse({'error': True, 'msg': 'Training title is required.'}, status=400)
     if not training_category:
         return JsonResponse({'error': True, 'msg': 'Training category is required.'}, status=400)
     if not quarter:
@@ -370,20 +397,30 @@ def ldi_plan_save(request):
     if not platform:
         return JsonResponse({'error': True, 'msg': 'Platform is required.'}, status=400)
     if not proposed_ldi_activity:
-        return JsonResponse({'error': True, 'msg': 'Proposed LDI activity is required.'}, status=400)
+        return JsonResponse({'error': True, 'msg': 'Proposed LDI / activities is required.'}, status=400)
+
+    category_obj, _ = LdsCategory.objects.get_or_create(
+        category_name=training_category,
+        defaults={'approve': 1},
+    )
+
+    training_obj = Trainingtitle.objects.create(
+        tt_name=training_title,
+        tt_status=1,
+        pi_id=request.session.get('pi_id'),
+    )
 
     defaults = {
-        'division_id': None,
-        'section_id': None,
-        'training_category': training_category,
+        'category_id': category_obj.id,
         'quarter': quarter,
         'platform': platform,
+        'training_id': training_obj.id,
         'proposed_ldi_activity': proposed_ldi_activity,
         'proposed_date': proposed_date_value,
         'target_participants': target_participants,
-        'budgetary_requirements': budget_value,
-        'target_competencies': target_competencies,
-        'venue': venue,
+        'budgetary_requirements': request.POST.get('budgetary_requirements'),
+        'target_competencies': request.POST.get('target_competencies'),
+        'venue': request.POST.get('venue'),
         'created_by_id': request.session.get('emp_id'),
         'status': 1,
         'date_updated': timezone.now(),

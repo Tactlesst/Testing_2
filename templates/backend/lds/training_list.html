@@ -6,11 +6,9 @@
 <style>
     .training-title-cell {
         max-width: 520px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        display: inline-block;
-        vertical-align: bottom;
+        white-space: normal;
+        word-break: break-word;
+        display: inline;
     }
 </style>
 {% endblock %}
@@ -56,14 +54,14 @@
                         <table class="table table-bordered table-hover" id="training-titles-table" width="100%">
                             <thead>
                                 <tr>
-                                    <th width="7%">Action</th>
                                     <th width="10%" class="text-center" style="display:none;">ID</th>
                                     <th>Training Title</th>
                                     <th width="15%" class="text-center">tt_status</th>
                                     <th width="25%">Added by</th>
                                     <th width="10%" class="text-center">Requests</th>
-                                    <th width="10%" class="text-center">Facilitators</th>
                                     <th width="10%" class="text-center">Trainees</th>
+                                    <th width="10%" class="text-center">Facilitators</th>
+                                    <th width="7%">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -106,6 +104,18 @@
 </div>
 {# nazef working in this code end #}
 
+<div class="modal" id="ldi_plan_details" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-info">
+                <h3 class="modal-title">LDI PLAN DETAILS</h3>
+                <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body" id="ldi-plan-details-content"></div>
+        </div>
+    </div>
+</div>
+
 {# nazef working in this code start #}
 <div class="modal" id="add_training_title" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
     <div class="modal-dialog">
@@ -139,24 +149,16 @@ $(document).ready(function(){
     var trainingTitlesTable = $('#training-titles-table').DataTable({
         'processing': true,
         'deferRender': true,
-        'order': [[ 1, 'desc' ]],
+        'order': [[ 0, 'desc' ]],
         'lengthMenu': [25,50,100],
         'ajax': {
             'url': '{% url "lds_training_list_ajax" %}',
             'type': 'GET',
         },
         'columnDefs': [
-            { 'targets': [1], 'visible': false, 'searchable': false },
+            { 'targets': [0], 'visible': false, 'searchable': false },
         ],
         'columns': [
-            {
-                'data': null,
-                'orderable': false,
-                'searchable': false,
-                'render': function(data, type, row, meta){
-                    return '<a href="javascript:;" class="training-details-toggle" data-id="' + row.id + '">Details</a>';
-                }
-            },
             { 'data': 'id' },
             {
                 'data': 'tt_name',
@@ -170,8 +172,16 @@ $(document).ready(function(){
             { 'data': 'tt_status', 'className': 'text-center' },
             { 'data': 'added_by' },
             { 'data': 'requests_count', 'className': 'text-center' },
-            { 'data': 'facilitators_count', 'className': 'text-center' },
             { 'data': 'trainees_count', 'className': 'text-center' },
+            { 'data': 'facilitators_count', 'className': 'text-center' },
+            {
+                'data': null,
+                'orderable': false,
+                'searchable': false,
+                'render': function(data, type, row, meta){
+                    return '<a href="javascript:;" class="training-details-toggle" data-id="' + row.id + '">Details</a>';
+                }
+            },
         ],
     });
 
@@ -187,6 +197,13 @@ $(document).ready(function(){
         var rsoId = $(this).data('rso-id');
         $('#training_rso_participants').modal('show').find('#participants-content').load(
             '{% url "lds_training_list_participants" 0 %}'.replace('/0/', '/' + rsoId + '/')
+        );
+    });
+
+    $(document).on('click', 'a.ldi-plan-title-toggle', function(){
+        var trainingId = $(this).data('training-id');
+        $('#ldi_plan_details').modal('show').find('#ldi-plan-details-content').load(
+            '{% url "ldi_plan_details" 0 %}'.replace('/0/', '/' + trainingId + '/')
         );
     });
     {# nazef working in this code end #}

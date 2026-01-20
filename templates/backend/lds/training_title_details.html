@@ -1,6 +1,8 @@
 {% if training %}
 <div class="mb-3">
-    <h4 class="font-weight-bold">{{ training.tt_name }}</h4>
+    <h4 class="font-weight-bold">
+        <a href="javascript:;" class="ldi-plan-title-toggle" data-training-id="{{ training.id }}">{{ training.tt_name }}</a>
+    </h4>
 </div>
 {% endif %}
 
@@ -23,22 +25,22 @@
     <table class="table table-bordered table-hover training-title-details-table" width="100%">
         <thead>
             <tr>
-                <th width="12%" class="text-center">Action</th>
                 <th width="25%">Requester</th>
                 <th width="35%">Venue</th>
                 <th width="22%" class="text-center">Inclusive Dates</th>
                 <th width="18%" class="text-center">Participants</th>
+                <th width="12%" class="text-center">Action</th>
             </tr>
         </thead>
         <tbody>
             {% if rows %}
                 {% for row in rows %}
                     <tr>
-                        <td class="text-center"><a href="javascript:;" data-role="view-participants" data-rso-id="{{ row.id }}">Participants</a></td>
                         <td class="text-center">{% if row.created_by and row.created_by.pi and row.created_by.pi.user %}{{ row.created_by.pi.user.get_fullname }}{% endif %}</td>
                         <td>{{ row.venue|default_if_none:"" }}</td>
                         <td class="text-center">{{ row.get_inclusive_dates_v2 }}</td>
                         <td class="text-center">{{ row.participants_count }}</td>
+                        <td class="text-center"><a href="javascript:;" data-role="view-participants" data-rso-id="{{ row.id }}">Participants</a></td>
                     </tr>
                 {% endfor %}
             {% else %}

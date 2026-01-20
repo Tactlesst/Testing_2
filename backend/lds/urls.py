@@ -9,6 +9,7 @@ urlpatterns = [
     path('ld-list/', views.ldi_list, name='ldi_list'),
     path('ld-list/ajax/', views.ldi_list_ajax, name='ldi_list_ajax'),
     path('ld-plan/get/<int:pk>/', views.ldi_plan_get, name='ldi_plan_get'),
+    path('ld-plan/details/<int:training_id>/', views.ldi_plan_details, name='ldi_plan_details'),
     path('ld-plan/save/', views.ldi_plan_save, name='ldi_plan_save'),
     path('ld-plan/', views.ldi_plan, name='ldi_plan_new'),  # Create new
     path('ld-plan/<str:plan_id>/', views.ldi_plan, name='ldi_plan'),  # Edit 

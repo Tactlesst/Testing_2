@@ -4,44 +4,38 @@
 </div>
 {% endif %}
 
-<div class="mb-2">
+<div class="mb-3">
     <h6 class="font-weight-bold">Facilitators Assigned</h6>
-</div>
-
-<div class="table-responsive mb-3">
-    <table class="table table-bordered table-hover" width="100%">
-        <thead>
-            <tr>
-                <th width="20%" class="text-center">Type</th>
-                <th>Facilitator</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% if internal_facilitators %}
-                {% for f in internal_facilitators %}
-                    <tr>
-                        <td class="text-center">Internal</td>
-                        <td>{% if f.emp and f.emp.pi and f.emp.pi.user %}{{ f.emp.pi.user.get_fullname }}{% endif %}</td>
-                    </tr>
-                {% endfor %}
-            {% endif %}
-
-            {% if external_facilitators %}
-                {% for f in external_facilitators %}
-                    <tr>
-                        <td class="text-center">External</td>
-                        <td>{{ f.rp_name|default_if_none:"" }}</td>
-                    </tr>
-                {% endfor %}
-            {% endif %}
-
-            {% if not internal_facilitators and not external_facilitators %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover" width="100%">
+            <thead>
                 <tr>
-                    <td colspan="2" class="text-center">No facilitators found.</td>
+                    <th width="20%" class="text-center">Type</th>
+                    <th>Facilitator</th>
                 </tr>
-            {% endif %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                {% if facilitators %}
+                    {% for f in facilitators %}
+                        <tr>
+                            <td class="text-center">{% if f.is_external %}External{% else %}Internal{% endif %}</td>
+                            <td>
+                                {% if f.is_external %}
+                                    {{ f.rp_name|default_if_none:"" }}
+                                {% else %}
+                                    {% if f.emp and f.emp.pi and f.emp.pi.user %}{{ f.emp.pi.user.get_fullname }}{% endif %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="2" class="text-center">No facilitators assigned.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <div class="table-responsive">

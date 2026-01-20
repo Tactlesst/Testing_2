@@ -1,18 +1,27 @@
 from django.db import models
 
-from backend.models import Division, Section, Empprofile
+from backend.models import Empprofile
+from frontend.models import Trainingtitle
+
+
+class LdsCategory(models.Model):
+    category_name = models.CharField(max_length=255)
+    approve = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'lds_category'
 
 
 class LdsLdiPlan(models.Model):
-    division = models.ForeignKey(Division, models.DO_NOTHING, blank=True, null=True)
-    section = models.ForeignKey(Section, models.DO_NOTHING, blank=True, null=True)
-    training_category = models.CharField(max_length=255, blank=True, null=True)
+    category = models.ForeignKey(LdsCategory, models.DO_NOTHING, db_column='category_id', blank=True, null=True)
     quarter = models.CharField(max_length=10, blank=True, null=True)
     platform = models.CharField(max_length=255, blank=True, null=True)
+    training = models.ForeignKey(Trainingtitle, models.DO_NOTHING, db_column='training_id', blank=True, null=True)
     proposed_ldi_activity = models.TextField(blank=True, null=True)
     proposed_date = models.DateField(blank=True, null=True)
     target_participants = models.TextField(blank=True, null=True)
-    budgetary_requirements = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    budgetary_requirements = models.TextField(blank=True, null=True)
     target_competencies = models.TextField(blank=True, null=True)
     venue = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(Empprofile, models.DO_NOTHING, db_column='created_by_id', blank=True, null=True)
