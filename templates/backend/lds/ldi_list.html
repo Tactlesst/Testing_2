@@ -10,22 +10,26 @@
         word-break: break-word;
         display: inline;
     }
-
+    
     #training-titles-table td,
     #training-titles-table th {
         white-space: normal;
         word-break: break-word;
+        vertical-align: top;
+        line-height: 1.4;
     }
 
     #training-titles-table thead th {
         white-space: nowrap;
         word-break: normal;
+        vertical-align: middle;
     }
 
     #training-titles-table td .row-actions {
         opacity: 0.25;
         transition: opacity 0.15s ease-in-out;
         white-space: nowrap;
+        vertical-align: middle;
     }
 
     #training-titles-table tbody tr:hover td .row-actions {
@@ -45,6 +49,93 @@
 
     #training-titles-table td .row-actions a.action-delete {
         color: #dc3545;
+    }
+    
+    /* Responsive table improvements */
+    @media (max-width: 768px) {
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        #training-titles-table {
+            min-width: 800px;
+        }
+        
+        /* Hide less important columns on small screens */
+        #training-titles-table th:nth-child(4),
+        #training-titles-table td:nth-child(4),
+        #training-titles-table th:nth-child(5),
+        #training-titles-table td:nth-child(5),
+        #training-titles-table th:nth-child(6),
+        #training-titles-table td:nth-child(6) {
+            display: none;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        /* Hide more columns on very small screens including Action column */
+        #training-titles-table th:nth-child(3),
+        #training-titles-table td:nth-child(3),
+        #training-titles-table th:nth-child(4),
+        #training-titles-table td:nth-child(4),
+        #training-titles-table th:nth-child(5),
+        #training-titles-table td:nth-child(5),
+        #training-titles-table th:nth-child(6),
+        #training-titles-table td:nth-child(6),
+        #training-titles-table th:nth-child(7),
+        #training-titles-table td:nth-child(7),
+        #training-titles-table th:nth-child(8),
+        #training-titles-table td:nth-child(8),
+        #training-titles-table th:nth-child(9),
+        #training-titles-table td:nth-child(9),
+        #training-titles-table th:nth-child(10),
+        #training-titles-table td:nth-child(10) {
+            display: none;
+        }
+        
+        #training-titles-table {
+            min-width: 400px;
+        }
+    }
+    
+    /* Expandable row styles */
+    .row-details {
+        display: none;
+        background-color: #f8f9fa;
+        border-left: 3px solid #17a2b8;
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+    
+    .row-details .detail-item {
+        padding: 5px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .row-details .detail-item:last-child {
+        border-bottom: none;
+    }
+    
+    .row-details .detail-label {
+        font-weight: bold;
+        color: #495057;
+        display: inline-block;
+        min-width: 120px;
+    }
+    
+    .row-details .detail-value {
+        color: #212529;
+    }
+    
+    /* Clickable row indicator */
+    .clickable-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    
+    .clickable-row:hover {
+        background-color: #f5f5f5;
     }
 </style>
 {% endblock %}
@@ -158,6 +249,7 @@
                     {% csrf_token %}
                     <input type="hidden" name="ldi_id" id="ldi-id">
                     <input type="hidden" name="training_id" id="ldi-training-id">
+                    <input type="hidden" name="created_by_id" id="ldi-created-by-id">
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label>Training Title <span class="text-danger">*</span></label>
@@ -248,6 +340,7 @@ createBtn.addEventListener('click', function() {
     $('#ldi-category-id').val('');
     $('#ldi-quarter').val('Q1');
     $('#ldi-platform').val('Face-to-Face');
+    $('#ldi-created-by-id').val('{{ request.session.emp_id }}');
     modal.modal('show');
 });
 
@@ -294,17 +387,15 @@ function openLdiModalForTraining(trainingId, trainingTitle){
 var trainingTitlesTable = $('#training-titles-table').DataTable({
     'processing': true,
     'deferRender': true,
-    'order': [[ 0, 'desc' ]],
+    'order': [[ 1, 'desc' ]],
     'lengthMenu': [25,50,100],
     'ajax': {
         'url': '{% url "lds_training_list_ajax" %}',
         'type': 'GET',
     },
-    'columnDefs': [
-        { 'targets': [0], 'visible': false, 'searchable': false },
-    ],
+    'columnDefs': [],
     'columns': [
-        { 'data': 'id' },
+        { 'data': 'id', 'visible': false },
         {
             'data': 'tt_name',
             'render': function(data, type, row, meta){
@@ -487,6 +578,7 @@ $(document).on('click', 'a[data-role=ldi-row-edit]', function(){
             $('#ldi-budgetary-requirements').val(resp.row.budgetary_requirements);
             $('#ldi-target-competencies').val(resp.row.target_competencies);
             $('#ldi-venue').val(resp.row.venue);
+            $('#ldi-created-by-id').val(resp.row.created_by_id || '{{ request.session.emp_id }}');
             $('#ldi_plan_details').modal('hide');
             modal.modal('show');
         }
