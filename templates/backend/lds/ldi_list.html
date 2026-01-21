@@ -2,12 +2,101 @@
 {% load static %}
 
 {% block style %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/adjustments.css' %}">
 <style>
     .training-title-cell {
         max-width: 520px;
         white-space: normal;
         word-break: break-word;
         display: inline;
+    }
+    
+    /* Responsive table improvements */
+    @media (max-width: 768px) {
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        #training-titles-table {
+            min-width: 800px;
+        }
+        
+        /* Hide less important columns on small screens */
+        #training-titles-table th:nth-child(4),
+        #training-titles-table td:nth-child(4) {
+            display: none;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        /* Hide more columns on very small screens */
+        #training-titles-table th:nth-child(3),
+        #training-titles-table td:nth-child(3),
+        #training-titles-table th:nth-child(5),
+        #training-titles-table td:nth-child(5),
+        #training-titles-table th:nth-child(6),
+        #training-titles-table td:nth-child(6),
+        #training-titles-table th:nth-child(7),
+        #training-titles-table td:nth-child(7) {
+            display: none;
+        }
+        
+        #training-titles-table {
+            min-width: 400px;
+        }
+    }
+    
+    /* Expandable row styles */
+    .row-details {
+        display: none;
+        background-color: #f8f9fa;
+        border-left: 3px solid #17a2b8;
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+    
+    .row-details .detail-item {
+        padding: 5px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .row-details .detail-item:last-child {
+        border-bottom: none;
+    }
+    
+    .row-details .detail-label {
+        font-weight: bold;
+        color: #495057;
+        display: inline-block;
+        min-width: 120px;
+    }
+    
+    .row-details .detail-value {
+        color: #212529;
+    }
+    
+    /* Mobile view details button */
+    .view-details-btn {
+        display: none;
+        width: 100%;
+        margin-top: 10px;
+    }
+    
+    @media (max-width: 576px) {
+        .view-details-btn {
+            display: block;
+        }
+    }
+    
+    /* Clickable row indicator */
+    .clickable-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    
+    .clickable-row:hover {
+        background-color: #f5f5f5;
     }
 </style>
 {% endblock %}
@@ -286,12 +375,105 @@ var trainingTitlesTable = $('#training-titles-table').DataTable({
             'render': function(data, type, row, meta){
                 return (
                     '<a href="javascript:;" class="mr-2 ldi-plan-edit-toggle" data-training-id="' + row.id + '">Edit</a>' +
-                    '<a href="javascript:;" class="text-danger" data-role="ldi-row-delete" data-id="' + row.id + '">Delete</a>'
+                    '<a href="javascript:;" class="text-danger" data-role="ldi-row-delete" data-id="' + row.id + '">Delete</a>' +
+                    '<button class="btn btn-sm btn-info view-details-btn" data-row-id="' + row.id + '" data-row-data="' + encodeURIComponent(JSON.stringify(row)) + '">View Details</button>'
                 );
             }
         },
     ],
 });
+
+    // Track currently open details row
+    var openDetailsRow = null;
+
+    // Handle View Details button click
+    $(document).on('click', '.view-details-btn', function(e){
+        e.stopPropagation();
+        var rowData = JSON.parse(decodeURIComponent($(this).data('row-data')));
+        showRowDetails(rowData, $(this));
+    });
+
+    // Handle row click for mobile view
+    $(document).on('click', '#training-titles-table tbody tr', function(e){
+        // Only handle clicks on mobile and not on action buttons
+        if ($(window).width() <= 576 && !$(e.target).closest('a, button').length) {
+            var row = trainingTitlesTable.row($(this));
+            var rowData = row.data();
+            if (rowData) {
+                showRowDetails(rowData, $(this));
+            }
+        }
+    });
+
+    // Function to show row details
+    function showRowDetails(rowData, triggerElement) {
+        var currentTr = triggerElement.closest('tr');
+        
+        // If the clicked row is already open, close it
+        if (openDetailsRow && openDetailsRow.is(currentTr)) {
+            openDetailsRow.next('.row-details').slideUp(300, function(){
+                $(this).remove();
+            });
+            openDetailsRow = null;
+            return;
+        }
+
+        // Remove any existing details
+        $('.row-details').slideUp(300, function(){
+            $(this).remove();
+        });
+        
+        // Create details HTML
+        var detailsHtml = '<div class="row-details">' +
+            '<div class="detail-item"><span class="detail-label">Status:</span> <span class="detail-value">' + (rowData.tt_status || 'N/A') + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label">Added by:</span> <span class="detail-value">' + (rowData.added_by || 'N/A') + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label">Requests:</span> <span class="detail-value">' + (rowData.requests_count || 0) + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label">Trainees:</span> <span class="detail-value">' + (rowData.trainees_count || 0) + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label">Facilitators:</span> <span class="detail-value">' + (rowData.facilitators_count || 0) + '</span></div>' +
+            '<div class="detail-item"><span class="detail-label">Actions:</span> <span class="detail-value">' +
+                '<a href="javascript:;" class="mr-2 ldi-plan-edit-toggle" data-training-id="' + rowData.id + '">Edit</a> ' +
+                '<a href="javascript:;" class="text-danger" data-role="ldi-row-delete" data-id="' + rowData.id + '">Delete</a>' +
+            '</span></div>' +
+            '</div>';
+        
+        // Insert details after the row
+        var targetRow;
+        if (triggerElement.hasClass('view-details-btn')) {
+            targetRow = triggerElement.closest('tr');
+        } else {
+            targetRow = triggerElement;
+        }
+        targetRow.after(detailsHtml);
+        
+        // Show details with animation
+        targetRow.next('.row-details').slideDown(300);
+        openDetailsRow = targetRow;
+    }
+
+    // Hide details when clicking outside
+    $(document).on('click', function(e){
+        if (!$(e.target).closest('#training-titles-table, .row-details').length) {
+            $('.row-details').slideUp(300, function(){
+                $(this).remove();
+            });
+            openDetailsRow = null;
+        }
+    });
+
+    // Handle window resize to close details on desktop view
+    var resizeTimer;
+    $(window).on('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            // If we're on desktop view and details are open, close them
+            if ($(window).width() > 576 && openDetailsRow) {
+                $('.row-details').slideUp(300, function(){
+                    $(this).remove();
+                });
+                openDetailsRow = null;
+            }
+        }, 250); // Debounce resize event
+    });
 
 $(document).on('click', 'a.ldi-plan-edit-toggle', function(){
     var trainingId = $(this).data('training-id');
