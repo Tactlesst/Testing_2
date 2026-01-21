@@ -287,12 +287,12 @@
         });
         {# nazef working in this code end #}
 
-        $(document).on('mousedown', '.select2-selection__rendered .ldi-plan-info-toggle', function(e){
+        $(document).on('mousedown', '.select2-container .ldi-plan-info-toggle', function(e){
             e.preventDefault();
             e.stopPropagation();
         });
 
-        $(document).on('click', '.select2-selection__rendered .ldi-plan-info-toggle', function(e){
+        $(document).on('click', '.ldi-plan-info-toggle', function(e){
             e.preventDefault();
             e.stopPropagation();
 
@@ -656,7 +656,7 @@
                     });
                 },
             }).then(function (response){
-                if (response.value.data == "success"){
+                if (response.value && response.value.data == "success"){
                     Swal.fire({
                       title: "Good job!",
                       text: response.value.msg,
@@ -670,8 +670,8 @@
                     });
                 } else {
                     Swal.fire({
-                      title: "Unauthorized transaction",
-                      text: response.value.msg,
+                      title: "Unable to add participant",
+                      text: (response.value && response.value.msg) ? response.value.msg : 'Unable to add participant.',
                       icon: "warning",
                       confirmButtonColor: "#3498DB",
                     });
@@ -702,7 +702,7 @@
                     });
                 },
             }).then(function (response){
-                if (response.value.data == "success"){
+                if (response.value && response.value.data == "success"){
                     Swal.fire({
                       title: "Good job!",
                       text: response.value.msg,
@@ -713,6 +713,13 @@
                             $('#addExternalParticipantForm').trigger('reset');
                             $('#lds-external-participants-table').DataTable().ajax.reload();
                         }
+                    });
+                } else {
+                    Swal.fire({
+                      title: "Unable to add participant",
+                      text: (response.value && response.value.msg) ? response.value.msg : 'Unable to add participant.',
+                      icon: "warning",
+                      confirmButtonColor: "#3498DB",
                     });
                 }
             });
@@ -741,7 +748,7 @@
                     });
                 },
             }).then(function (response){
-                if (response.value.data == "success"){
+                if (response.value && response.value.data == "success"){
                     Swal.fire({
                       title: "Good job!",
                       text: response.value.msg,
@@ -755,8 +762,8 @@
                     });
                 } else {
                     Swal.fire({
-                      title: "Unauthorized transaction",
-                      text: response.value.msg,
+                      title: "Unable to add facilitator",
+                      text: (response.value && response.value.msg) ? response.value.msg : 'Unable to add facilitator.',
                       icon: "warning",
                       confirmButtonColor: "#3498DB",
                     });
@@ -787,7 +794,7 @@
                     });
                 },
             }).then(function (response){
-                if (response.value.data == "success"){
+                if (response.value && response.value.data == "success"){
                     Swal.fire({
                       title: "Good job!",
                       text: response.value.msg,
@@ -801,8 +808,8 @@
                     });
                 } else {
                     Swal.fire({
-                      title: "Unauthorized transaction",
-                      text: response.value.msg,
+                      title: "Unable to add facilitator",
+                      text: (response.value && response.value.msg) ? response.value.msg : 'Unable to add facilitator.',
                       icon: "warning",
                       confirmButtonColor: "#3498DB",
                     });

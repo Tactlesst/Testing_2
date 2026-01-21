@@ -5,7 +5,7 @@
 </div>
 
 <!-- Only show Add button for admins/managers -->
-{% if user|check_permission:'ld_manager' or user|check_permission:'superadmin' %}
+{% if 0 %}
 <div class="mb-3 text-right">
     <button type="button" class="btn btn-info" data-role="ldi-add" data-training-id="{{ training.id }}" data-training-title="{{ training.tt_name }}">
         <i class="fas fa-plus"></i> Add LDI Plan
@@ -14,7 +14,7 @@
 {% endif %}
 {% else %}
 <!-- Fallback if training object is not available -->
-{% if user|check_permission:'ld_manager' or user|check_permission:'superadmin' %}
+{% if 0 %}
 <div class="mb-3 text-right">
     <button type="button" class="btn btn-info" data-role="ldi-add" data-training-id="{{ training_id }}" data-training-title="Training Plan">
         <i class="fas fa-plus"></i> Add LDI Plan
@@ -33,7 +33,7 @@
                 <th width="25%">Target Participants</th>
                 <th width="15%">Budget</th>
                 <th width="21%">Category</th>
-                {% if user|check_permission:'ld_manager' or user|check_permission:'superadmin' %}
+                {% if 0 %}
                 <th width="10%" class="text-center">Action</th>
                 {% endif %}
             </tr>
@@ -47,7 +47,7 @@
                 <td style="word-break: break-word;">{{ row.target_participants|default_if_none:'' }}</td>
                 <td style="word-break: break-word;">{{ row.budgetary_requirements|default_if_none:'' }}</td>
                 <td style="word-break: break-word;">{{ row.category.category_name|default_if_none:'' }}</td>
-                {% if user|check_permission:'ld_manager' or user|check_permission:'superadmin' %}
+                {% if 0 %}
                 <td class="text-center">
                     <a href="javascript:;" class="mr-2" data-role="ldi-row-edit" data-id="{{ row.id }}">Edit</a>
                     <a href="javascript:;" class="text-danger" data-role="ldi-row-delete" data-id="{{ row.id }}">Delete</a>
@@ -56,7 +56,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="7" class="text-center">No LDI Plan record found for this Training Title.</td>
+                <td colspan="6" class="text-center">No LDI Plan record found for this Training Title.</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -71,90 +71,4 @@
 </div>
 
 <script>
-// LDI Plan Edit Handler
-$(document).on('click', 'a[data-role=ldi-row-edit]', function(){
-    var id = $(this).data('id');
-    $.ajax({
-        url: '{% url "ldi_plan_get" 0 %}'.replace('/0/', '/' + id + '/'),
-        type: 'GET',
-    }).done(function(resp){
-        if (resp && resp.data === 'success' && resp.row){
-            $('#ldi-id').val(resp.row.id);
-            $('#ldi-training-id').val(resp.row.training_id || '');
-            $('#ldi-training-title').val(resp.row.training_title || '');
-            $('#ldi-category-id').val(resp.row.category_id || '');
-            $('#ldi-quarter').val(resp.row.quarter);
-            $('#ldi-platform').val(resp.row.platform);
-            $('#ldi-proposed-ldi-activity').val(resp.row.proposed_ldi_activity);
-            $('#ldi-proposed-date').val(resp.row.proposed_date);
-            $('#ldi-target-participants').val(resp.row.target_participants);
-            $('#ldi-budgetary-requirements').val(resp.row.budgetary_requirements);
-            $('#ldi-target-competencies').val(resp.row.target_competencies);
-            $('#ldi-venue').val(resp.row.venue);
-            
-            // Close any open modals and open the LDI form modal
-            if($('#ldi_plan_details').length){
-                $('#ldi_plan_details').modal('hide');
-            }
-            if($('#ldi_form_modal').length){
-                $('#ldi_form_modal').modal('show');
-            }
-        }
-    });
-});
-
-// LDI Plan Delete Handler
-$(document).on('click', 'a[data-role=ldi-row-delete]', function(){
-    var id = $(this).data('id');
-
-    if(confirm('Are you sure you want to delete this LDI plan?')){
-        $.ajax({
-            url: '{% url "ldi_plan_delete" 0 %}'.replace('/0/', '/' + id + '/'),
-            type: 'POST',
-            data: {
-                'csrfmiddlewaretoken': $('[name="csrfmiddlewaretoken"]').val(),
-            },
-            success: function(resp){
-                if(resp && resp.data === 'success'){
-                    alert('LDI plan deleted successfully.');
-                    // Reload the page or current modal content
-                    location.reload();
-                } else {
-                    alert('Error: ' + (resp.msg || 'Failed to delete'));
-                }
-            },
-            error: function(){
-                alert('Error deleting LDI plan');
-            }
-        });
-    }
-});
-
-// LDI Plan Add Handler
-$(document).on('click', 'button[data-role=ldi-add]', function(){
-    var trainingId = $(this).data('training-id');
-    var trainingTitle = $(this).data('training-title');
-    
-    // Reset form
-    $('#ldi-id').val('');
-    $('#ldi-training-id').val(trainingId);
-    $('#ldi-training-title').val(trainingTitle);
-    $('#ldi-category-id').val('');
-    $('#ldi-quarter').val('Q1');
-    $('#ldi-platform').val('Face-to-Face');
-    $('#ldi-proposed-ldi-activity').val('');
-    $('#ldi-proposed-date').val('');
-    $('#ldi-target-participants').val('');
-    $('#ldi-budgetary-requirements').val('');
-    $('#ldi-target-competencies').val('');
-    $('#ldi-venue').val('');
-    
-    // Close current modal and open form
-    if($('#ldi_plan_details').length){
-        $('#ldi_plan_details').modal('hide');
-    }
-    if($('#ldi_form_modal').length){
-        $('#ldi_form_modal').modal('show');
-    }
-});
 </script>

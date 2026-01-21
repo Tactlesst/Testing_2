@@ -225,7 +225,11 @@ def add_training_participant(request, pk, type):
         if type == 0:
             id_number = re.split('\[|\]', request.POST.get('employee'))
             emp = Empprofile.objects.values('id', 'pi__mobile_no').filter(id_number=id_number[1]).first()
+            check_facilitator = LdsFacilitator.objects.filter(emp_id=emp['id'], rso_id=pk)
             check = LdsParticipants.objects.filter(emp_id=emp['id'], rso_id=pk)
+            if check_facilitator:
+                return JsonResponse({'error': True,
+                                     'msg': "You can't add this employee as a participant because it already existed in the facilitator."})
             if not check:
                 participant = LdsParticipants(
                     emp_id=emp['id'],
@@ -265,8 +269,22 @@ def add_training_participant(request, pk, type):
             else:
                 return JsonResponse({'error': True, 'msg': 'Participant already existed in the training.'})
         else:
+            name = (request.POST.get('employee') or '').strip()
+            if not name:
+                return JsonResponse({'error': True, 'msg': 'Please enter a participant name.'})
+            norm_name = name.upper()
+
+            check_participant = LdsParticipants.objects.filter(rso_id=pk, type=1, participants_name__iexact=norm_name)
+            if check_participant:
+                return JsonResponse({'error': True, 'msg': 'Participant already existed in the training.'})
+
+            check_facilitator = LdsFacilitator.objects.filter(rso_id=pk, is_external=1, rp_name__iexact=norm_name)
+            if check_facilitator:
+                return JsonResponse({'error': True,
+                                     'msg': "You can't add this person as a participant because it already existed in the facilitator."})
+
             participant = LdsParticipants(
-                participants_name=request.POST.get('employee').upper(),
+                participants_name=norm_name,
                 rso_id=pk,
                 type=type
             )
@@ -327,9 +345,23 @@ def add_training_facilitator(request, pk, type):
                     else:
                         return JsonResponse({'error': True, 'msg': 'Facilitator already existed in the training.'})
             else:
+                name = (request.POST.get('employee') or '').strip()
+                if not name:
+                    return JsonResponse({'error': True, 'msg': 'Please enter a facilitator name.'})
+                norm_name = name.upper()
+
+                check_facilitator = LdsFacilitator.objects.filter(rso_id=pk, is_external=1, rp_name__iexact=norm_name)
+                if check_facilitator:
+                    return JsonResponse({'error': True, 'msg': 'Facilitator already existed in the training.'})
+
+                check_participant = LdsParticipants.objects.filter(rso_id=pk, type=1, participants_name__iexact=norm_name)
+                if check_participant:
+                    return JsonResponse({'error': True,
+                                         'msg': "You can't add this person as a facilitator because it already existed in the participant."})
+
                 LdsFacilitator.objects.create(
                     is_external=1,
-                    rp_name=request.POST.get('employee'),
+                    rp_name=norm_name,
                     rso_id=pk,
                     is_resource_person=0,
                     is_group=0

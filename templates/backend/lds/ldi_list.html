@@ -10,93 +10,41 @@
         word-break: break-word;
         display: inline;
     }
-    
-    /* Responsive table improvements */
-    @media (max-width: 768px) {
-        .table-responsive {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        #training-titles-table {
-            min-width: 800px;
-        }
-        
-        /* Hide less important columns on small screens */
-        #training-titles-table th:nth-child(4),
-        #training-titles-table td:nth-child(4) {
-            display: none;
-        }
+
+    #training-titles-table td,
+    #training-titles-table th {
+        white-space: normal;
+        word-break: break-word;
     }
-    
-    @media (max-width: 576px) {
-        /* Hide more columns on very small screens */
-        #training-titles-table th:nth-child(3),
-        #training-titles-table td:nth-child(3),
-        #training-titles-table th:nth-child(5),
-        #training-titles-table td:nth-child(5),
-        #training-titles-table th:nth-child(6),
-        #training-titles-table td:nth-child(6),
-        #training-titles-table th:nth-child(7),
-        #training-titles-table td:nth-child(7) {
-            display: none;
-        }
-        
-        #training-titles-table {
-            min-width: 400px;
-        }
+
+    #training-titles-table thead th {
+        white-space: nowrap;
+        word-break: normal;
     }
-    
-    /* Expandable row styles */
-    .row-details {
-        display: none;
-        background-color: #f8f9fa;
-        border-left: 3px solid #17a2b8;
-        padding: 15px;
-        margin-bottom: 10px;
+
+    #training-titles-table td .row-actions {
+        opacity: 0.25;
+        transition: opacity 0.15s ease-in-out;
+        white-space: nowrap;
     }
-    
-    .row-details .detail-item {
-        padding: 5px 0;
-        border-bottom: 1px solid #e9ecef;
+
+    #training-titles-table tbody tr:hover td .row-actions {
+        opacity: 1;
     }
-    
-    .row-details .detail-item:last-child {
-        border-bottom: none;
+
+    #training-titles-table td .row-actions a {
+        font-size: 12px;
+        color: #6c757d;
+        text-decoration: none;
     }
-    
-    .row-details .detail-label {
-        font-weight: bold;
-        color: #495057;
-        display: inline-block;
-        min-width: 120px;
+
+    #training-titles-table td .row-actions a:hover {
+        color: #343a40;
+        text-decoration: underline;
     }
-    
-    .row-details .detail-value {
-        color: #212529;
-    }
-    
-    /* Mobile view details button */
-    .view-details-btn {
-        display: none;
-        width: 100%;
-        margin-top: 10px;
-    }
-    
-    @media (max-width: 576px) {
-        .view-details-btn {
-            display: block;
-        }
-    }
-    
-    /* Clickable row indicator */
-    .clickable-row {
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-    }
-    
-    .clickable-row:hover {
-        background-color: #f5f5f5;
+
+    #training-titles-table td .row-actions a.action-delete {
+        color: #dc3545;
     }
 </style>
 {% endblock %}
@@ -142,6 +90,9 @@
                                     <th>Training Title</th>
                                     <th width="15%" class="text-center">tt_status</th>
                                     <th width="25%">Added by</th>
+                                    <th width="20%">Venue</th>
+                                    <th width="12%" class="text-center">Date Added</th>
+                                    <th width="12%" class="text-center">Platform</th>
                                     <th width="10%" class="text-center">Requests</th>
                                     <th width="10%" class="text-center">Trainees</th>
                                     <th width="10%" class="text-center">Facilitators</th>
@@ -365,6 +316,17 @@ var trainingTitlesTable = $('#training-titles-table').DataTable({
         },
         { 'data': 'tt_status', 'className': 'text-center' },
         { 'data': 'added_by' },
+        {
+            'data': 'latest_venue',
+            'render': function(data, type, row, meta){
+                if (type === 'display'){
+                    return '<span class="training-title-cell" title="' + (data || '') + '">' + (data || '') + '</span>';
+                }
+                return data;
+            }
+        },
+        { 'data': 'latest_date_added', 'className': 'text-center' },
+        { 'data': 'latest_platform', 'className': 'text-center' },
         { 'data': 'requests_count', 'className': 'text-center' },
         { 'data': 'trainees_count', 'className': 'text-center' },
         { 'data': 'facilitators_count', 'className': 'text-center' },
@@ -374,9 +336,10 @@ var trainingTitlesTable = $('#training-titles-table').DataTable({
             'searchable': false,
             'render': function(data, type, row, meta){
                 return (
-                    '<a href="javascript:;" class="mr-2 ldi-plan-edit-toggle" data-training-id="' + row.id + '">Edit</a>' +
-                    '<a href="javascript:;" class="text-danger" data-role="ldi-row-delete" data-id="' + row.id + '">Delete</a>' +
-                    '<button class="btn btn-sm btn-info view-details-btn" data-row-id="' + row.id + '" data-row-data="' + encodeURIComponent(JSON.stringify(row)) + '">View Details</button>'
+                    '<span class="row-actions">' +
+                        '<a href="javascript:;" class="mr-2 ldi-plan-edit-toggle" data-training-id="' + row.id + '">Edit</a>' +
+                        '<a href="javascript:;" class="action-delete" data-role="ldi-row-delete" data-id="' + row.id + '">Delete</a>' +
+                    '</span>'
                 );
             }
         },
@@ -549,6 +512,16 @@ $(document).on('click', 'a[data-role=ldi-row-delete]', function(){
                 data: {
                     'csrfmiddlewaretoken': '{{ csrf_token }}',
                 }
+            }).catch(function(xhr){
+                var msg = 'Unable to delete.';
+                try {
+                    if (xhr && xhr.responseJSON && xhr.responseJSON.msg){
+                        msg = xhr.responseJSON.msg;
+                    }
+                } catch (e) {}
+
+                Swal.showValidationMessage(msg);
+                return false;
             });
         },
     }).then(function (response){

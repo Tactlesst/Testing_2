@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.db import IntegrityError, transaction
 from django.db.models import Count
+from django.db.models import OuterRef, Subquery
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
@@ -75,10 +76,15 @@ def lds_training_list_ajax(request):
     date_from = (request.GET.get('date_from') or '').strip()
     date_to = (request.GET.get('date_to') or '').strip()
 
+    latest_rso = LdsRso.objects.filter(training_id=OuterRef('pk')).order_by('-date_added', '-id')
+
     qs = Trainingtitle.objects.select_related('pi__user').annotate(
         requests_count=Count('ldsrso', distinct=True),
         trainees_count=Count('ldsrso__ldsparticipants', distinct=True),
         facilitators_count=Count('ldsrso__ldsfacilitator', distinct=True),
+        latest_venue=Subquery(latest_rso.values('venue')[:1]),
+        latest_date_added=Subquery(latest_rso.values('date_added')[:1]),
+        latest_is_online_platform=Subquery(latest_rso.values('is_online_platform')[:1]),
     ).all()
 
     if date_from:
@@ -99,6 +105,13 @@ def lds_training_list_ajax(request):
 
     data = []
     for row in qs:
+        platform = ''
+        try:
+            if row.latest_is_online_platform is not None:
+                platform = 'Online' if int(row.latest_is_online_platform) == 1 else 'Face-to-Face'
+        except Exception:
+            platform = ''
+
         data.append({
             'id': row.id,
             'tt_name': row.tt_name,
@@ -107,6 +120,9 @@ def lds_training_list_ajax(request):
             'requests_count': row.requests_count,
             'trainees_count': row.trainees_count,
             'facilitators_count': row.facilitators_count,
+            'latest_venue': row.latest_venue or '',
+            'latest_date_added': row.latest_date_added.strftime('%Y-%m-%d') if row.latest_date_added else '',
+            'latest_platform': platform,
         })
 
     return JsonResponse({'data': data})
@@ -221,7 +237,13 @@ def lds_training_title_delete(request, training_id):
         return JsonResponse({'error': True, 'msg': 'Method not allowed'}, status=405)
 
     if LdsRso.objects.filter(training_id=training_id).exists():
-        return JsonResponse({'error': True, 'msg': 'Unable to delete. This training title has existing requests.'}, status=400)
+        return JsonResponse(
+            {
+                'error': True,
+                'msg': 'Unable to delete. This training title has existing requests (participants/facilitators are linked to those requests).',
+            },
+            status=400,
+        )
 
     obj = Trainingtitle.objects.filter(id=training_id).first()
     if not obj:
