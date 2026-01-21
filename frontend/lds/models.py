@@ -46,7 +46,7 @@ class LdsParticipants(models.Model):
 
 
 class LdsRso(models.Model):
-    training = models.ForeignKey(Trainingtitle, models.DO_NOTHING)
+    training = models.ForeignKey(Trainingtitle, models.CASCADE)
     venue = models.CharField(max_length=1024, blank=True, null=True)
     start_date = models.DateTimeField(blank=True, null=True)
     end_date = models.DateTimeField(blank=True, null=True)
@@ -122,12 +122,16 @@ class LdsRso(models.Model):
     def get_status(self):
         template = ""
 
-        if self.rrso_status == 1:
+        if self.rrso_status == -1:
+            template += "<span class='badge badge-danger'>Rejected</span> | "
+        elif self.rrso_status == 1:
             template += "<span class='badge badge-success'>Approved</span> | "
         else:
             template += "<span class='badge badge-primary'>Pending</span> | "
 
-        if self.rso_status == 1:
+        if self.rso_status == -1:
+            template += "<span class='badge badge-danger'>Rejected</span> | "
+        elif self.rso_status == 1:
             template += "<span class='badge badge-success'>Approved</span> | "
         else:
             template += "<span class='badge badge-primary'>Pending</span> | "

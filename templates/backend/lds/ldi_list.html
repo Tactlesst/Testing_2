@@ -286,7 +286,7 @@ var trainingTitlesTable = $('#training-titles-table').DataTable({
             'render': function(data, type, row, meta){
                 return (
                     '<a href="javascript:;" class="mr-2 ldi-plan-edit-toggle" data-training-id="' + row.id + '">Edit</a>' +
-                    '<a href="javascript:;" class="text-danger" data-role="training-title-delete" data-id="' + row.id + '">Delete</a>'
+                    '<a href="javascript:;" class="text-danger" data-role="ldi-row-delete" data-id="' + row.id + '">Delete</a>'
                 );
             }
         },
@@ -353,7 +353,7 @@ $(document).on('click', 'a[data-role=ldi-row-delete]', function(){
 
     Swal.fire({
         title: 'Are you sure?',
-        text: 'This will delete the LDI plan.',
+        text: 'This will delete the training title.',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#E74C3C',
@@ -362,7 +362,7 @@ $(document).on('click', 'a[data-role=ldi-row-delete]', function(){
         showLoaderOnConfirm: true,
         preConfirm: function (){
             return $.ajax({
-                url: '{% url "ldi_plan_delete" 0 %}'.replace('/0/', '/' + id + '/'),
+                url: '/backend/learning-and-development/training-list/delete/' + id + '/',
                 type: 'POST',
                 data: {
                     'csrfmiddlewaretoken': '{{ csrf_token }}',
@@ -373,11 +373,10 @@ $(document).on('click', 'a[data-role=ldi-row-delete]', function(){
         if (response.value && response.value.data === 'success'){
             Swal.fire({
                 title: 'Deleted!',
-                text: 'LDI plan deleted.',
+                text: 'Training title deleted.',
                 icon: 'success',
                 confirmButtonColor: '#3498DB',
             }).then(function(){
-                $('#ldi_plan_details').modal('show');
                 trainingTitlesTable.ajax.reload(null, false);
             });
         } else if (response.value && response.value.msg) {

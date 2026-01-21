@@ -933,3 +933,26 @@ def remove_idp(request):
     LdsIDPContent.objects.filter(id=request.POST.get('pk')).delete()
     return JsonResponse(
         {'data': 'success', 'msg': 'You have successfully remove the content of your Individual Development Plan.'})
+
+
+@login_required
+def ldi_plan_details_user(request, training_id):
+    """User/Frontend view for LDI Plan details (read-only)"""
+    from backend.lds.models import LdsLdiPlan
+    from frontend.models import Trainingtitle
+    
+    training = Trainingtitle.objects.filter(id=training_id).first()
+    rows = LdsLdiPlan.objects.select_related('category', 'training').filter(training_id=training_id).order_by('-id')
+
+    activities_text = ''
+    first = rows.first()
+    if first and getattr(first, 'proposed_ldi_activity', None):
+        activities_text = first.proposed_ldi_activity
+
+    context = {
+        'training': training,
+        'rows': rows,
+        'activities_text': activities_text,
+        'training_id': training_id,
+    }
+    return render(request, 'frontend/lds/ldi_plan_details.html', context)

@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from backend.lds.views import ld_admin, generate_drn_for_rso, bypass_lds_rso_approval, \
-    bypass_lds_rrso_approval
+    bypass_lds_rrso_approval, training_details_admin, reject_training
 
 urlpatterns = [
     path('', ld_admin, name='ld_admin'),
@@ -29,6 +29,8 @@ urlpatterns = [
     # nazef working in this code end
     #end added paths for LDI plan by Nazef
 
+    path('details/<int:pk>/', training_details_admin, name='training_details_admin'),
+    path('details/<int:pk>/reject/', reject_training, name='reject_training'),
     path('rrso/bypass-approval/<int:pk>', bypass_lds_rrso_approval, name='bypass_lds_rrso_approval'),
     path('rso/bypass-approval/<int:pk>', bypass_lds_rso_approval, name='bypass_lds_rso_approval'),
     path('generate/rso/', generate_drn_for_rso, name='generate_drn_for_rso'),

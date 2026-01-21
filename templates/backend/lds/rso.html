@@ -54,7 +54,7 @@
 	<div class="modal-dialog modal-lg">
 		<div class="modal-content animated bounceInDown">
 	        <div class="modal-header bg-info">
-	            <h3 class="modal-title">TRAINING DETAILS</h3>
+	            <h3 class="modal-title">TRAINING DETAILS (Admin View)</h3>
 	            <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
 	        </div>
             <div id="details-content"></div>
@@ -97,7 +97,7 @@ $(document).ready(function(){
 
     $(document).on('click', 'a[data-role=details]', function(){
         var id = $(this).data('id');
-        $('#training_details').modal('show').find('#details-content').load('/learning-and-development/details/' + id);
+        $('#training_details').modal('show').find('#details-content').load('/backend/learning-and-development/details/' + id);
     });
 });
 </script>

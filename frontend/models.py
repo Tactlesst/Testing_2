@@ -466,7 +466,7 @@ class Trainingtype(models.Model):
 
 
 class Training(models.Model):
-    tt = models.ForeignKey(Trainingtitle, models.DO_NOTHING)
+    tt = models.ForeignKey(Trainingtitle, models.CASCADE)
     training = models.CharField(max_length=1024, null=True, blank=True)
     tr_from = models.DateField()
     tr_to = models.DateField()

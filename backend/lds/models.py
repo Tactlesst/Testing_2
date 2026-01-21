@@ -17,7 +17,7 @@ class LdsLdiPlan(models.Model):
     category = models.ForeignKey(LdsCategory, models.DO_NOTHING, db_column='category_id', blank=True, null=True)
     quarter = models.CharField(max_length=10, blank=True, null=True)
     platform = models.CharField(max_length=255, blank=True, null=True)
-    training = models.ForeignKey(Trainingtitle, models.DO_NOTHING, db_column='training_id', blank=True, null=True)
+    training = models.ForeignKey(Trainingtitle, models.CASCADE, db_column='training_id', blank=True, null=True)
     proposed_ldi_activity = models.TextField(blank=True, null=True)
     proposed_date = models.DateField(blank=True, null=True)
     target_participants = models.TextField(blank=True, null=True)

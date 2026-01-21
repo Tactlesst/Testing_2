@@ -5,7 +5,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.contrib.auth.decorators import login_required, permission_required
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.db import IntegrityError, transaction
 from django.db.models import Count
 from django.db.models import Q
@@ -429,11 +429,13 @@ def ldi_plan_details(request, training_id):
     if first and getattr(first, 'proposed_ldi_activity', None):
         activities_text = first.proposed_ldi_activity
 
-    return render(request, 'backend/lds/ldi_plan_details.html', {
+    context = {
         'training': training,
         'rows': rows,
         'activities_text': activities_text,
-    })
+        'training_id': training_id,  # Pass training_id as backup
+    }
+    return render(request, 'backend/lds/ldi_plan_details.html', context)
 
 @login_required
 def ldi_plan_save(request):
@@ -884,3 +886,38 @@ def bypass_lds_rrso_approval(request, pk):
 def bypass_lds_rso_approval(request, pk):
     LdsRso.objects.filter(id=pk).update(rso_status=1)
     return JsonResponse({'data': 'success', 'msg': 'You have successfully approved the Regional Special Order'})
+
+
+@login_required
+@permission_required('auth.ld_manager')
+def training_details_admin(request, pk):
+    """Admin view for training details with action buttons"""
+    obj = get_object_or_404(LdsRso, pk=pk)
+    context = {
+        'training': obj,
+        'participants': LdsParticipants.objects.filter(rso_id=pk).order_by('emp__pi__user__last_name'),
+        'facilitators': LdsFacilitator.objects.filter(rso_id=pk).order_by('emp__pi__user__last_name'),
+        'is_admin': True,
+    }
+    return render(request, 'backend/lds/training_details_admin.html', context)
+
+
+@login_required
+@csrf_exempt
+@permission_required('auth.ld_manager')
+def reject_training(request, pk):
+    """Handle training rejection - sets status to -1"""
+    if request.method == "POST":
+        try:
+            training = get_object_or_404(LdsRso, pk=pk)
+            
+            # Mark as rejected by setting status to -1
+            training.rrso_status = -1
+            training.rso_status = -1
+            training.save()
+            
+            return JsonResponse({'data': 'success', 'msg': 'Training has been rejected successfully.'})
+        except Exception as e:
+            return JsonResponse({'error': True, 'msg': str(e)}, status=500)
+    
+    return JsonResponse({'error': True, 'msg': 'Invalid request method.'}, status=400)

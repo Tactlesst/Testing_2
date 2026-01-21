@@ -303,7 +303,7 @@
 
             if ($('#ldi_plan_info').length){
                 $('#ldi_plan_info').modal('show').find('#ldi-plan-info-content').load(
-                    '{% url "ldi_plan_details" 0 %}'.replace('/0/', '/' + trainingId + '/')
+                    '{% url "ldi_plan_details_user" 0 %}'.replace('/0/', '/' + trainingId + '/')
                 );
             }
         });
