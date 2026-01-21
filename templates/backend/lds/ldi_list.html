@@ -179,7 +179,6 @@
                                 <tr>
                                     <th width="10%" class="text-center" style="display:none;">ID</th>
                                     <th>Training Title</th>
-                                    <th width="15%" class="text-center">tt_status</th>
                                     <th width="25%">Added by</th>
                                     <th width="20%">Venue</th>
                                     <th width="12%" class="text-center">Date Added</th>
@@ -187,6 +186,7 @@
                                     <th width="10%" class="text-center">Requests</th>
                                     <th width="10%" class="text-center">Trainees</th>
                                     <th width="10%" class="text-center">Facilitators</th>
+                                    <th width="15%" class="text-center">tt_status</th>
                                     <th width="10%">Action</th>
                                 </tr>
                             </thead>
@@ -346,10 +346,105 @@ createBtn.addEventListener('click', function() {
 
 $(document).on('click', 'a.ldi-plan-title-toggle', function(){
     var trainingId = $(this).data('training-id');
-    $('#ldi_plan_details').modal('show').find('#ldi-plan-details-content').load(
-        '{% url "ldi_plan_details" 0 %}'.replace('/0/', '/' + trainingId + '/')
-    );
+
+    var trainingTitle = '';
+    try {
+        var tr = $(this).closest('tr');
+        if (tr.hasClass('child')){
+            tr = tr.prev();
+        }
+        var row = trainingTitlesTable.row(tr).data();
+        trainingTitle = (row && row.tt_name) ? row.tt_name : '';
+    } catch (e) {}
+
+    $('#ldi_plan_details').modal('show');
+    loadLdiPlanDetails(trainingId, trainingTitle);
 });
+
+function escapeHtml(value){
+    return String(value || '').replace(/[&<>'"]/g, function(c){
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]);
+    });
+}
+
+function formatDateYmdToMonDYear(value){
+    if (!value){
+        return '';
+    }
+    var parts = String(value).split('-');
+    if (parts.length !== 3){
+        return value;
+    }
+    var yyyy = parseInt(parts[0], 10);
+    var mm = parseInt(parts[1], 10) - 1;
+    var dd = parseInt(parts[2], 10);
+    var d = new Date(yyyy, mm, dd);
+    if (isNaN(d.getTime())){
+        return value;
+    }
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+}
+
+function loadLdiPlanDetails(trainingId, trainingTitle){
+    var container = $('#ldi-plan-details-content');
+    container.html('<div class="text-center p-3">Loading...</div>');
+
+    $.ajax({
+        url: '/api/learning-and-development/ldi-plans/training/' + trainingId + '/',
+        type: 'GET',
+    }).done(function(rows){
+        rows = rows || [];
+
+        var heading = '<div class="mb-2"><strong>' + escapeHtml(trainingTitle || (rows[0] && rows[0].training_title) || '') + '</strong></div>';
+        var table = '';
+        var activities = '';
+
+        if (rows.length){
+            activities = rows[0].proposed_ldi_activity || '';
+        }
+
+        table += '<div class="table-responsive">';
+        table += '<table class="table table-bordered table-hover" width="100%">';
+        table += '<thead><tr>' +
+            '<th width="12%" class="text-center">Quarter</th>' +
+            '<th width="15%" class="text-center">Platform</th>' +
+            '<th width="12%" class="text-center">Proposed Date</th>' +
+            '<th width="25%">Target Participants</th>' +
+            '<th width="15%">Budget</th>' +
+            '<th width="21%">Category</th>' +
+            '</tr></thead>';
+        table += '<tbody>';
+
+        if (!rows.length){
+            table += '<tr><td colspan="6" class="text-center">No LDI Plan record found for this Training Title.</td></tr>';
+        } else {
+            for (var i = 0; i < rows.length; i++){
+                var r = rows[i] || {};
+                table += '<tr>' +
+                    '<td class="text-center">' + escapeHtml(r.quarter || '') + '</td>' +
+                    '<td class="text-center">' + escapeHtml(r.platform || '') + '</td>' +
+                    '<td class="text-center">' + escapeHtml(formatDateYmdToMonDYear(r.proposed_date || '')) + '</td>' +
+                    '<td style="word-break: break-word;">' + escapeHtml(r.target_participants || '') + '</td>' +
+                    '<td style="word-break: break-word;">' + escapeHtml(r.budgetary_requirements || '') + '</td>' +
+                    '<td style="word-break: break-word;">' + escapeHtml(r.training_category || '') + '</td>' +
+                    '</tr>';
+            }
+        }
+
+        table += '</tbody></table></div>';
+
+        var activitiesHtml = '';
+        activitiesHtml += '<div class="mt-3">';
+        activitiesHtml += '<label class="mb-1"><strong>Proposed LDI / Activities</strong></label>';
+        activitiesHtml += '<div class="border rounded p-2" style="white-space: pre-wrap; word-break: break-word;">';
+        activitiesHtml += escapeHtml(activities);
+        activitiesHtml += '</div></div>';
+
+        container.html(heading + table + activitiesHtml);
+    }).fail(function(){
+        container.html('<div class="text-center text-danger p-3">Unable to load LDI plan details.</div>');
+    });
+}
 
 function openLdiModalForTraining(trainingId, trainingTitle){
     $.ajax({
@@ -386,11 +481,12 @@ function openLdiModalForTraining(trainingId, trainingTitle){
 }
 var trainingTitlesTable = $('#training-titles-table').DataTable({
     'processing': true,
+    'serverSide': true,
     'deferRender': true,
     'order': [[ 1, 'desc' ]],
     'lengthMenu': [25,50,100],
     'ajax': {
-        'url': '{% url "lds_training_list_ajax" %}',
+        'url': '/api/learning-and-development/training-titles/',
         'type': 'GET',
     },
     'columnDefs': [],
@@ -405,7 +501,7 @@ var trainingTitlesTable = $('#training-titles-table').DataTable({
                 return data;
             }
         },
-        { 'data': 'tt_status', 'className': 'text-center' },
+        
         { 'data': 'added_by' },
         {
             'data': 'latest_venue',
@@ -416,11 +512,30 @@ var trainingTitlesTable = $('#training-titles-table').DataTable({
                 return data;
             }
         },
-        { 'data': 'latest_date_added', 'className': 'text-center' },
-        { 'data': 'latest_platform', 'className': 'text-center' },
+        {
+            'data': 'latest_date_added',
+            'className': 'text-center',
+            'render': function(data, type, row, meta){
+                if (type === 'display'){
+                    return data ? data : '-';
+                }
+                return data;
+            }
+        },
+        {
+            'data': 'latest_platform',
+            'className': 'text-center',
+            'render': function(data, type, row, meta){
+                if (type === 'display'){
+                    return data ? data : '-';
+                }
+                return data;
+            }
+        },
         { 'data': 'requests_count', 'className': 'text-center' },
         { 'data': 'trainees_count', 'className': 'text-center' },
         { 'data': 'facilitators_count', 'className': 'text-center' },
+        { 'data': 'tt_status', 'className': 'text-center' },
         {
             'data': null,
             'orderable': false,
@@ -479,12 +594,13 @@ var trainingTitlesTable = $('#training-titles-table').DataTable({
         
         // Create details HTML
         var detailsHtml = '<div class="row-details">' +
-            '<div class="detail-item"><span class="detail-label">Status:</span> <span class="detail-value">' + (rowData.tt_status || 'N/A') + '</span></div>' +
+
             '<div class="detail-item"><span class="detail-label">Added by:</span> <span class="detail-value">' + (rowData.added_by || 'N/A') + '</span></div>' +
             '<div class="detail-item"><span class="detail-label">Requests:</span> <span class="detail-value">' + (rowData.requests_count || 0) + '</span></div>' +
             '<div class="detail-item"><span class="detail-label">Trainees:</span> <span class="detail-value">' + (rowData.trainees_count || 0) + '</span></div>' +
             '<div class="detail-item"><span class="detail-label">Facilitators:</span> <span class="detail-value">' + (rowData.facilitators_count || 0) + '</span></div>' +
             '<div class="detail-item"><span class="detail-label">Actions:</span> <span class="detail-value">' +
+                        '<div class="detail-item"><span class="detail-label">Status:</span> <span class="detail-value">' + (rowData.tt_status || 'N/A') + '</span></div>' +
                 '<a href="javascript:;" class="mr-2 ldi-plan-edit-toggle" data-training-id="' + rowData.id + '">Edit</a> ' +
                 '<a href="javascript:;" class="text-danger" data-role="ldi-row-delete" data-id="' + rowData.id + '">Delete</a>' +
             '</span></div>' +

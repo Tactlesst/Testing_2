@@ -1,10 +1,14 @@
 from django_mysql.models.functions import SHA1
+from django.db.models import Count, OuterRef, Subquery, Q
 from rest_framework import generics, permissions
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
-from api.lds.serializers import LdsRsoSerializer, LdsParticipantsSerializer, LdsFacilitatorSerializer, LdsIDPSerializer
+from api.lds.serializers import LdsRsoSerializer, LdsParticipantsSerializer, LdsFacilitatorSerializer, LdsIDPSerializer, LdsTrainingTitleListSerializer, LdsLdiPlanSerializer
 from backend.templatetags.tags import check_permission
 from frontend.lds.models import LdsRso, LdsParticipants, LdsFacilitator, LdsIDP
+from backend.lds.models import LdsLdiPlan
+from frontend.models import Trainingtitle
 
 
 class LdsRsoViews(generics.ListAPIView):
@@ -65,3 +69,90 @@ class LdsIDPViews(generics.ListAPIView):
         return queryset
 
 
+#nazef Added
+class LdsTrainingTitlesDataTableViews(generics.ListAPIView):
+    serializer_class = LdsTrainingTitleListSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        latest_rso = LdsRso.objects.filter(training_id=OuterRef('pk')).order_by('-date_added', '-id')
+        latest_ldi = LdsLdiPlan.objects.filter(training_id=OuterRef('pk')).order_by('-date_created', '-id')
+
+        qs = Trainingtitle.objects.select_related('pi__user').annotate(
+            requests_count=Count('ldsrso', distinct=True),
+            trainees_count=Count('ldsrso__ldsparticipants', distinct=True),
+            facilitators_count=Count('ldsrso__ldsfacilitator', distinct=True),
+            latest_venue=Subquery(latest_ldi.values('venue')[:1]),
+            latest_date_added=Subquery(latest_rso.values('date_added')[:1]),
+            latest_is_online_platform=Subquery(latest_rso.values('is_online_platform')[:1]),
+            latest_ldi_date_created=Subquery(latest_ldi.values('date_created')[:1]),
+            latest_ldi_platform=Subquery(latest_ldi.values('platform')[:1]),
+        )
+
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        draw = int(request.query_params.get('draw', '1') or 1)
+        start = int(request.query_params.get('start', '0') or 0)
+        length = int(request.query_params.get('length', '25') or 25)
+        search_value = (request.query_params.get('search[value]') or '').strip()
+
+        base_qs = self.get_queryset().distinct()
+        records_total = base_qs.count()
+
+        qs = base_qs
+        if search_value:
+            qs = qs.filter(
+                Q(tt_name__icontains=search_value)
+                | Q(pi__user__first_name__icontains=search_value)
+                | Q(pi__user__last_name__icontains=search_value)
+                | Q(latest_venue__icontains=search_value)
+            )
+
+        records_filtered = qs.count()
+
+        column_map = {
+            1: 'id',
+            2: 'tt_name',
+            3: 'tt_status',
+            4: 'pi__user__last_name',
+            5: 'latest_venue',
+            6: 'latest_date_added',
+            7: 'latest_is_online_platform',
+            8: 'requests_count',
+            9: 'trainees_count',
+            10: 'facilitators_count',
+        }
+
+        order_col = int(request.query_params.get('order[0][column]', '1') or 1)
+        order_dir = request.query_params.get('order[0][dir]', 'desc')
+        order_field = column_map.get(order_col, 'id')
+        if order_dir == 'desc':
+            order_field = '-' + order_field
+        qs = qs.order_by(order_field)
+
+        qs = qs[start:start + length]
+
+        serializer = self.get_serializer(qs, many=True)
+        return Response({
+            'draw': draw,
+            'recordsTotal': records_total,
+            'recordsFiltered': records_filtered,
+            'data': serializer.data,
+        })
+
+
+class LdsLdiPlansByTrainingViews(generics.ListAPIView):
+    serializer_class = LdsLdiPlanSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        training_id = self.kwargs.get('training_id')
+        return (
+            LdsLdiPlan.objects.select_related('category', 'training')
+            .filter(training_id=training_id)
+            .order_by('-id')
+        )
+
+
+#nazef end

@@ -77,14 +77,17 @@ def lds_training_list_ajax(request):
     date_to = (request.GET.get('date_to') or '').strip()
 
     latest_rso = LdsRso.objects.filter(training_id=OuterRef('pk')).order_by('-date_added', '-id')
+    latest_ldi = LdsLdiPlan.objects.filter(training_id=OuterRef('pk')).order_by('-date_created', '-id')
 
     qs = Trainingtitle.objects.select_related('pi__user').annotate(
         requests_count=Count('ldsrso', distinct=True),
         trainees_count=Count('ldsrso__ldsparticipants', distinct=True),
         facilitators_count=Count('ldsrso__ldsfacilitator', distinct=True),
-        latest_venue=Subquery(latest_rso.values('venue')[:1]),
+        latest_venue=Subquery(latest_ldi.values('venue')[:1]),
         latest_date_added=Subquery(latest_rso.values('date_added')[:1]),
         latest_is_online_platform=Subquery(latest_rso.values('is_online_platform')[:1]),
+        latest_ldi_date_created=Subquery(latest_ldi.values('date_created')[:1]),
+        latest_ldi_platform=Subquery(latest_ldi.values('platform')[:1]),
     ).all()
 
     if date_from:
@@ -112,6 +115,11 @@ def lds_training_list_ajax(request):
         except Exception:
             platform = ''
 
+        if not platform:
+            platform = row.latest_ldi_platform or ''
+
+        effective_date_added = row.latest_date_added or row.latest_ldi_date_created
+
         data.append({
             'id': row.id,
             'tt_name': row.tt_name,
@@ -121,7 +129,7 @@ def lds_training_list_ajax(request):
             'trainees_count': row.trainees_count,
             'facilitators_count': row.facilitators_count,
             'latest_venue': row.latest_venue or '',
-            'latest_date_added': row.latest_date_added.strftime('%Y-%m-%d') if row.latest_date_added else '',
+            'latest_date_added': effective_date_added.strftime('%Y-%m-%d') if effective_date_added else '',
             'latest_platform': platform,
         })
 
@@ -528,16 +536,21 @@ def ldi_plan_save(request):
         'budgetary_requirements': request.POST.get('budgetary_requirements'),
         'target_competencies': request.POST.get('target_competencies'),
         'venue': request.POST.get('venue'),
-        'created_by_id': request.session.get('emp_id'),
         'status': 1,
-        'date_updated': timezone.now(),
     }
 
     if pk:
+        defaults['date_updated'] = timezone.now()
         LdsLdiPlan.objects.filter(id=pk).update(**defaults)
         return JsonResponse({'data': 'success', 'msg': 'LDI plan updated.'})
 
     defaults['date_created'] = timezone.now()
+    emp_id = request.session.get('emp_id')
+    if emp_id and Empprofile.objects.filter(id=emp_id).exists():
+        defaults['created_by_id'] = emp_id
+    else:
+        defaults['created_by_id'] = None
+    defaults['date_approved'] = timezone.now()
     obj = LdsLdiPlan.objects.create(**defaults)
     return JsonResponse({'data': 'success', 'msg': 'LDI plan created.', 'id': obj.id})
 
