@@ -2,9 +2,192 @@
 {% load static %}
 {% block style %}
 <link rel="stylesheet" type="text/css" href="{% static 'css/adjustments.css' %}">
+<style>
+    .training-title-cell {
+        max-width: 520px;
+        white-space: normal;
+        word-break: break-word;
+        display: inline;
+    }
+
+    #training-titles-table td,
+    #training-titles-table th {
+        white-space: normal;
+        word-break: break-word;
+        vertical-align: top;
+        line-height: 1.4;
+    }
+
+    #training-titles-table thead th {
+        white-space: nowrap;
+        word-break: normal;
+        vertical-align: middle;
+    }
+
+    #training-titles-table td .row-actions {
+        opacity: 0.25;
+        transition: opacity 0.15s ease-in-out;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+    #training-titles-table tbody tr:hover td .row-actions {
+        opacity: 1;
+    }
+
+    #training-titles-table td .row-actions a {
+        font-size: 12px;
+        color: #6c757d;
+        text-decoration: none;
+    }
+
+    #training-titles-table td .row-actions a:hover {
+        color: #343a40;
+        text-decoration: underline;
+    }
+
+    #training-titles-table td .row-actions a.action-delete {
+        color: #dc3545;
+    }
+
+    @media (max-width: 768px) {
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #training-titles-table {
+            min-width: 800px;
+        }
+
+        #training-titles-table th:nth-child(4),
+        #training-titles-table td:nth-child(4),
+        #training-titles-table th:nth-child(5),
+        #training-titles-table td:nth-child(5),
+        #training-titles-table th:nth-child(6),
+        #training-titles-table td:nth-child(6) {
+            display: none;
+        }
+    }
+
+    @media (max-width: 576px) {
+        #training-titles-table th:nth-child(3),
+        #training-titles-table td:nth-child(3),
+        #training-titles-table th:nth-child(4),
+        #training-titles-table td:nth-child(4),
+        #training-titles-table th:nth-child(5),
+        #training-titles-table td:nth-child(5),
+        #training-titles-table th:nth-child(6),
+        #training-titles-table td:nth-child(6),
+        #training-titles-table th:nth-child(7),
+        #training-titles-table td:nth-child(7),
+        #training-titles-table th:nth-child(8),
+        #training-titles-table td:nth-child(8),
+        #training-titles-table th:nth-child(9),
+        #training-titles-table td:nth-child(9),
+        #training-titles-table th:nth-child(10),
+        #training-titles-table td:nth-child(10) {
+            display: none;
+        }
+
+        #training-titles-table {
+            min-width: 400px;
+        }
+    }
+
+    .row-details {
+        display: none;
+        background-color: #f8f9fa;
+        border-left: 3px solid #17a2b8;
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+
+    .row-details .detail-item {
+        padding: 5px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .row-details .detail-item:last-child {
+        border-bottom: none;
+    }
+
+    .row-details .detail-label {
+        font-weight: bold;
+        color: #495057;
+        display: inline-block;
+        min-width: 120px;
+    }
+
+    .row-details .detail-value {
+        color: #212529;
+    }
+
+    .clickable-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .clickable-row:hover {
+        background-color: #f5f5f5;
+    }
+
+    @media (max-width: 768px) {
+        #lds-rso-admin-table th:nth-child(5),
+        #lds-rso-admin-table td:nth-child(5),
+        #lds-rso-admin-table th:nth-child(6),
+        #lds-rso-admin-table td:nth-child(6) {
+            display: none;
+        }
+    }
+
+    @media (max-width: 576px) {
+        #lds-rso-admin-table th:nth-child(3),
+        #lds-rso-admin-table td:nth-child(3),
+        #lds-rso-admin-table th:nth-child(4),
+        #lds-rso-admin-table td:nth-child(4),
+        #lds-rso-admin-table th:nth-child(5),
+        #lds-rso-admin-table td:nth-child(5),
+        #lds-rso-admin-table th:nth-child(6),
+        #lds-rso-admin-table td:nth-child(6),
+        #lds-rso-admin-table th:nth-child(7),
+        #lds-rso-admin-table td:nth-child(7) {
+            display: none;
+        }
+    }
+
+    .rso-row-details {
+        display: none;
+        background-color: #f8f9fa;
+        border-left: 3px solid #17a2b8;
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+
+    .rso-row-details .detail-item {
+        padding: 5px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .rso-row-details .detail-item:last-child {
+        border-bottom: none;
+    }
+
+    .rso-row-details .detail-label {
+        font-weight: bold;
+        color: #495057;
+        display: inline-block;
+        min-width: 120px;
+    }
+
+    .rso-row-details .detail-value {
+        color: #212529;
+    }
+</style>
 {% endblock %}
 {% block content %}
 <div class="container-fluid">
+
     <div class="row px-3 pt-3">
         <div class="col-lg-8">
             <h1 class="font-weight-bold">Training Requests</h1>
@@ -13,11 +196,11 @@
                     <a href="{% url 'backend-dashboard' %}">Home</a>
                 </li>
                 <li class="breadcrumb-item">
-					Admin
-				</li>
-				<li class="breadcrumb-item">
-					Learning and Development Management
-				</li>
+                    Admin
+                </li>
+                <li class="breadcrumb-item">
+                    Learning and Development Management
+                </li>
                 <li class="breadcrumb-item active">
                     <strong>Training Requests</strong>
                 </li>
@@ -26,37 +209,84 @@
     </div>
 </div>
 <div class="content-wrapper p-4 ml-0">
-	<div class="row">
-		<div class="col-lg-12">
-            <div class="card card-info card-outline">
-                <div class="card-body">
-		<div class="table-responsive">
-                    <table class="table table-bordered table-hover" id="lds-rso-admin-table" width="100%">
-                        <thead>
-                            <tr>
-                                <th width="7%">Action</th>
-                                <th width="25%">Training</th>
-                                <th width="15%" class="text-center">Venue</th>
-                                <th width="10%" class="text-center">Inclusive Dates</th>
-                                <th width="15%" class="text-center">Created by</th>
-                                <th class="15%" class="text-center">Training Status | RSO Status | Attachment</th>
-                                <th class="13%" class="text-right">Date Added</th>
-                            </tr>
-                        </thead>
-                    </table>
+    <div class="row">
+        <div class="col-lg-12">
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="training-requests-tab" data-toggle="tab" href="#training-requests-pane" role="tab" aria-controls="training-requests-pane" aria-selected="true">Training Requests</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="ldi-plans-tab" data-toggle="tab" href="#ldi-plans-pane" role="tab" aria-controls="ldi-plans-pane" aria-selected="false">LDI Plan</a>
+                </li>
+            </ul>
+
+            <div class="tab-content pt-3">
+                <div class="tab-pane fade show active" id="training-requests-pane" role="tabpanel" aria-labelledby="training-requests-tab">
+                    <div class="card card-info card-outline">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover" id="lds-rso-admin-table" width="100%">
+                                    <thead>
+                                        <tr>
+                                            <th width="7%">Action</th>
+                                            <th width="25%">Training</th>
+                                            <th width="15%" class="text-center">Venue</th>
+                                            <th width="10%" class="text-center">Inclusive Dates</th>
+                                            <th width="15%" class="text-center">Created by</th>
+                                            <th class="15%" class="text-center">Training Status | RSO Status | Attachment</th>
+                                            <th class="13%" class="text-right">Date Added</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-		</div>
+
+                <div class="tab-pane fade" id="ldi-plans-pane" role="tabpanel" aria-labelledby="ldi-plans-tab">
+                    <div class="d-flex justify-content-end mb-2">
+                        <button class="btn btn-info" id="create-btn"><i class="fas fa-plus"></i> Create LDI Plan</button>
+                    </div>
+
+                    <div class="card card-info card-outline">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover" id="training-titles-table" width="100%">
+                                    <thead>
+                                        <tr>
+                                            <th width="10%" class="text-center" style="display:none;">ID</th>
+                                            <th>Training Title</th>
+                                            <th width="25%">Added by</th>
+                                            <th width="20%">Venue</th>
+                                            <th width="12%" class="text-center">Date Added</th>
+                                            <th width="12%" class="text-center">Platform</th>
+                                            <th width="10%" class="text-center">Requests</th>
+                                            <th width="10%" class="text-center">Trainees</th>
+                                            <th width="10%" class="text-center">Facilitators</th>
+                                            <th width="15%" class="text-center">tt_status</th>
+                                            <th width="10%">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+</div>
+
 <div class="modal" id="training_details" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content animated bounceInDown">
-	        <div class="modal-header bg-info">
-	            <h3 class="modal-title">TRAINING DETAILS (Admin View)</h3>
-	            <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-	        </div>
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-info">
+                <h3 class="modal-title">TRAINING DETAILS (Admin View)</h3>
+                <button type="button" class="close text-white" data-dismiss="modal"><span
+                        aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
             <div id="details-content"></div>
         </div>
     </div>
@@ -64,41 +294,568 @@
 {% endblock %}
 {% block script %}
 <script>
-$(document).ready(function(){
-    $('#lds-rso-admin-table').DataTable({
-        'serverSide': true,
-        'processing': true,
-        'deferRender': true,
-        'order': [[ 6, 'desc' ]],
-        'lengthMenu': [25,50,100],
-        'ajax': {
-            'url': '/api/learning-and-development/admin/?format=datatables',
-            'type': 'GET',
-        },
-        'fnCreatedRow': function (row, data, index) {
-            $(row).attr('id', data['id']);
-        },
-        'columns': [
-            {'data': 'id',
-                'render': function(data, type, row, meta){
-                    var template = '';
-                    template += '<a href="javascript:;" data-role="details" data-id="'+ data +'">Details</a>'
-                    return template;
-                }
+    $(document).ready(function () {
+        var rsoTable = $('#lds-rso-admin-table').DataTable({
+            'serverSide': true,
+            'processing': true,
+            'deferRender': true,
+            'order': [[6, 'desc']],
+            'lengthMenu': [25, 50, 100],
+            'ajax': {
+                'url': '/api/learning-and-development/admin/?format=datatables',
+                'type': 'GET',
             },
-            {'data': 'training_title', 'name': 'training.tt_name'},
-            {'data': 'venue', 'className': 'text-center'},
-            {'data': 'inclusive_dates', 'searchable': false, 'className': 'text-center'},
-            {'data': 'created_by', 'name': 'created_by.pi.user.last_name, created_by.pi.user.first_name', 'className': 'text-center'},
-            {'data': 'status', 'searchable': false, 'className': 'text-center'},
-            {'data': 'date_added', 'className': 'text-right'}
-        ],
-    });
+            'fnCreatedRow': function (row, data, index) {
+                $(row).attr('id', data['id']);
+            },
+            'columns': [
+                {
+                    'data': 'id',
+                    'render': function (data, type, row, meta) {
+                        var template = '';
+                        template += '<a href="javascript:;" data-role="details" data-id="' + data + '">Details</a>'
+                        return template;
+                    }
+                },
+                { 'data': 'training_title', 'name': 'training.tt_name' },
+                { 'data': 'venue', 'className': 'text-center' },
+                { 'data': 'inclusive_dates', 'searchable': false, 'className': 'text-center' },
+                { 'data': 'created_by', 'name': 'created_by.pi.user.last_name, created_by.pi.user.first_name', 'className': 'text-center' },
+                { 'data': 'status', 'searchable': false, 'className': 'text-center' },
+                { 'data': 'date_added', 'className': 'text-right' }
+            ],
+        });
 
-    $(document).on('click', 'a[data-role=details]', function(){
-        var id = $(this).data('id');
-        $('#training_details').modal('show').find('#details-content').load('/backend/learning-and-development/details/' + id);
+        $(document).on('click', 'a[data-role=details]', function () {
+            var id = $(this).data('id');
+            $('#training_details').modal('show').find('#details-content').load('/backend/learning-and-development/details/' + id);
+        });
+
+        var openRsoDetailsRow = null;
+
+        function closeRsoDetails() {
+            $('.rso-row-details').slideUp(300, function () {
+                $(this).remove();
+            });
+            openRsoDetailsRow = null;
+        }
+
+        function showRsoRowDetails(rowData, $tr) {
+            if (openRsoDetailsRow && openRsoDetailsRow.is($tr)) {
+                closeRsoDetails();
+                return;
+            }
+
+            closeRsoDetails();
+
+            var detailsHtml = '';
+            detailsHtml += '<div class="rso-row-details">';
+            detailsHtml += '<div class="detail-item"><span class="detail-label">Venue:</span> <span class="detail-value">' + (rowData.venue || 'N/A') + '</span></div>';
+            detailsHtml += '<div class="detail-item"><span class="detail-label">Inclusive Dates:</span> <span class="detail-value">' + (rowData.inclusive_dates || 'N/A') + '</span></div>';
+            detailsHtml += '<div class="detail-item"><span class="detail-label">Created by:</span> <span class="detail-value">' + (rowData.created_by || 'N/A') + '</span></div>';
+            detailsHtml += '<div class="detail-item"><span class="detail-label">Status:</span> <span class="detail-value">' + (rowData.status || 'N/A') + '</span></div>';
+            detailsHtml += '<div class="detail-item"><span class="detail-label">Date Added:</span> <span class="detail-value">' + (rowData.date_added || 'N/A') + '</span></div>';
+            detailsHtml += '</div>';
+
+            $tr.after(detailsHtml);
+            $tr.next('.rso-row-details').slideDown(300);
+            openRsoDetailsRow = $tr;
+        }
+
+        $(document).on('click', '#lds-rso-admin-table tbody tr', function (e) {
+            if ($(window).width() <= 576) {
+                if ($(e.target).closest('a, button').length) {
+                    return;
+                }
+                var rowData = rsoTable.row(this).data();
+                if (rowData) {
+                    showRsoRowDetails(rowData, $(this));
+                }
+            }
+        });
+
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('#lds-rso-admin-table, .rso-row-details').length) {
+                closeRsoDetails();
+            }
+        });
+
+        var rsoResizeTimer;
+        $(window).on('resize', function () {
+            clearTimeout(rsoResizeTimer);
+            rsoResizeTimer = setTimeout(function () {
+                if ($(window).width() > 576 && openRsoDetailsRow) {
+                    closeRsoDetails();
+                }
+            }, 250);
+        });
+
+        var ldiModal = $('#ldiModal');
+        var participantsRegex = /^\d+$/;
+        var budgetRegex = /^\d+(\.\d{1,2})?$/;
+
+        function setFieldError($input, errorId, message) {
+            $input.addClass('is-invalid');
+            $('#' + errorId).text(message).removeClass('d-none');
+        }
+
+        function clearFieldError($input, errorId) {
+            $input.removeClass('is-invalid');
+            $('#' + errorId).text('').addClass('d-none');
+        }
+
+        function validateParticipants() {
+            var $input = $('#ldi-target-participants');
+            var val = ($input.val() || '').trim();
+            if (!val) {
+                setFieldError($input, 'participants-error', 'Target Amount of Participants is required.');
+                return false;
+            }
+            if (!participantsRegex.test(val)) {
+                setFieldError($input, 'participants-error', 'Please enter whole numbers only.');
+                return false;
+            }
+            clearFieldError($input, 'participants-error');
+            return true;
+        }
+
+        function validateBudget() {
+            var $input = $('#ldi-budgetary-requirements');
+            var val = ($input.val() || '').trim();
+            if (!val) {
+                setFieldError($input, 'budget-error', 'Budget is required.');
+                return false;
+            }
+            if (!budgetRegex.test(val)) {
+                setFieldError($input, 'budget-error', 'Please enter a valid amount (e.g. 1000 or 1000.50).');
+                return false;
+            }
+            clearFieldError($input, 'budget-error');
+            return true;
+        }
+
+        $('#ldi-budgetary-requirements').on('input', function () {
+            validateBudget();
+        });
+
+        $('#ldi-target-participants').on('input', function () {
+            validateParticipants();
+        });
+
+        $('#create-btn').on('click', function () {
+            $('#ldi-id').val('');
+            $('#ldi-form').trigger('reset');
+            clearFieldError($('#ldi-target-participants'), 'participants-error');
+            clearFieldError($('#ldi-budgetary-requirements'), 'budget-error');
+            $('#ldi-proposed-date').val(new Date().toISOString().slice(0, 10));
+            $('#ldi-category-id').val('');
+            $('#ldi-quarter').val('Q1');
+            $('#ldi-platform').val('Face-to-Face');
+            ldiModal.modal('show');
+        });
+
+        function escapeHtml(value) {
+            return String(value || '').replace(/[&<>'"]/g, function (c) {
+                return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[c]);
+            });
+        }
+
+        function formatDateYmdToMonDYear(value) {
+            if (!value) {
+                return '';
+            }
+            var parts = String(value).split('-');
+            if (parts.length !== 3) {
+                return value;
+            }
+            var yyyy = parseInt(parts[0], 10);
+            var mm = parseInt(parts[1], 10) - 1;
+            var dd = parseInt(parts[2], 10);
+            var d = new Date(yyyy, mm, dd);
+            if (isNaN(d.getTime())) {
+                return value;
+            }
+            return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+        }
+
+        function loadLdiPlanDetails(trainingId, trainingTitle) {
+            var container = $('#ldi-plan-details-content');
+            container.html('<div class="text-center p-3">Loading...</div>');
+
+            $.ajax({
+                url: '/api/learning-and-development/ldi-plans/training/' + trainingId + '/',
+                type: 'GET',
+            }).done(function (rows) {
+                rows = rows || [];
+
+                var heading = '<div class="mb-2"><strong>' + escapeHtml(trainingTitle || (rows[0] && rows[0].training_title) || '') + '</strong></div>';
+                var table = '';
+                var activities = '';
+
+                if (rows.length) {
+                    activities = rows[0].proposed_ldi_activity || '';
+                }
+
+                table += '<div class="table-responsive">';
+                table += '<table class="table table-bordered table-hover" width="100%">';
+                table += '<thead><tr>' +
+                    '<th width="12%" class="text-center">Quarter</th>' +
+                    '<th width="15%" class="text-center">Platform</th>' +
+                    '<th width="12%" class="text-center">Proposed Date</th>' +
+                    '<th width="25%">Target Participants</th>' +
+                    '<th width="15%">Budget</th>' +
+                    '<th width="21%">Category</th>' +
+                    '</tr></thead>';
+                table += '<tbody>';
+
+                if (!rows.length) {
+                    table += '<tr><td colspan="6" class="text-center">No LDI Plan record found for this Training Title.</td></tr>';
+                } else {
+                    for (var i = 0; i < rows.length; i++) {
+                        var r = rows[i] || {};
+                        table += '<tr>' +
+                            '<td class="text-center">' + escapeHtml(r.quarter || '') + '</td>' +
+                            '<td class="text-center">' + escapeHtml(r.platform || '') + '</td>' +
+                            '<td class="text-center">' + escapeHtml(formatDateYmdToMonDYear(r.proposed_date || '')) + '</td>' +
+                            '<td style="word-break: break-word;">' + escapeHtml(r.target_participants || '') + '</td>' +
+                            '<td style="word-break: break-word;">' + escapeHtml(r.budgetary_requirements || '') + '</td>' +
+                            '<td style="word-break: break-word;">' + escapeHtml(r.training_category || '') + '</td>' +
+                            '</tr>';
+                    }
+                }
+
+                table += '</tbody></table></div>';
+
+                var activitiesHtml = '';
+                activitiesHtml += '<div class="mt-3">';
+                activitiesHtml += '<label class="mb-1"><strong>Proposed LDI / Activities</strong></label>';
+                activitiesHtml += '<div class="border rounded p-2" style="white-space: pre-wrap; word-break: break-word;">';
+                activitiesHtml += escapeHtml(activities);
+                activitiesHtml += '</div></div>';
+
+                container.html(heading + table + activitiesHtml);
+            }).fail(function () {
+                container.html('<div class="text-center text-danger p-3">Unable to load LDI plan details.</div>');
+            });
+        }
+
+        function openLdiModalForTraining(trainingId, trainingTitle) {
+            $.ajax({
+                url: '{% url "ldi_plan_get_by_training" 0 %}'.replace('/0/', '/' + trainingId + '/'),
+                type: 'GET',
+            }).done(function (resp) {
+                if (resp && resp.data === 'success' && resp.row) {
+                    $('#ldi-id').val(resp.row.id);
+                    $('#ldi-training-id').val(resp.row.training_id || trainingId);
+                    $('#ldi-training-title').val(resp.row.training_title || trainingTitle || '');
+                    $('#ldi-category-id').val(resp.row.category_id || '');
+                    $('#ldi-quarter').val(resp.row.quarter || 'Q1');
+                    $('#ldi-platform').val(resp.row.platform || 'Face-to-Face');
+                    $('#ldi-proposed-ldi-activity').val(resp.row.proposed_ldi_activity || '');
+                    $('#ldi-proposed-date').val(resp.row.proposed_date || new Date().toISOString().slice(0, 10));
+                    $('#ldi-target-participants').val(resp.row.target_participants || '');
+                    $('#ldi-budgetary-requirements').val(resp.row.budgetary_requirements || '');
+                    clearFieldError($('#ldi-target-participants'), 'participants-error');
+                    clearFieldError($('#ldi-budgetary-requirements'), 'budget-error');
+                    $('#ldi-target-competencies').val(resp.row.target_competencies || '');
+                    $('#ldi-venue').val(resp.row.venue || '');
+                    ldiModal.modal('show');
+                }
+            }).fail(function () {
+                $('#ldi-id').val('');
+                $('#ldi-form').trigger('reset');
+                $('#ldi-training-id').val(trainingId);
+                $('#ldi-training-title').val(trainingTitle || '');
+                $('#ldi-proposed-date').val(new Date().toISOString().slice(0, 10));
+                $('#ldi-category-id').val('');
+                $('#ldi-quarter').val('Q1');
+                $('#ldi-platform').val('Face-to-Face');
+                clearFieldError($('#ldi-target-participants'), 'participants-error');
+                clearFieldError($('#ldi-budgetary-requirements'), 'budget-error');
+                ldiModal.modal('show');
+            });
+        }
+
+        var trainingTitlesTable = $('#training-titles-table').DataTable({
+            'processing': true,
+            'serverSide': true,
+            'deferRender': true,
+            'order': [[1, 'desc']],
+            'lengthMenu': [25, 50, 100],
+            'ajax': {
+                'url': '/api/learning-and-development/training-titles/',
+                'type': 'GET',
+            },
+            'columnDefs': [],
+            'columns': [
+                { 'data': 'id', 'visible': false },
+                {
+                    'data': 'tt_name',
+                    'render': function (data, type, row, meta) {
+                        if (type === 'display') {
+                            return '<span class="training-title-cell" title="' + (data || '') + '">' + (data || '') + '</span>';
+                        }
+                        return data;
+                    }
+                },
+                { 'data': 'added_by' },
+                {
+                    'data': 'latest_venue',
+                    'render': function (data, type, row, meta) {
+                        if (type === 'display') {
+                            return '<span class="training-title-cell" title="' + (data || '') + '">' + (data || '') + '</span>';
+                        }
+                        return data;
+                    }
+                },
+                {
+                    'data': 'latest_date_added',
+                    'className': 'text-center',
+                    'render': function (data, type, row, meta) {
+                        if (type === 'display') {
+                            return data ? data : '-';
+                        }
+                        return data;
+                    }
+                },
+                {
+                    'data': 'latest_platform',
+                    'className': 'text-center',
+                    'render': function (data, type, row, meta) {
+                        if (type === 'display') {
+                            return data ? data : '-';
+                        }
+                        return data;
+                    }
+                },
+                { 'data': 'requests_count', 'className': 'text-center' },
+                { 'data': 'trainees_count', 'className': 'text-center' },
+                { 'data': 'facilitators_count', 'className': 'text-center' },
+                { 'data': 'tt_status', 'className': 'text-center' },
+                {
+                    'data': null,
+                    'orderable': false,
+                    'searchable': false,
+                    'render': function (data, type, row, meta) {
+                        return (
+                            '<span class="row-actions">' +
+                            '<a href="javascript:;" class="mr-2 ldi-plan-edit-toggle" data-training-id="' + row.id + '">Edit</a>' +
+                            '<a href="javascript:;" class="action-delete" data-role="ldi-row-delete" data-id="' + row.id + '">Delete</a>' +
+                            '</span>'
+                        );
+                    }
+                },
+            ],
+        });
+
+        var openDetailsRow = null;
+
+        $(document).on('click', '#training-titles-table tbody tr', function (e) {
+            if ($(window).width() <= 576 && !$(e.target).closest('a, button').length) {
+                var row = trainingTitlesTable.row($(this));
+                var rowData = row.data();
+                if (rowData) {
+                    showRowDetails(rowData, $(this));
+                }
+            }
+        });
+
+        function showRowDetails(rowData, triggerElement) {
+            var currentTr = triggerElement.closest('tr');
+            if (openDetailsRow && openDetailsRow.is(currentTr)) {
+                openDetailsRow.next('.row-details').slideUp(300, function () {
+                    $(this).remove();
+                });
+                openDetailsRow = null;
+                return;
+            }
+
+            $('.row-details').slideUp(300, function () {
+                $(this).remove();
+            });
+
+            var detailsHtml = '<div class="row-details">' +
+                '<div class="detail-item"><span class="detail-label">Added by:</span> <span class="detail-value">' + (rowData.added_by || 'N/A') + '</span></div>' +
+                '<div class="detail-item"><span class="detail-label">Requests:</span> <span class="detail-value">' + (rowData.requests_count || 0) + '</span></div>' +
+                '<div class="detail-item"><span class="detail-label">Trainees:</span> <span class="detail-value">' + (rowData.trainees_count || 0) + '</span></div>' +
+                '<div class="detail-item"><span class="detail-label">Facilitators:</span> <span class="detail-value">' + (rowData.facilitators_count || 0) + '</span></div>' +
+                '<div class="detail-item"><span class="detail-label">Status:</span> <span class="detail-value">' + (rowData.tt_status || 'N/A') + '</span></div>' +
+                '<div class="detail-item"><span class="detail-label">Actions:</span> <span class="detail-value">' +
+                '<a href="javascript:;" class="mr-2 ldi-plan-edit-toggle" data-training-id="' + rowData.id + '">Edit</a> ' +
+                '<a href="javascript:;" class="text-danger" data-role="ldi-row-delete" data-id="' + rowData.id + '">Delete</a>' +
+                '</span></div>' +
+                '</div>';
+
+            triggerElement.after(detailsHtml);
+            triggerElement.next('.row-details').slideDown(300);
+            openDetailsRow = triggerElement;
+        }
+
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('#training-titles-table, .row-details').length) {
+                $('.row-details').slideUp(300, function () {
+                    $(this).remove();
+                });
+                openDetailsRow = null;
+            }
+        });
+
+        var resizeTimer;
+        $(window).on('resize', function () {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function () {
+                if ($(window).width() > 576 && openDetailsRow) {
+                    $('.row-details').slideUp(300, function () {
+                        $(this).remove();
+                    });
+                    openDetailsRow = null;
+                }
+            }, 250);
+        });
+
+        $(document).on('click', 'a.ldi-plan-title-toggle', function () {
+            var trainingId = $(this).data('training-id');
+            var trainingTitle = '';
+            try {
+                var tr = $(this).closest('tr');
+                if (tr.hasClass('child')) {
+                    tr = tr.prev();
+                }
+                var row = trainingTitlesTable.row(tr).data();
+                trainingTitle = (row && row.tt_name) ? row.tt_name : '';
+            } catch (e) { }
+
+            $('#ldi_plan_details').modal('show');
+            loadLdiPlanDetails(trainingId, trainingTitle);
+        });
+
+        $(document).on('click', 'a.ldi-plan-edit-toggle', function () {
+            var trainingId = $(this).data('training-id');
+            var tr = $(this).closest('tr');
+            if (tr.hasClass('child')) {
+                tr = tr.prev();
+            }
+            var row = trainingTitlesTable.row(tr).data();
+            var trainingTitle = (row && row.tt_name) ? row.tt_name : '';
+            openLdiModalForTraining(trainingId, trainingTitle);
+        });
+
+        $(document).on('click', 'a[data-role=ldi-row-delete]', function () {
+            var id = $(this).data('id');
+
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'This will delete the training title.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#E74C3C',
+                confirmButtonText: 'Delete',
+                allowOutsideClick: false,
+                showLoaderOnConfirm: true,
+                preConfirm: function () {
+                    return $.ajax({
+                        url: '/backend/learning-and-development/training-list/delete/' + id + '/',
+                        type: 'POST',
+                        data: {
+                            'csrfmiddlewaretoken': '{{ csrf_token }}',
+                        }
+                    }).catch(function (xhr) {
+                        var msg = 'Unable to delete.';
+                        try {
+                            if (xhr && xhr.responseJSON && xhr.responseJSON.msg) {
+                                msg = xhr.responseJSON.msg;
+                            }
+                        } catch (e) { }
+
+                        Swal.showValidationMessage(msg);
+                        return false;
+                    });
+                },
+            }).then(function (response) {
+                if (response.value && response.value.data === 'success') {
+                    Swal.fire({
+                        title: 'Deleted!',
+                        text: 'Training title deleted.',
+                        icon: 'success',
+                        confirmButtonColor: '#3498DB',
+                    }).then(function () {
+                        trainingTitlesTable.ajax.reload(null, false);
+                    });
+                } else if (response.value && response.value.msg) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: response.value.msg,
+                        icon: 'error',
+                        confirmButtonColor: '#3498DB',
+                    });
+                }
+            });
+        });
+
+        $('#ldi-form').on('submit', function (e) {
+            e.preventDefault();
+
+            var isParticipantsValid = validateParticipants();
+            var isBudgetValid = validateBudget();
+            if (!isParticipantsValid || !isBudgetValid) {
+                return;
+            }
+
+            var form = new FormData(this);
+
+            $.ajax({
+                url: '{% url "ldi_plan_save" %}',
+                type: 'POST',
+                data: form,
+                cache: false,
+                contentType: false,
+                processData: false,
+            }).done(function (resp) {
+                if (resp && resp.data === 'success') {
+                    Swal.fire({
+                        title: 'Saved!',
+                        text: resp.msg || 'LDI plan saved.',
+                        icon: 'success',
+                        confirmButtonColor: '#3498DB',
+                    }).then(function () {
+                        ldiModal.modal('hide');
+                        trainingTitlesTable.ajax.reload(null, false);
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: (resp && resp.msg) ? resp.msg : 'Unable to save LDI plan.',
+                        icon: 'error',
+                        confirmButtonColor: '#3498DB',
+                    });
+                }
+            }).fail(function (xhr) {
+                var msg = 'Unable to save LDI plan.';
+                try {
+                    if (xhr && xhr.responseJSON && xhr.responseJSON.msg) {
+                        msg = xhr.responseJSON.msg;
+                    }
+                } catch (e) { }
+                Swal.fire({
+                    title: 'Error',
+                    text: msg,
+                    icon: 'error',
+                    confirmButtonColor: '#3498DB',
+                });
+            });
+        });
+
+        $('a[data-toggle="tab"][href="#ldi-plans-pane"]').on('shown.bs.tab', function () {
+            try {
+                trainingTitlesTable.columns.adjust();
+            } catch (e) { }
+        });
+
+        $('a[data-toggle="tab"][href="#training-requests-pane"]').on('shown.bs.tab', function () {
+            try {
+                rsoTable.columns.adjust();
+            } catch (e) { }
+        });
     });
-});
 </script>
 {% endblock %}
