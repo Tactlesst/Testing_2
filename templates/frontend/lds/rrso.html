@@ -30,15 +30,16 @@
         <div class="col-lg-4 pt-3">
             <div class="float-md-right">
                 {% if perms.auth.training_requester %}
-                <button class="btn btn-info" data-toggle="modal" data-target="#new_training"><i class="fas fa-plus"></i> Request New Training</button>
+                <button class="btn btn-info" data-toggle="modal" data-target="#new_training"><i class="fas fa-plus"></i>
+                    Request New Training</button>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
 <div class="content-wrapper p-4 ml-0">
-	<div class="row">
-		<div class="col-lg-12">
+    <div class="row">
+        <div class="col-lg-12">
             <div class="card card-info card-outline">
                 <div class="card-body">
                     <table class="table table-bordered table-hover" id="lds-rso-table" width="100%">
@@ -62,83 +63,107 @@
 
 {% if perms.auth.training_requester %}
 <div class="modal" id="new_training" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
-	<div class="modal-dialog">
-		<div class="modal-content animated bounceInDown">
-	        <div class="modal-header bg-info">
-	            <h3 class="modal-title">
+    <div class="modal-dialog">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-info">
+                <h3 class="modal-title">
                     NEW TRAINING
                 </h3>
-                <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-	        </div>
+                <button type="button" class="close text-white" data-dismiss="modal"><span
+                        aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
             <form id="submitForm">
-            <div class="modal-body">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label>Title<span class="asteriskField">*</span></label>
-                    <div class="pull-right"><input type="checkbox" name="is_online_platform"> Is online platform?</div>
-                    {# nazef working in this code start #}
-                    <select class="form-control" name="training_id" id="training-id" style="width: 100%;" required></select>
-                    {# nazef working in this code end #}
-                </div>
-                <div class="form-group">
-                    <label id="venue">Venue </label> (if online platform please indicate if it's Zoom, Google Meet or any other online platform) <label><span class="asteriskField">*</span></label>
-                    <textarea class="form-control" name="venue" rows="3" autocomplete="off" required></textarea>
-                </div>
-                <div class="form-group">
-                    <div class="row">
-                        <div class="col-lg-6">
-                            <label>Start Date<span class="asteriskField">*</span></label>
-                            <input type="date" class="form-control" name="start_date" required>
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label>Title<span class="asteriskField">*</span></label>
+                        <div class="pull-right"><input type="checkbox" name="is_online_platform"> Is online platform?
                         </div>
-                        <div class="col-lg-6">
-                            <label>End Date<span class="asteriskField">*</span></label>
-                            <input type="date" class="form-control" name="end_date" required>
+                        {# nazef working in this code start #}
+                        <select class="form-control" name="training_id" id="training-id" style="width: 100%;"
+                            required></select>
+                        {# nazef working in this code end #}
+                    </div>
+                    <div class="form-group">
+                        <label id="venue">Venue </label> (if online platform please indicate if it's Zoom, Google Meet
+                        or any other online platform) <label><span class="asteriskField">*</span></label>
+                        <textarea class="form-control" name="venue" rows="3" autocomplete="off" required></textarea>
+                    </div>
+                    <!-- Start Here -->
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <label>Amount of Participants <span class="text-danger">*</span></label>
+                                <input type="text" name="participant_amount" id="participant_amount"
+                                    class="form-control" placeholder="e.g. 25" required>
+                                <small class="text-danger d-none" id="participant-error"></small>
+                            </div>
+
+                            <div class="col-lg-6">
+                                <label>Budget Amount <span class="text-danger">*</span></label>
+                                <input type="text" name="budget_amount" id="budget_amount" class="form-control"
+                                    placeholder="e.g. 1000 or 1000.50" required>
+                                <small class="text-danger d-none" id="budget-error"></small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <label>Start Date<span class="asteriskField">*</span></label>
+                                <input type="date" class="form-control" name="start_date" required>
+                            </div>
+                            <div class="col-lg-6">
+                                <label>End Date<span class="asteriskField">*</span></label>
+                                <input type="date" class="form-control" name="end_date" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <label>Time Start</label>
+                                <input type="time" class="form-control" name="time_start" value="08:00">
+                            </div>
+                            <div class="col-lg-6">
+                                <label>Time End</label>
+                                <input type="time" class="form-control" name="time_end" value="17:00">
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="form-group">
-                    <div class="row">
-                        <div class="col-lg-6">
-                            <label>Time Start</label>
-                            <input type="time" class="form-control" name="time_start" value="08:00">
-                        </div>
-                        <div class="col-lg-6">
-                            <label>Time End</label>
-                            <input type="time" class="form-control" name="time_end" value="17:00">
-                        </div>
-                    </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-info">Submit</button>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-info">Submit</button>
-            </div>
             </form>
-	    </div>
-	</div>
+        </div>
+    </div>
 </div>
 {% endif %}
 
 <div class="modal" id="training_details" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content animated bounceInDown">
-	        <div class="modal-header bg-info">
-	            <h3 class="modal-title">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-info">
+                <h3 class="modal-title">
                     TRAINING DETAILS
                 </h3>
-                <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-	        </div>
+                <button type="button" class="close text-white" data-dismiss="modal"><span
+                        aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
             <div id="details-content"></div>
         </div>
     </div>
 </div>
 
 <div class="modal" id="ldi_plan_info" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
-	<div class="modal-dialog modal-lg">
-		<div class="modal-content animated bounceInDown">
-	        <div class="modal-header bg-info">
-	            <h3 class="modal-title">LDI PLAN DETAILS</h3>
-                <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-	        </div>
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-info">
+                <h3 class="modal-title">LDI PLAN DETAILS</h3>
+                <button type="button" class="close text-white" data-dismiss="modal"><span
+                        aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
             <div class="modal-body" id="ldi-plan-info-content"></div>
         </div>
     </div>
@@ -146,20 +171,64 @@
 {% endblock %}
 {% block script %}
 <script>
-$(document).ready(function(){
-    var CAN_TRAINING_REQUESTER = {% if perms.auth.training_requester %}true{% else %}false{% endif %};
+    $(document).ready(function () {
+        var CAN_TRAINING_REQUESTER = {% if perms.auth.training_requester %}true{% else %}false{% endif %};
+
+    $('#participant_amount').on('input', function () {
+        const value = this.value;
+        const regex = /^[0-9]+$/;
+
+        if (!regex.test(value)) {
+            $('#participant-error')
+                .text('Amount of Participants must be a whole number only')
+                .removeClass('d-none');
+        } else {
+            $('#participant-error').addClass('d-none');
+        }
+    });
+
+    $('#budget_amount').on('input', function () {
+        const value = this.value;
+        const regex = /^\d+(\.\d{0,2})?$/;
+
+        if (!regex.test(value)) {
+            $('#budget-error')
+                .text('Budget Amount must be a valid number (e.g. 100 or 100.50)')
+                .removeClass('d-none');
+        } else {
+            $('#budget-error').addClass('d-none');
+        }
+    });
+
+    function toggleSubmit() {
+        const validParticipants = /^[0-9]+$/.test($('#participant_amount').val());
+        const validBudget = /^\d+(\.\d{1,2})?$/.test($('#budget_amount').val());
+
+        $('#submitForm button[type="submit"]').prop(
+            'disabled',
+            !(validParticipants && validBudget)
+        );
+    }
+
+    // Run toggleSubmit whenever user types
+    $('#participant_amount, #budget_amount').on('input', toggleSubmit);
+
+    // Initial check in case fields are prefilled
+    toggleSubmit();
+
+
 
     // Set min date for all date inputs to today (disable past dates)
     var today = new Date().toISOString().split('T')[0];
     $('input[type="date"]').attr('min', today);
-    
+
     // Dynamic end date constraint based on start date
-    $(document).on('change', 'input[name="start_date"]', function() {
+    $(document).on('change', 'input[name="start_date"]', function () {
         var startDate = $(this).val();
         $('input[name="end_date"]').attr('min', startDate);
     });
-    
-    {# nazef working in this code start #}
+
+    // {# nazef working in this code start #}
     $('#training-id').select2({
         width: '100%',
         allowClear: true,
@@ -167,18 +236,18 @@ $(document).ready(function(){
         minimumInputLength: 0,
         dropdownParent: $('#new_training'),
         escapeMarkup: function (markup) { return markup; },
-        templateSelection: function (data){
-            if (!data || !data.id){
+        templateSelection: function (data) {
+            if (!data || !data.id) {
                 return data && data.text ? data.text : '';
             }
 
             var text = data.text || '';
             return (
                 '<span>' +
-                    '<a href="javascript:;" class="ldi-plan-info-toggle" data-training-id="' + data.id + '" style="margin-right:6px;">' +
-                        '<i class="fas fa-exclamation-circle text-info"></i>' +
-                    '</a>' +
-                    '<span>' + text + '</span>' +
+                '<a href="javascript:;" class="ldi-plan-info-toggle" data-training-id="' + data.id + '" style="margin-right:6px;">' +
+                '<i class="fas fa-exclamation-circle text-info"></i>' +
+                '</a>' +
+                '<span>' + text + '</span>' +
                 '</span>'
             );
         },
@@ -196,37 +265,58 @@ $(document).ready(function(){
         }
     });
 
-    $(document).on('mousedown', '.select2-container .ldi-plan-info-toggle', function(e){
+    $(document).on('mousedown', '.select2-container .ldi-plan-info-toggle', function (e) {
         e.preventDefault();
         e.stopPropagation();
     });
 
-    $(document).on('click', '.ldi-plan-info-toggle', function(e){
+    $(document).on('click', '.ldi-plan-info-toggle', function (e) {
         e.preventDefault();
         e.stopPropagation();
         try {
             $('#training-id').select2('close');
-        } catch (err) {}
+        } catch (err) { }
         $('.select2-container--open .select2-search__field').trigger('blur');
         var trainingId = $(this).data('training-id');
-        if (!trainingId){
+        if (!trainingId) {
             return;
         }
         $('#ldi_plan_info').modal('show').find('#ldi-plan-info-content').load(
             '{% url "ldi_plan_details" 0 %}'.replace('/0/', '/' + trainingId + '/')
         );
     });
-    {# nazef working in this code end #}
+    // {# nazef working in this code end #}
 
-    $('#submitForm').on('submit', function(e){
+    $('#submitForm').on('submit', function (e) {
         e.preventDefault();
-        
+
         // Validate date range
         var startDate = new Date($('input[name="start_date"]').val());
         var endDate = new Date($('input[name="end_date"]').val());
         var startTime = $('input[name="time_start"]').val();
         var endTime = $('input[name="time_end"]').val();
-        
+        var participants = $('#participant_amount').val().trim();
+        var budget = $('#budget_amount').val().trim();
+        var participantRegex = /^[0-9]+$/;
+        var budgetRegex = /^\d+(\.\d{1,2})?$/;
+
+        $('#participant-error').addClass('d-none');
+        $('#budget-error').addClass('d-none');
+
+        if (!participantRegex.test(participants)) {
+            $('#participant-error')
+                .text('Amount of Participants must be a whole number only')
+                .removeClass('d-none');
+            hasError = true;
+        }
+
+        if (!budgetRegex.test(budget)) {
+            $('#budget-error')
+                .text('Budget Amount must be a valid number (e.g. 100 or 100.50)')
+                .removeClass('d-none');
+            hasError = true;
+        }
+
         // Check if end date is before start date
         if (endDate < startDate) {
             Swal.fire({
@@ -235,21 +325,21 @@ $(document).ready(function(){
                 icon: "warning",
                 confirmButtonColor: "#3498DB",
             });
-            
+
             // Set end date to next day
             var nextDay = new Date(startDate);
             nextDay.setDate(nextDay.getDate() + 1);
             $('input[name="end_date"]').val(nextDay.toISOString().split('T')[0]);
             return false;
         }
-        
+
         // Check if same day but end time is before start time
         if (startDate.toDateString() === endDate.toDateString() && startTime && endTime) {
             var startHour = parseInt(startTime.split(':')[0]);
             var startMin = parseInt(startTime.split(':')[1]);
             var endHour = parseInt(endTime.split(':')[0]);
             var endMin = parseInt(endTime.split(':')[1]);
-            
+
             if ((endHour < startHour) || (endHour === startHour && endMin < startMin)) {
                 Swal.fire({
                     title: "Invalid Time Range",
@@ -257,7 +347,7 @@ $(document).ready(function(){
                     icon: "warning",
                     confirmButtonColor: "#3498DB",
                 });
-                
+
                 // Set end date to next day
                 var nextDay = new Date(startDate);
                 nextDay.setDate(nextDay.getDate() + 1);
@@ -265,7 +355,7 @@ $(document).ready(function(){
                 return false;
             }
         }
-        
+
         var form = new FormData(this);
         Swal.fire({
             title: "Are you sure",
@@ -276,55 +366,55 @@ $(document).ready(function(){
             confirmButtonText: "Yes",
             allowOutsideClick: false,
             showLoaderOnConfirm: true,
-		    preConfirm: function (){
-				{# nazef working in this code start #}
-				return $.ajax({
-					data        : form,
-					url         : '{% url "lds_rrso" %}',
-					type        : 'POST',
-					cache       : false,
-					contentType : false,
-					processData : false,
-				}).catch(function(xhr){
-					var msg = 'Unable to submit.';
-					if (xhr && xhr.responseJSON && xhr.responseJSON.msg){
-						msg = xhr.responseJSON.msg;
-					}
-					Swal.showValidationMessage(msg);
-				});
-				{# nazef working in this code end #}
-		    },
-        }).then(function (response){
-            if (response.value.data == "success"){
-				Swal.fire({
-				  title: "Good job!",
-				  text: response.value.msg,
-				  icon: "success",
-				  confirmButtonColor: "#3498DB",
-				}).then((result) => {
-					if (result.isConfirmed) {
-						$('#submitForm').trigger('reset');
-						$('#new_training').modal('hide');
-						$('#lds-rso-table').DataTable().ajax.reload();
-					}
-				});
-			} else {
-				Swal.fire({
-				  title: "Unauthorized transaction",
-				  text: response.value.errors,
-				  icon: "error",
-				  confirmButtonColor: "#3498DB",
-				});
-			}
+            preConfirm: function () {
+                // {# nazef working in this code start # }
+                return $.ajax({
+                    data: form,
+                    url: '{% url "lds_rrso" %}',
+                    type: 'POST',
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                }).catch(function (xhr) {
+                    var msg = 'Unable to submit.';
+                    if (xhr && xhr.responseJSON && xhr.responseJSON.msg) {
+                        msg = xhr.responseJSON.msg;
+                    }
+                    Swal.showValidationMessage(msg);
+                });
+                // {# nazef working in this code end # }
+            },
+        }).then(function (response) {
+            if (response.value.data == "success") {
+                Swal.fire({
+                    title: "Good job!",
+                    text: response.value.msg,
+                    icon: "success",
+                    confirmButtonColor: "#3498DB",
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $('#submitForm').trigger('reset');
+                        $('#new_training').modal('hide');
+                        $('#lds-rso-table').DataTable().ajax.reload();
+                    }
+                });
+            } else {
+                Swal.fire({
+                    title: "Unauthorized transaction",
+                    text: response.value.errors,
+                    icon: "error",
+                    confirmButtonColor: "#3498DB",
+                });
+            }
         });
-	});
+    });
 
-	$('#lds-rso-table').DataTable({
+    $('#lds-rso-table').DataTable({
         'serverSide': true,
         'processing': true,
         'deferRender': true,
-        'order': [[ 6, 'desc' ]],
-        'lengthMenu': [25,50,100],
+        'order': [[6, 'desc']],
+        'lengthMenu': [25, 50, 100],
         'ajax': {
             'url': '/api/learning-and-development/?format=datatables&pk=' + '{% getHash request.session.emp_id as employee_id %}{{ employee_id }}',
             'type': 'GET',
@@ -336,19 +426,21 @@ $(document).ready(function(){
             { 'targets': [0], 'visible': false, 'searchable': false }
         ],
         'columns': [
-            {'data': 'id',
-                'render': function(data, type, row, meta){
-                    if (!CAN_TRAINING_REQUESTER){
+            {
+                'data': 'id',
+                'render': function (data, type, row, meta) {
+                    if (!CAN_TRAINING_REQUESTER) {
                         return '';
                     }
-                    return '<a href="javascript:;" data-role="details" data-id="'+ data +'">Details</a>'
+                    return '<a href="javascript:;" data-role="details" data-id="' + data + '">Details</a>'
                 }
             },
-            {'data': 'training_title', 'name': 'training.tt_name'},
-            {'data': 'venue', 'className': 'text-center'},
-            {'data': 'inclusive_dates', 'searchable': false, 'className': 'text-center'},
-            {'data': 'time_range', 'searchable': false, 'orderable': false, 'className': 'text-center',
-                'render': function(data, type, row, meta){
+            { 'data': 'training_title', 'name': 'training.tt_name' },
+            { 'data': 'venue', 'className': 'text-center' },
+            { 'data': 'inclusive_dates', 'searchable': false, 'className': 'text-center' },
+            {
+                'data': 'time_range', 'searchable': false, 'orderable': false, 'className': 'text-center',
+                'render': function (data, type, row, meta) {
                     if (!data || data === '') {
                         return 'No Time Range Yet';
                     } else if (data.includes('None') || data.includes('null')) {
@@ -358,8 +450,8 @@ $(document).ready(function(){
                     }
                 }
             },
-            {'data': 'status', 'className': 'text-center'},
-            {'data': 'date_added', 'className': 'text-right'}
+            { 'data': 'status', 'className': 'text-center' },
+            { 'data': 'date_added', 'className': 'text-right' }
         ],
     });
 
@@ -367,16 +459,16 @@ $(document).ready(function(){
         $('#lds-rso-table').DataTable().ajax.reload();
     });
 
-    $(document).on('click', 'a[data-role=details]', function(){
+    $(document).on('click', 'a[data-role=details]', function () {
         var id = $(this).data('id');
-        $('#training_details').modal('show').find('#details-content').load('/learning-and-development/details/' + id, function() {
+        $('#training_details').modal('show').find('#details-content').load('/learning-and-development/details/' + id, function () {
             // Set min date for date inputs in the loaded content
             var today = new Date().toISOString().split('T')[0];
             var currentStartDate = $('#training_details input[name="start_date"]').val();
-            
+
             // Check if current start date is in the past
             var isStartDateInPast = currentStartDate < today;
-            
+
             if (isStartDateInPast) {
                 // Disable start date input if it's in the past
                 $('#training_details input[name="start_date"]').prop('readonly', true);
