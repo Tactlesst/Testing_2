@@ -118,11 +118,7 @@
 
                     <div class="form-group mt-3">
                         <label>Online Platform?</label>
-                        {% if training.is_online_platform %}
-                            <span class="badge badge-success">Yes</span>
-                        {% else %}
-                            <span class="badge badge-danger">No</span>
-                        {% endif %}
+                        <input type="checkbox" {% if training.is_online_platform %}checked{% endif %} disabled>
                     </div>
 
                     <hr style="margin-right:-15px; margin-left:-15px; margin-top:25px;">
@@ -394,11 +390,6 @@ $(document).ready(function(){
         e.preventDefault();
         e.stopPropagation();
 
-		try {
-			$('#training-id-update-admin').select2('close');
-		} catch (err) {}
-		$('.select2-container--open .select2-search__field').trigger('blur');
-
         var trainId = $(this).data('training-id');
         if (!trainId){
             return;
@@ -419,7 +410,6 @@ $(document).ready(function(){
         allowClear: true,
         placeholder: 'Type to search training title..',
         minimumInputLength: 0,
-        dropdownParent: $('#training_details'),
         escapeMarkup: function (markup) { return markup; },
         ajax: {
             url: '{% url "lds_trainingtitle_search" %}',

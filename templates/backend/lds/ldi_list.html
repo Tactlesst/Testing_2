@@ -2,140 +2,12 @@
 {% load static %}
 
 {% block style %}
-<link rel="stylesheet" type="text/css" href="{% static 'css/adjustments.css' %}">
 <style>
     .training-title-cell {
         max-width: 520px;
         white-space: normal;
         word-break: break-word;
         display: inline;
-    }
-    
-    #training-titles-table td,
-    #training-titles-table th {
-        white-space: normal;
-        word-break: break-word;
-        vertical-align: top;
-        line-height: 1.4;
-    }
-
-    #training-titles-table thead th {
-        white-space: nowrap;
-        word-break: normal;
-        vertical-align: middle;
-    }
-
-    #training-titles-table td .row-actions {
-        opacity: 0.25;
-        transition: opacity 0.15s ease-in-out;
-        white-space: nowrap;
-        vertical-align: middle;
-    }
-
-    #training-titles-table tbody tr:hover td .row-actions {
-        opacity: 1;
-    }
-
-    #training-titles-table td .row-actions a {
-        font-size: 12px;
-        color: #6c757d;
-        text-decoration: none;
-    }
-
-    #training-titles-table td .row-actions a:hover {
-        color: #343a40;
-        text-decoration: underline;
-    }
-
-    #training-titles-table td .row-actions a.action-delete {
-        color: #dc3545;
-    }
-    
-    /* Responsive table improvements */
-    @media (max-width: 768px) {
-        .table-responsive {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        #training-titles-table {
-            min-width: 800px;
-        }
-        
-        /* Hide less important columns on small screens */
-        #training-titles-table th:nth-child(4),
-        #training-titles-table td:nth-child(4),
-        #training-titles-table th:nth-child(5),
-        #training-titles-table td:nth-child(5),
-        #training-titles-table th:nth-child(6),
-        #training-titles-table td:nth-child(6) {
-            display: none;
-        }
-    }
-    
-    @media (max-width: 576px) {
-        /* Hide more columns on very small screens including Action column */
-        #training-titles-table th:nth-child(3),
-        #training-titles-table td:nth-child(3),
-        #training-titles-table th:nth-child(4),
-        #training-titles-table td:nth-child(4),
-        #training-titles-table th:nth-child(5),
-        #training-titles-table td:nth-child(5),
-        #training-titles-table th:nth-child(6),
-        #training-titles-table td:nth-child(6),
-        #training-titles-table th:nth-child(7),
-        #training-titles-table td:nth-child(7),
-        #training-titles-table th:nth-child(8),
-        #training-titles-table td:nth-child(8),
-        #training-titles-table th:nth-child(9),
-        #training-titles-table td:nth-child(9),
-        #training-titles-table th:nth-child(10),
-        #training-titles-table td:nth-child(10) {
-            display: none;
-        }
-        
-        #training-titles-table {
-            min-width: 400px;
-        }
-    }
-    
-    /* Expandable row styles */
-    .row-details {
-        display: none;
-        background-color: #f8f9fa;
-        border-left: 3px solid #17a2b8;
-        padding: 15px;
-        margin-bottom: 10px;
-    }
-    
-    .row-details .detail-item {
-        padding: 5px 0;
-        border-bottom: 1px solid #e9ecef;
-    }
-    
-    .row-details .detail-item:last-child {
-        border-bottom: none;
-    }
-    
-    .row-details .detail-label {
-        font-weight: bold;
-        color: #495057;
-        display: inline-block;
-        min-width: 120px;
-    }
-    
-    .row-details .detail-value {
-        color: #212529;
-    }
-    
-    /* Clickable row indicator */
-    .clickable-row {
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-    }
-    
-    .clickable-row:hover {
-        background-color: #f5f5f5;
     }
 </style>
 {% endblock %}
@@ -179,14 +51,11 @@
                                 <tr>
                                     <th width="10%" class="text-center" style="display:none;">ID</th>
                                     <th>Training Title</th>
+                                    <th width="15%" class="text-center">tt_status</th>
                                     <th width="25%">Added by</th>
-                                    <th width="20%">Venue</th>
-                                    <th width="12%" class="text-center">Date Added</th>
-                                    <th width="12%" class="text-center">Platform</th>
                                     <th width="10%" class="text-center">Requests</th>
                                     <th width="10%" class="text-center">Trainees</th>
                                     <th width="10%" class="text-center">Facilitators</th>
-                                    <th width="15%" class="text-center">tt_status</th>
                                     <th width="10%">Action</th>
                                 </tr>
                             </thead>
@@ -249,7 +118,6 @@
                     {% csrf_token %}
                     <input type="hidden" name="ldi_id" id="ldi-id">
                     <input type="hidden" name="training_id" id="ldi-training-id">
-                    <input type="hidden" name="created_by_id" id="ldi-created-by-id">
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label>Training Title <span class="text-danger">*</span></label>
@@ -340,111 +208,15 @@ createBtn.addEventListener('click', function() {
     $('#ldi-category-id').val('');
     $('#ldi-quarter').val('Q1');
     $('#ldi-platform').val('Face-to-Face');
-    $('#ldi-created-by-id').val('{{ request.session.emp_id }}');
     modal.modal('show');
 });
 
 $(document).on('click', 'a.ldi-plan-title-toggle', function(){
     var trainingId = $(this).data('training-id');
-
-    var trainingTitle = '';
-    try {
-        var tr = $(this).closest('tr');
-        if (tr.hasClass('child')){
-            tr = tr.prev();
-        }
-        var row = trainingTitlesTable.row(tr).data();
-        trainingTitle = (row && row.tt_name) ? row.tt_name : '';
-    } catch (e) {}
-
-    $('#ldi_plan_details').modal('show');
-    loadLdiPlanDetails(trainingId, trainingTitle);
+    $('#ldi_plan_details').modal('show').find('#ldi-plan-details-content').load(
+        '{% url "ldi_plan_details" 0 %}'.replace('/0/', '/' + trainingId + '/')
+    );
 });
-
-function escapeHtml(value){
-    return String(value || '').replace(/[&<>'"]/g, function(c){
-        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]);
-    });
-}
-
-function formatDateYmdToMonDYear(value){
-    if (!value){
-        return '';
-    }
-    var parts = String(value).split('-');
-    if (parts.length !== 3){
-        return value;
-    }
-    var yyyy = parseInt(parts[0], 10);
-    var mm = parseInt(parts[1], 10) - 1;
-    var dd = parseInt(parts[2], 10);
-    var d = new Date(yyyy, mm, dd);
-    if (isNaN(d.getTime())){
-        return value;
-    }
-    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
-}
-
-function loadLdiPlanDetails(trainingId, trainingTitle){
-    var container = $('#ldi-plan-details-content');
-    container.html('<div class="text-center p-3">Loading...</div>');
-
-    $.ajax({
-        url: '/api/learning-and-development/ldi-plans/training/' + trainingId + '/',
-        type: 'GET',
-    }).done(function(rows){
-        rows = rows || [];
-
-        var heading = '<div class="mb-2"><strong>' + escapeHtml(trainingTitle || (rows[0] && rows[0].training_title) || '') + '</strong></div>';
-        var table = '';
-        var activities = '';
-
-        if (rows.length){
-            activities = rows[0].proposed_ldi_activity || '';
-        }
-
-        table += '<div class="table-responsive">';
-        table += '<table class="table table-bordered table-hover" width="100%">';
-        table += '<thead><tr>' +
-            '<th width="12%" class="text-center">Quarter</th>' +
-            '<th width="15%" class="text-center">Platform</th>' +
-            '<th width="12%" class="text-center">Proposed Date</th>' +
-            '<th width="25%">Target Participants</th>' +
-            '<th width="15%">Budget</th>' +
-            '<th width="21%">Category</th>' +
-            '</tr></thead>';
-        table += '<tbody>';
-
-        if (!rows.length){
-            table += '<tr><td colspan="6" class="text-center">No LDI Plan record found for this Training Title.</td></tr>';
-        } else {
-            for (var i = 0; i < rows.length; i++){
-                var r = rows[i] || {};
-                table += '<tr>' +
-                    '<td class="text-center">' + escapeHtml(r.quarter || '') + '</td>' +
-                    '<td class="text-center">' + escapeHtml(r.platform || '') + '</td>' +
-                    '<td class="text-center">' + escapeHtml(formatDateYmdToMonDYear(r.proposed_date || '')) + '</td>' +
-                    '<td style="word-break: break-word;">' + escapeHtml(r.target_participants || '') + '</td>' +
-                    '<td style="word-break: break-word;">' + escapeHtml(r.budgetary_requirements || '') + '</td>' +
-                    '<td style="word-break: break-word;">' + escapeHtml(r.training_category || '') + '</td>' +
-                    '</tr>';
-            }
-        }
-
-        table += '</tbody></table></div>';
-
-        var activitiesHtml = '';
-        activitiesHtml += '<div class="mt-3">';
-        activitiesHtml += '<label class="mb-1"><strong>Proposed LDI / Activities</strong></label>';
-        activitiesHtml += '<div class="border rounded p-2" style="white-space: pre-wrap; word-break: break-word;">';
-        activitiesHtml += escapeHtml(activities);
-        activitiesHtml += '</div></div>';
-
-        container.html(heading + table + activitiesHtml);
-    }).fail(function(){
-        container.html('<div class="text-center text-danger p-3">Unable to load LDI plan details.</div>');
-    });
-}
 
 function openLdiModalForTraining(trainingId, trainingTitle){
     $.ajax({
@@ -481,17 +253,18 @@ function openLdiModalForTraining(trainingId, trainingTitle){
 }
 var trainingTitlesTable = $('#training-titles-table').DataTable({
     'processing': true,
-    'serverSide': true,
     'deferRender': true,
-    'order': [[ 1, 'desc' ]],
+    'order': [[ 0, 'desc' ]],
     'lengthMenu': [25,50,100],
     'ajax': {
-        'url': '/api/learning-and-development/training-titles/',
+        'url': '{% url "lds_training_list_ajax" %}',
         'type': 'GET',
     },
-    'columnDefs': [],
+    'columnDefs': [
+        { 'targets': [0], 'visible': false, 'searchable': false },
+    ],
     'columns': [
-        { 'data': 'id', 'visible': false },
+        { 'data': 'id' },
         {
             'data': 'tt_name',
             'render': function(data, type, row, meta){
@@ -501,149 +274,24 @@ var trainingTitlesTable = $('#training-titles-table').DataTable({
                 return data;
             }
         },
-        
+        { 'data': 'tt_status', 'className': 'text-center' },
         { 'data': 'added_by' },
-        {
-            'data': 'latest_venue',
-            'render': function(data, type, row, meta){
-                if (type === 'display'){
-                    return '<span class="training-title-cell" title="' + (data || '') + '">' + (data || '') + '</span>';
-                }
-                return data;
-            }
-        },
-        {
-            'data': 'latest_date_added',
-            'className': 'text-center',
-            'render': function(data, type, row, meta){
-                if (type === 'display'){
-                    return data ? data : '-';
-                }
-                return data;
-            }
-        },
-        {
-            'data': 'latest_platform',
-            'className': 'text-center',
-            'render': function(data, type, row, meta){
-                if (type === 'display'){
-                    return data ? data : '-';
-                }
-                return data;
-            }
-        },
         { 'data': 'requests_count', 'className': 'text-center' },
         { 'data': 'trainees_count', 'className': 'text-center' },
         { 'data': 'facilitators_count', 'className': 'text-center' },
-        { 'data': 'tt_status', 'className': 'text-center' },
         {
             'data': null,
             'orderable': false,
             'searchable': false,
             'render': function(data, type, row, meta){
                 return (
-                    '<span class="row-actions">' +
-                        '<a href="javascript:;" class="mr-2 ldi-plan-edit-toggle" data-training-id="' + row.id + '">Edit</a>' +
-                        '<a href="javascript:;" class="action-delete" data-role="ldi-row-delete" data-id="' + row.id + '">Delete</a>' +
-                    '</span>'
+                    '<a href="javascript:;" class="mr-2 ldi-plan-edit-toggle" data-training-id="' + row.id + '">Edit</a>' +
+                    '<a href="javascript:;" class="text-danger" data-role="ldi-row-delete" data-id="' + row.id + '">Delete</a>'
                 );
             }
         },
     ],
 });
-
-    // Track currently open details row
-    var openDetailsRow = null;
-
-    // Handle View Details button click
-    $(document).on('click', '.view-details-btn', function(e){
-        e.stopPropagation();
-        var rowData = JSON.parse(decodeURIComponent($(this).data('row-data')));
-        showRowDetails(rowData, $(this));
-    });
-
-    // Handle row click for mobile view
-    $(document).on('click', '#training-titles-table tbody tr', function(e){
-        // Only handle clicks on mobile and not on action buttons
-        if ($(window).width() <= 576 && !$(e.target).closest('a, button').length) {
-            var row = trainingTitlesTable.row($(this));
-            var rowData = row.data();
-            if (rowData) {
-                showRowDetails(rowData, $(this));
-            }
-        }
-    });
-
-    // Function to show row details
-    function showRowDetails(rowData, triggerElement) {
-        var currentTr = triggerElement.closest('tr');
-        
-        // If the clicked row is already open, close it
-        if (openDetailsRow && openDetailsRow.is(currentTr)) {
-            openDetailsRow.next('.row-details').slideUp(300, function(){
-                $(this).remove();
-            });
-            openDetailsRow = null;
-            return;
-        }
-
-        // Remove any existing details
-        $('.row-details').slideUp(300, function(){
-            $(this).remove();
-        });
-        
-        // Create details HTML
-        var detailsHtml = '<div class="row-details">' +
-
-            '<div class="detail-item"><span class="detail-label">Added by:</span> <span class="detail-value">' + (rowData.added_by || 'N/A') + '</span></div>' +
-            '<div class="detail-item"><span class="detail-label">Requests:</span> <span class="detail-value">' + (rowData.requests_count || 0) + '</span></div>' +
-            '<div class="detail-item"><span class="detail-label">Trainees:</span> <span class="detail-value">' + (rowData.trainees_count || 0) + '</span></div>' +
-            '<div class="detail-item"><span class="detail-label">Facilitators:</span> <span class="detail-value">' + (rowData.facilitators_count || 0) + '</span></div>' +
-            '<div class="detail-item"><span class="detail-label">Actions:</span> <span class="detail-value">' +
-                        '<div class="detail-item"><span class="detail-label">Status:</span> <span class="detail-value">' + (rowData.tt_status || 'N/A') + '</span></div>' +
-                '<a href="javascript:;" class="mr-2 ldi-plan-edit-toggle" data-training-id="' + rowData.id + '">Edit</a> ' +
-                '<a href="javascript:;" class="text-danger" data-role="ldi-row-delete" data-id="' + rowData.id + '">Delete</a>' +
-            '</span></div>' +
-            '</div>';
-        
-        // Insert details after the row
-        var targetRow;
-        if (triggerElement.hasClass('view-details-btn')) {
-            targetRow = triggerElement.closest('tr');
-        } else {
-            targetRow = triggerElement;
-        }
-        targetRow.after(detailsHtml);
-        
-        // Show details with animation
-        targetRow.next('.row-details').slideDown(300);
-        openDetailsRow = targetRow;
-    }
-
-    // Hide details when clicking outside
-    $(document).on('click', function(e){
-        if (!$(e.target).closest('#training-titles-table, .row-details').length) {
-            $('.row-details').slideUp(300, function(){
-                $(this).remove();
-            });
-            openDetailsRow = null;
-        }
-    });
-
-    // Handle window resize to close details on desktop view
-    var resizeTimer;
-    $(window).on('resize', function() {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(function() {
-            // If we're on desktop view and details are open, close them
-            if ($(window).width() > 576 && openDetailsRow) {
-                $('.row-details').slideUp(300, function(){
-                    $(this).remove();
-                });
-                openDetailsRow = null;
-            }
-        }, 250); // Debounce resize event
-    });
 
 $(document).on('click', 'a.ldi-plan-edit-toggle', function(){
     var trainingId = $(this).data('training-id');
@@ -694,7 +342,6 @@ $(document).on('click', 'a[data-role=ldi-row-edit]', function(){
             $('#ldi-budgetary-requirements').val(resp.row.budgetary_requirements);
             $('#ldi-target-competencies').val(resp.row.target_competencies);
             $('#ldi-venue').val(resp.row.venue);
-            $('#ldi-created-by-id').val(resp.row.created_by_id || '{{ request.session.emp_id }}');
             $('#ldi_plan_details').modal('hide');
             modal.modal('show');
         }
@@ -720,16 +367,6 @@ $(document).on('click', 'a[data-role=ldi-row-delete]', function(){
                 data: {
                     'csrfmiddlewaretoken': '{{ csrf_token }}',
                 }
-            }).catch(function(xhr){
-                var msg = 'Unable to delete.';
-                try {
-                    if (xhr && xhr.responseJSON && xhr.responseJSON.msg){
-                        msg = xhr.responseJSON.msg;
-                    }
-                } catch (e) {}
-
-                Swal.showValidationMessage(msg);
-                return false;
             });
         },
     }).then(function (response){
