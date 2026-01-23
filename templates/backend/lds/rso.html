@@ -3,135 +3,6 @@
 {% block style %}
 <link rel="stylesheet" type="text/css" href="{% static 'css/adjustments.css' %}">
 <style>
-    .training-title-cell {
-        max-width: 520px;
-        white-space: normal;
-        word-break: break-word;
-        display: inline;
-    }
-
-    #training-titles-table td,
-    #training-titles-table th {
-        white-space: normal;
-        word-break: break-word;
-        vertical-align: top;
-        line-height: 1.4;
-    }
-
-    #training-titles-table thead th {
-        white-space: nowrap;
-        word-break: normal;
-        vertical-align: middle;
-    }
-
-    #training-titles-table td .row-actions {
-        opacity: 0.25;
-        transition: opacity 0.15s ease-in-out;
-        white-space: nowrap;
-        vertical-align: middle;
-    }
-
-    #training-titles-table tbody tr:hover td .row-actions {
-        opacity: 1;
-    }
-
-    #training-titles-table td .row-actions a {
-        font-size: 12px;
-        color: #6c757d;
-        text-decoration: none;
-    }
-
-    #training-titles-table td .row-actions a:hover {
-        color: #343a40;
-        text-decoration: underline;
-    }
-
-    #training-titles-table td .row-actions a.action-delete {
-        color: #dc3545;
-    }
-
-    @media (max-width: 768px) {
-        .table-responsive {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        #training-titles-table {
-            min-width: 800px;
-        }
-
-        #training-titles-table th:nth-child(4),
-        #training-titles-table td:nth-child(4),
-        #training-titles-table th:nth-child(5),
-        #training-titles-table td:nth-child(5),
-        #training-titles-table th:nth-child(6),
-        #training-titles-table td:nth-child(6) {
-            display: none;
-        }
-    }
-
-    @media (max-width: 576px) {
-        #training-titles-table th:nth-child(3),
-        #training-titles-table td:nth-child(3),
-        #training-titles-table th:nth-child(4),
-        #training-titles-table td:nth-child(4),
-        #training-titles-table th:nth-child(5),
-        #training-titles-table td:nth-child(5),
-        #training-titles-table th:nth-child(6),
-        #training-titles-table td:nth-child(6),
-        #training-titles-table th:nth-child(7),
-        #training-titles-table td:nth-child(7),
-        #training-titles-table th:nth-child(8),
-        #training-titles-table td:nth-child(8),
-        #training-titles-table th:nth-child(9),
-        #training-titles-table td:nth-child(9),
-        #training-titles-table th:nth-child(10),
-        #training-titles-table td:nth-child(10) {
-            display: none;
-        }
-
-        #training-titles-table {
-            min-width: 400px;
-        }
-    }
-
-    .row-details {
-        display: none;
-        background-color: #f8f9fa;
-        border-left: 3px solid #17a2b8;
-        padding: 15px;
-        margin-bottom: 10px;
-    }
-
-    .row-details .detail-item {
-        padding: 5px 0;
-        border-bottom: 1px solid #e9ecef;
-    }
-
-    .row-details .detail-item:last-child {
-        border-bottom: none;
-    }
-
-    .row-details .detail-label {
-        font-weight: bold;
-        color: #495057;
-        display: inline-block;
-        min-width: 120px;
-    }
-
-    .row-details .detail-value {
-        color: #212529;
-    }
-
-    .clickable-row {
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-    }
-
-    .clickable-row:hover {
-        background-color: #f5f5f5;
-    }
-
     @media (max-width: 768px) {
         #lds-rso-admin-table th:nth-child(5),
         #lds-rso-admin-table td:nth-child(5),
@@ -244,34 +115,7 @@
                 </div>
 
                 <div class="tab-pane fade" id="ldi-plans-pane" role="tabpanel" aria-labelledby="ldi-plans-tab">
-                    <div class="d-flex justify-content-end mb-2">
-                        <button class="btn btn-info" id="create-btn"><i class="fas fa-plus"></i> Create LDI Plan</button>
-                    </div>
-
-                    <div class="card card-info card-outline">
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-hover" id="training-titles-table" width="100%">
-                                    <thead>
-                                        <tr>
-                                            <th width="10%" class="text-center" style="display:none;">ID</th>
-                                            <th>Training Title</th>
-                                            <th width="25%">Added by</th>
-                                            <th width="20%">Venue</th>
-                                            <th width="12%" class="text-center">Date Added</th>
-                                            <th width="12%" class="text-center">Platform</th>
-                                            <th width="10%" class="text-center">Requests</th>
-                                            <th width="10%" class="text-center">Trainees</th>
-                                            <th width="10%" class="text-center">Facilitators</th>
-                                            <th width="15%" class="text-center">tt_status</th>
-                                            <th width="10%">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+                    {% include 'backend/lds/partials/ldi_list_content.html' %}
                 </div>
             </div>
         </div>
@@ -711,22 +555,6 @@
                     openDetailsRow = null;
                 }
             }, 250);
-        });
-
-        $(document).on('click', 'a.ldi-plan-title-toggle', function () {
-            var trainingId = $(this).data('training-id');
-            var trainingTitle = '';
-            try {
-                var tr = $(this).closest('tr');
-                if (tr.hasClass('child')) {
-                    tr = tr.prev();
-                }
-                var row = trainingTitlesTable.row(tr).data();
-                trainingTitle = (row && row.tt_name) ? row.tt_name : '';
-            } catch (e) { }
-
-            $('#ldi_plan_details').modal('show');
-            loadLdiPlanDetails(trainingId, trainingTitle);
         });
 
         $(document).on('click', 'a.ldi-plan-edit-toggle', function () {

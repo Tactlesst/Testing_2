@@ -56,7 +56,7 @@ class TrainingtitleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Trainingtitle
         fields = ['id', 'tt_name', 'tt_status']
-
+#nazef added
 
 class LdsTrainingTitleListSerializer(serializers.ModelSerializer):
     added_by = serializers.SerializerMethodField()
@@ -114,7 +114,7 @@ class LdsTrainingTitleListSerializer(serializers.ModelSerializer):
         if not platform:
             platform = getattr(obj, 'latest_ldi_platform', None) or ''
         return platform
-
+#nazef end
 
 class LdsLdiPlanSerializer(serializers.ModelSerializer):
     training_title = serializers.CharField(source='training.tt_name', read_only=True)

@@ -1,0 +1,295 @@
+{% load static %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'css/adjustments.css' %}">
+<style>
+    .training-title-cell {
+        max-width: 520px;
+        white-space: normal;
+        word-break: break-word;
+        display: inline;
+    }
+
+    #training-titles-table td,
+    #training-titles-table th {
+        white-space: normal;
+        word-break: break-word;
+        vertical-align: top;
+        line-height: 1.4;
+    }
+
+    #training-titles-table thead th {
+        white-space: nowrap;
+        word-break: normal;
+        vertical-align: middle;
+    }
+
+    #training-titles-table td .row-actions {
+        opacity: 0.25;
+        transition: opacity 0.15s ease-in-out;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+    #training-titles-table tbody tr:hover td .row-actions {
+        opacity: 1;
+    }
+
+    #training-titles-table td .row-actions a {
+        font-size: 12px;
+        color: #6c757d;
+        text-decoration: none;
+    }
+
+    #training-titles-table td .row-actions a:hover {
+        color: #343a40;
+        text-decoration: underline;
+    }
+
+    #training-titles-table td .row-actions a.action-delete {
+        color: #dc3545;
+    }
+
+    @media (max-width: 768px) {
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #training-titles-table {
+            min-width: 800px;
+        }
+
+        #training-titles-table th:nth-child(4),
+        #training-titles-table td:nth-child(4),
+        #training-titles-table th:nth-child(5),
+        #training-titles-table td:nth-child(5),
+        #training-titles-table th:nth-child(6),
+        #training-titles-table td:nth-child(6) {
+            display: none;
+        }
+    }
+
+    @media (max-width: 576px) {
+        #training-titles-table th:nth-child(3),
+        #training-titles-table td:nth-child(3),
+        #training-titles-table th:nth-child(4),
+        #training-titles-table td:nth-child(4),
+        #training-titles-table th:nth-child(5),
+        #training-titles-table td:nth-child(5),
+        #training-titles-table th:nth-child(6),
+        #training-titles-table td:nth-child(6),
+        #training-titles-table th:nth-child(7),
+        #training-titles-table td:nth-child(7),
+        #training-titles-table th:nth-child(8),
+        #training-titles-table td:nth-child(8),
+        #training-titles-table th:nth-child(9),
+        #training-titles-table td:nth-child(9),
+        #training-titles-table th:nth-child(10),
+        #training-titles-table td:nth-child(10) {
+            display: none;
+        }
+
+        #training-titles-table {
+            min-width: 400px;
+        }
+    }
+
+    .row-details {
+        display: none;
+        background-color: #f8f9fa;
+        border-left: 3px solid #17a2b8;
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+
+    .row-details .detail-item {
+        padding: 5px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .row-details .detail-item:last-child {
+        border-bottom: none;
+    }
+
+    .row-details .detail-label {
+        font-weight: bold;
+        color: #495057;
+        display: inline-block;
+        min-width: 120px;
+    }
+
+    .row-details .detail-value {
+        color: #212529;
+    }
+
+    .clickable-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    .clickable-row:hover {
+        background-color: #f5f5f5;
+    }
+</style>
+
+<div class="d-flex justify-content-end mb-2">
+    <button class="btn btn-info" id="create-btn"><i class="fas fa-plus"></i> Create LDI Plan</button>
+</div>
+
+<div class="card card-info card-outline">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover" id="training-titles-table" width="100%">
+                <thead>
+                    <tr>
+                        <th width="10%" class="text-center" style="display:none;">ID</th>
+                        <th>Training Title</th>
+                        <th width="25%">Added by</th>
+                        <th width="20%">Venue</th>
+                        <th width="12%" class="text-center">Date Added</th>
+                        <th width="12%" class="text-center">Platform</th>
+                        <th width="10%" class="text-center">Requests</th>
+                        <th width="10%" class="text-center">Trainees</th>
+                        <th width="10%" class="text-center">Facilitators</th>
+                        <th width="15%" class="text-center">tt_status</th>
+                        <th width="10%">Action</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="ldi_training_title_details" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-info">
+                <h3 class="modal-title">TRAINING TITLE DETAILS</h3>
+                <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body" id="ldi-details-content"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="ldi_training_rso_participants" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-info">
+                <h3 class="modal-title">PARTICIPANTS</h3>
+                <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body" id="ldi-participants-content"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="ldi_plan_details" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-info">
+                <h3 class="modal-title">LDI PLAN DETAILS</h3>
+                <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body" id="ldi-plan-details-content"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="ldiModal" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-info">
+                <h3 class="modal-title">CREATE / EDIT LDI PLAN</h3>
+                <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+                <form id="ldi-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="ldi_id" id="ldi-id">
+                    <input type="hidden" name="training_id" id="ldi-training-id">
+                    <input type="hidden" name="created_by_id" id="ldi-created-by-id">
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Training Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="training_title" id="ldi-training-title" required>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Training Category</label>
+                            <select class="form-control" name="category_id" id="ldi-category-id">
+                                <option value="">-- Pending / None --</option>
+                                {% for c in categories %}
+                                <option value="{{ c.id }}">{{ c.category_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Quarter <span class="text-danger">*</span></label>
+                            <select class="form-control" name="quarter" id="ldi-quarter">
+                                <option value="Q1">1st Quarter</option>
+                                <option value="Q2">2nd Quarter</option>
+                                <option value="Q3">3rd Quarter</option>
+                                <option value="Q4">4th Quarter</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Proposed LDI / Activities <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="proposed_ldi_activity" id="ldi-proposed-ldi-activity" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Proposed Date <span class="text-danger">*</span></label>
+                            <input type="date" name="proposed_date" id="ldi-proposed-date" class="form-control">
+                        </div>
+                        <div class="form-group col-12 col-md-4">
+                            <label>Target Amount of Participants <span class="text-danger">*</span></label>
+                            <input type="text" name="target_participants" id="ldi-target-participants" class="form-control" placeholder="e.g. 25" inputmode="numeric" autocomplete="off">
+                            <small class="text-danger d-none" id="participants-error"></small>
+                        </div>
+                        <div class="form-group col-12 col-md-4">
+                            <label>Budget <span class="text-danger">*</span></label>
+                            <input type="text" name="budgetary_requirements" id="ldi-budgetary-requirements" class="form-control" placeholder="e.g. 1000 or 1000.50" inputmode="decimal" autocomplete="off">
+                            <small class="text-danger d-none" id="budget-error"></small>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Platform <span class="text-danger">*</span></label>
+                            <select class="form-control" name="platform" id="ldi-platform">
+                                <option value="Face-to-Face">Face-to-Face</option>
+                                <option value="Online">Online</option>
+                                <option value="Hybrid">Hybrid</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>Venue</label>
+                            <input type="text" class="form-control" name="venue" id="ldi-venue">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Target Competencies<span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="target_competencies" id="ldi-target-competencies" rows="3"></textarea>
+                    </div>
+
+                    <div class="text-right">
+                        <button type="submit" class="btn btn-info">Save Plan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.LDI_LIST_CTX = {
+        empId: '{{ request.session.emp_id }}',
+        csrfToken: '{{ csrf_token }}'
+    };
+</script>

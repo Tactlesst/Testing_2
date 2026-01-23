@@ -24,13 +24,37 @@ from frontend.templatetags.tags import generateDRN, gamify
 
 @login_required
 def ld_admin(request):
+    categories = LdsCategory.objects.filter(approve=1).order_by('category_name')
     context = {
         'tab_title': 'Learning and Development',
         'management': True,
         'title': 'ld_admin',
         'sub_title': 'train_request',
+        'categories': categories,
     }
     return render(request, 'backend/lds/rso.html', context)
+
+
+@login_required
+def ldi_prototype(request):
+    context = {
+        'tab_title': 'Learning and Development',
+        'management': True,
+        'title': 'ld_admin',
+        'sub_title': 'ldi_prototype',
+    }
+    return render(request, 'backend/lds/ldi_prototype.html', context)
+
+
+@login_required
+def ldi_approved_prototype(request):
+    context = {
+        'tab_title': 'Learning and Development',
+        'management': True,
+        'title': 'ld_admin',
+        'sub_title': 'ldi_approved_prototype',
+    }
+    return render(request, 'backend/lds/ldi_approved_prototype.html', context)
 
 
 # nazef working in this code start

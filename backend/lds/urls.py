@@ -6,6 +6,8 @@ from backend.lds.views import ld_admin, generate_drn_for_rso, bypass_lds_rso_app
 urlpatterns = [
     path('', ld_admin, name='ld_admin'),
     #added paths for LDI plan by Nazef
+    path('ld-prototype/', views.ldi_prototype, name='ldi_prototype'),
+    path('ld-approved-prototype/', views.ldi_approved_prototype, name='ldi_approved_prototype'),
     path('ld-list/', views.ldi_list, name='ldi_list'),
     path('ld-list/ajax/', views.ldi_list_ajax, name='ldi_list_ajax'),
     path('ld-plan/get/<int:pk>/', views.ldi_plan_get, name='ldi_plan_get'),

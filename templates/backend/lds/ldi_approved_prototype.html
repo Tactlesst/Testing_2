@@ -1,0 +1,172 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block style %}
+<style>
+    .prototype-badge {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+
+    .table td,
+    .table th {
+        vertical-align: middle;
+    }
+
+    .td-wrap {
+        white-space: normal;
+        word-break: break-word;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row px-3 pt-3">
+        <div class="col-lg-8">
+            <h1 class="font-weight-bold">Approved LDI Plan <span class="badge badge-warning prototype-badge">Prototype</span></h1>
+            <ol class="breadcrumb bg-transparent p-0">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'backend-dashboard' %}">Home</a>
+                </li>
+                <li class="breadcrumb-item">Admin</li>
+                <li class="breadcrumb-item">Learning and Development Management</li>
+                <li class="breadcrumb-item active"><strong>Approved LDI Plan</strong></li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+<div class="content-wrapper p-4 ml-0">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card card-info card-outline">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" id="ldi-approved-prototype-table" width="100%">
+                            <thead>
+                                <tr>
+                                    <th width="12%" class="text-center">Division</th>
+                                    <th width="16%">Section</th>
+                                    <th width="10%" class="text-center">Category</th>
+                                    <th width="8%" class="text-center">Quarter</th>
+                                    <th>Training Title</th>
+                                    <th width="10%" class="text-center">Proposed Date</th>
+                                    <th width="12%" class="text-center">Approved At</th>
+                                    <th width="8%" class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="ldiApprovedPrototypeViewModal" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-info">
+                <h3 class="modal-title">VIEW APPROVED LDI PLAN</h3>
+                <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body" id="approved-proto-view-body"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    const PROTO_STORAGE_KEY = 'ldi_prototype_records_v1';
+
+    function escapeHtml(value) {
+        return String(value || '').replace(/[&<>'"]/g, function (c) {
+            return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]);
+        });
+    }
+
+    function getRecords() {
+        try {
+            return JSON.parse(localStorage.getItem(PROTO_STORAGE_KEY)) || [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function findRecordById(id) {
+        const rows = getRecords();
+        for (let i = 0; i < rows.length; i++) {
+            if (String(rows[i].id) === String(id)) {
+                return rows[i];
+            }
+        }
+        return null;
+    }
+
+    function openViewModal(record) {
+        if (!record) {
+            return;
+        }
+
+        let html = '';
+        html += '<div class="mb-2"><strong>' + escapeHtml(record.training_title || '') + '</strong></div>';
+        html += '<div class="table-responsive">';
+        html += '<table class="table table-bordered" width="100%">';
+        html += '<tbody>';
+        html += '<tr><th width="25%">Division</th><td>' + escapeHtml(record.division) + '</td></tr>';
+        html += '<tr><th>Section</th><td>' + escapeHtml(record.section) + '</td></tr>';
+        html += '<tr><th>Category</th><td>' + escapeHtml(record.category) + '</td></tr>';
+        html += '<tr><th>Quarter</th><td>' + escapeHtml(record.quarter) + '</td></tr>';
+        html += '<tr><th>Proposed LDI / Activity</th><td style="white-space: pre-wrap;">' + escapeHtml(record.ldi_activity) + '</td></tr>';
+        html += '<tr><th>Proposed Date</th><td>' + escapeHtml(record.proposed_date) + '</td></tr>';
+        html += '<tr><th>Target Participants</th><td style="white-space: pre-wrap;">' + escapeHtml(record.participants) + '</td></tr>';
+        html += '<tr><th>Budgetary Requirements</th><td style="white-space: pre-wrap;">' + escapeHtml(record.budget) + '</td></tr>';
+        html += '<tr><th>Target Competencies</th><td style="white-space: pre-wrap;">' + escapeHtml(record.competencies) + '</td></tr>';
+        html += '<tr><th>Approved At</th><td>' + escapeHtml(record.approved_at_display || '') + '</td></tr>';
+        html += '</tbody>';
+        html += '</table>';
+        html += '</div>';
+
+        $('#approved-proto-view-body').html(html);
+        $('#ldiApprovedPrototypeViewModal').modal('show');
+    }
+
+    function renderTable() {
+        const rows = getRecords().filter((r) => !!r.approved);
+        const $tbody = $('#ldi-approved-prototype-table tbody');
+        $tbody.empty();
+
+        if (!rows.length) {
+            $tbody.append('<tr><td colspan="8" class="text-center"><em>No approved prototype LDI Plans yet.</em></td></tr>');
+            return;
+        }
+
+        rows.forEach((r) => {
+            const tr = $('<tr></tr>');
+            tr.append('<td class="text-center">' + escapeHtml(r.division) + '</td>');
+            tr.append('<td class="td-wrap">' + escapeHtml(r.section) + '</td>');
+            tr.append('<td class="text-center">' + escapeHtml(r.category) + '</td>');
+            tr.append('<td class="text-center">' + escapeHtml(r.quarter) + '</td>');
+            tr.append('<td class="td-wrap">' + escapeHtml(r.training_title) + '</td>');
+            tr.append('<td class="text-center">' + escapeHtml(r.proposed_date) + '</td>');
+            tr.append('<td class="text-center">' + escapeHtml(r.approved_at_display || '') + '</td>');
+            tr.append('<td class="text-center"><a href="javascript:;" data-role="approved-proto-view" data-id="' + escapeHtml(r.id) + '">View</a></td>');
+            $tbody.append(tr);
+        });
+    }
+
+    $(document).ready(function () {
+        renderTable();
+
+        $(document).on('click', 'a[data-role=approved-proto-view]', function () {
+            const id = $(this).data('id');
+            const row = findRecordById(id);
+            openViewModal(row);
+        });
+    });
+</script>
+{% endblock %}
