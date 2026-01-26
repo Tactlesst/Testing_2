@@ -4,7 +4,7 @@ from rest_framework import generics, permissions
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from api.lds.serializers import LdsRsoSerializer, LdsParticipantsSerializer, LdsFacilitatorSerializer, LdsIDPSerializer, LdsTrainingTitleListSerializer, LdsLdiPlanSerializer
+from api.lds.serializers import LdsRsoSerializer, LdsParticipantsSerializer, LdsFacilitatorSerializer, LdsIDPSerializer, LdsTrainingTitleListSerializer, LdsLdiPlanSerializer, LdsApprovedTrainingsDashboardSerializer
 from backend.templatetags.tags import check_permission
 from frontend.lds.models import LdsRso, LdsParticipants, LdsFacilitator, LdsIDP
 from backend.lds.models import LdsLdiPlan
@@ -32,6 +32,55 @@ class LdsRsoViewsAdmin(generics.ListAPIView):
     serializer_class = LdsRsoSerializer
     permission_classes = [IsAuthenticated, LdsManagerPermissions]
     queryset = LdsRso.objects.order_by('-date_added')
+
+
+class LdsApprovedTrainingsDashboardDataTableViews(generics.ListAPIView):
+    serializer_class = LdsApprovedTrainingsDashboardSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return (
+            LdsRso.objects.select_related('training')
+            .filter(rrso_status=1, rso_status=1)
+            .order_by('-date_approved', '-date_added')
+        )
+
+    def list(self, request, *args, **kwargs):
+        draw = int(request.query_params.get('draw', '1') or 1)
+        start = int(request.query_params.get('start', '0') or 0)
+        length = int(request.query_params.get('length', '5') or 5)
+        search_value = (request.query_params.get('search[value]') or '').strip()
+
+        base_qs = self.get_queryset().distinct()
+        records_total = base_qs.count()
+
+        qs = base_qs
+        if search_value:
+            qs = qs.filter(Q(training__tt_name__icontains=search_value))
+
+        records_filtered = qs.count()
+
+        column_map = {
+            0: 'training__tt_name',
+            1: 'date_added',
+        }
+
+        order_col = int(request.query_params.get('order[0][column]', '1') or 1)
+        order_dir = request.query_params.get('order[0][dir]', 'desc')
+        order_field = column_map.get(order_col, 'date_added')
+        if order_dir == 'desc':
+            order_field = '-' + order_field
+        qs = qs.order_by(order_field)
+
+        qs = qs[start:start + length]
+
+        serializer = self.get_serializer(qs, many=True)
+        return Response({
+            'draw': draw,
+            'recordsTotal': records_total,
+            'recordsFiltered': records_filtered,
+            'data': serializer.data,
+        })
 
 
 class LdsParticipantsViews(generics.ListAPIView):
