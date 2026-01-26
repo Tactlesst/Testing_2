@@ -478,6 +478,35 @@ def ldi_plan_details(request, training_id):
     training = Trainingtitle.objects.filter(id=training_id).first()
     rows = LdsLdiPlan.objects.select_related('category', 'training').filter(training_id=training_id).order_by('-id')
 
+    request_rows = LdsRso.objects.select_related('created_by__pi__user').filter(training_id=training_id).annotate(
+        participants_count=Count('ldsparticipants', distinct=True),
+    ).order_by('-id')
+
+    rso = (
+        LdsRso.objects.select_related('training')
+        .filter(training_id=training_id)
+        .order_by('-date_added', '-id')
+        .first()
+    )
+
+    facilitators = []
+    internal_participants = []
+    external_participants = []
+    if rso:
+        facilitators = LdsFacilitator.objects.select_related('emp__pi__user').filter(
+            rso_id=rso.id,
+        ).order_by('order', 'id')
+
+        internal_participants = LdsParticipants.objects.select_related('emp__pi__user').filter(
+            rso_id=rso.id,
+            type=0,
+        ).order_by('order', 'id')
+
+        external_participants = LdsParticipants.objects.filter(
+            rso_id=rso.id,
+            type=1,
+        ).order_by('order', 'id')
+
     activities_text = ''
     first = rows.first()
     if first and getattr(first, 'proposed_ldi_activity', None):
@@ -486,8 +515,13 @@ def ldi_plan_details(request, training_id):
     context = {
         'training': training,
         'rows': rows,
+        'request_rows': request_rows,
         'activities_text': activities_text,
         'training_id': training_id,  # Pass training_id as backup
+        'rso': rso,
+        'facilitators': facilitators,
+        'internal_participants': internal_participants,
+        'external_participants': external_participants,
     }
     return render(request, 'backend/lds/ldi_plan_details.html', context)
 

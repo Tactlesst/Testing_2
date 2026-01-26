@@ -7,7 +7,7 @@
 <div class="mb-3">
     <h6 class="font-weight-bold">Facilitators Assigned</h6>
     <div class="table-responsive">
-        <table class="table table-bordered table-hover" width="100%">
+        <table class="table table-bordered table-hover ldi-facilitators-table" width="100%">
             <thead>
                 <tr>
                     <th width="20%" class="text-center">Type</th>
@@ -30,7 +30,8 @@
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="2" class="text-center">No facilitators assigned.</td>
+                        <td class="text-center"></td>
+                        <td class="text-center">No facilitators assigned.</td>
                     </tr>
                 {% endif %}
             </tbody>
@@ -39,7 +40,7 @@
 </div>
 
 <div class="table-responsive">
-    <table class="table table-bordered table-hover" width="100%">
+    <table class="table table-bordered table-hover ldi-participants-table" width="100%">
         <thead>
             <tr>
                 <th width="20%" class="text-center">Type</th>
@@ -67,7 +68,8 @@
 
             {% if not internal_participants and not external_participants %}
                 <tr>
-                    <td colspan="2" class="text-center">No participants found.</td>
+                    <td class="text-center"></td>
+                    <td class="text-center">No participants found.</td>
                 </tr>
             {% endif %}
         </tbody>

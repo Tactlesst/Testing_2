@@ -218,6 +218,71 @@ $(document).on('click', 'a.ldi-plan-title-toggle', function(){
     );
 });
 
+function initInlineParticipantsDataTables($scope){
+    if (!$scope || !$scope.length){
+        return;
+    }
+
+    $scope.find('.ldi-facilitators-table, .ldi-participants-table').each(function(){
+        var $t = $(this);
+        if ($.fn.DataTable && $.fn.DataTable.isDataTable($t)){
+            $t.DataTable().destroy();
+        }
+
+        if ($.fn.DataTable){
+            $t.DataTable({
+                paging: true,
+                searching: true,
+                info: true,
+                lengthMenu: [10, 25, 50, 100],
+                pageLength: 10,
+                ordering: true,
+                autoWidth: false,
+            });
+        }
+    });
+}
+
+function closeAllInlineParticipants($container){
+    $container.find('[data-bottom-participants-panel]').addClass('d-none');
+    $container.find('[data-bottom-participants-container]').empty();
+    $container.removeData('open-rso-id');
+}
+
+$(document).on('click', '#ldi-plan-details-content a[data-role=view-participants]', function(e){
+    e.preventDefault();
+
+    var rsoId = $(this).data('rso-id');
+    var $container = $('#ldi-plan-details-content');
+    var $panel = $container.find('[data-bottom-participants-panel]');
+    var $target = $container.find('[data-bottom-participants-container]');
+    if (!$panel.length || !$target.length){
+        return;
+    }
+
+    var openId = $container.data('open-rso-id');
+    if (String(openId || '') === String(rsoId || '')){
+        closeAllInlineParticipants($container);
+        return;
+    }
+
+    closeAllInlineParticipants($container);
+    $container.data('open-rso-id', rsoId);
+    $panel.removeClass('d-none');
+    $target.html('<div class="text-center p-2">Loading...</div>');
+
+    $target.load(
+        '{% url "lds_training_list_participants" 0 %}'.replace('/0/', '/' + rsoId + '/'),
+        function(response, status){
+            if (status === 'error'){
+                $target.html('<div class="text-center text-danger p-2">Unable to load participants.</div>');
+                return;
+            }
+            initInlineParticipantsDataTables($target);
+        }
+    );
+});
+
 function openLdiModalForTraining(trainingId, trainingTitle){
     $.ajax({
         url: '{% url "ldi_plan_get_by_training" 0 %}'.replace('/0/', '/' + trainingId + '/'),
@@ -285,6 +350,7 @@ var trainingTitlesTable = $('#training-titles-table').DataTable({
             'searchable': false,
             'render': function(data, type, row, meta){
                 return (
+                    '<a href="javascript:;" class="mr-2 ldi-plan-title-toggle" data-training-id="' + row.id + '">Details</a>' +
                     '<a href="javascript:;" class="mr-2 ldi-plan-edit-toggle" data-training-id="' + row.id + '">Edit</a>' +
                     '<a href="javascript:;" class="text-danger" data-role="ldi-row-delete" data-id="' + row.id + '">Delete</a>'
                 );
