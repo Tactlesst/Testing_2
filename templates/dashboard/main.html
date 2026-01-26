@@ -702,7 +702,9 @@
                     'data': 'training_title',
                     'render': function (data, type, row, meta) {
                         if (type === 'display') {
-                            return '<div style="max-width: 260px; white-space: normal; word-break: break-word; overflow-wrap: anywhere;">' + (data || '') + '</div>';
+                            var full = (data || '');
+                            var safe = $('<div/>').text(full).html();
+                            return '<div title="' + safe + '" style="max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + safe + '</div>';
                         }
                         return data;
                     }
