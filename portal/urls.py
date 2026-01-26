@@ -43,6 +43,7 @@ urlpatterns = [
     path('login/', login, name="backend-login"),
     path('logout', logout, name='backend-logout'),
     path('vacancies/', vacancies, name='vacancies'),
+    # path('training_req/', training_req, name='training_req'),
     path('birthday-celebrants/', birthday_celebrants, name='birthday_celebrants'),
     path('birthday-celebrants/view/<int:pk>', birthday_celebrants_view, name='birthday_celebrants_view'),
     path('dashboard/', dashboard, name="backend-dashboard"),

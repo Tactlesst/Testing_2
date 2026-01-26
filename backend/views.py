@@ -42,6 +42,7 @@ from backend.libraries.gamification.models import GamifyPoints
 from backend.libraries.leave.models import LeaveApplication, CTDORequests
 from backend.libraries.pas.forms import UploadPictureForm
 
+from frontend.lds.models import LdsRso
 from backend.models import Empprofile, Personalinfo, Empstatus, WfhTime, AuthUser, HrwsHealthchecklist, \
     AuthUserUserPermissions, WfhType, DjangoLoggedInUser, Patches, PortalSuccessLogs, PortalErrorLogs, \
     Position, ExtensionName, Aoa, Section, Division
@@ -297,8 +298,21 @@ def main_dashboard(request):
         Q(deadline=None)
     ).order_by('position__name')
 
+
+    approved_trainings_qs = (
+        LdsRso.objects.select_related('training', 'created_by', 'created_by__pi', 'created_by__pi__user')
+        .filter(rrso_status=1, rso_status=1)
+        .order_by('-date_approved', '-date_added')
+    )
+
+    trainings_paginator = Paginator(approved_trainings_qs, 5)
+    trainings_page_number = request.GET.get('trainings_page')
+    approved_trainings = trainings_paginator.get_page(trainings_page_number)
+
+
     context = {
         'vacancy': vacancy,
+        'approved_trainings': approved_trainings,
         'announcements': announcements,
         'birthday_celebrants': Paginator(
             Empprofile.objects.filter(pi__dob__month=today.month, pi__dob__day__gte=today.day,
