@@ -79,7 +79,7 @@
 				<span style="font-family: Times New Roman; font-size: 8px;"><em>DSWD-GF-001</em> | <em>REV 02 / 17 AUG 2022</em></span>
 			</span> -->
 
-			<span style="margin-top: -50px; margin-right: 100px !important;" class="float-right text-center">
+			<span style="margin-top: -50px; display: block; width: 100%; text-align: center;" class="text-center">
 				<span style="font-family: Times New Roman; font-size: 10.7px;"><strong>
 					{% if office_unit %}
 					<strong>{{ office_unit.section.div|upper }}</strong> 
@@ -94,17 +94,20 @@
 			</span>
             <hr>
 			<div style="margin-top: -10px">
-				<div class="float-right my-2" style="margin-top: -5px;">
-					<div style="width: 80px; height: 80px; border: 3px solid #000; box-sizing: border-box; background: #fff;"></div>
+				<div style="display: flex; align-items: flex-start; width: 100%;">
+					<div style="width: 80px; height: 80px;"></div>
+					<div style="flex: 1; text-align: center;">
+						<p class="text-center mb-1" style="font-size: 10.7px;">
+							<strong>ATTENDANCE SHEET</strong>
+						</p>
+						<p class="text-center m-0" style="font-size: 9.3px;">
+							<strong>{{ training.training.tt_name|upper }}</strong><br>
+							<strong>{{ date }}</strong><br>
+							<strong>{{ training.venue }}</strong>
+						</p>
+					</div>
+					<div style="width: 80px; height: 80px; border: 3px solid #000; box-sizing: border-box; background: #fff; margin-top: -5px;"></div>
 				</div>
-			<p class="text-center mb-1" style="font-size: 10.7px;">
-				<strong>ATTENDANCE SHEET</strong>
-			</p>
-			<p class="text-center m-0" style="font-size: 9.3px;">
-				<strong>{{ training.training.tt_name|upper }}</strong><br>
-				<strong>{{ date }}</strong><br>
-				<strong>{{ training.venue }}</strong>
-			</p>
 			<table border="1" width="100%" style="font-size: 8px;">
 				<thead>
 					<tr>
