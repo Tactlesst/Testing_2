@@ -135,6 +135,18 @@
         </div>
     </div>
 </div>
+
+<div class="modal" id="training_rso_participants" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content animated bounceInDown">
+            <div class="modal-header bg-info">
+                <h3 class="modal-title">PARTICIPANTS</h3>
+                <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body" id="participants-content"></div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 {% block script %}
 <script>
@@ -326,61 +338,14 @@
             var container = $('#ldi-plan-details-content');
             container.html('<div class="text-center p-3">Loading...</div>');
 
-            $.ajax({
-                url: '/api/learning-and-development/ldi-plans/training/' + trainingId + '/',
-                type: 'GET',
-            }).done(function (rows) {
-                rows = rows || [];
-
-                var heading = '<div class="mb-2"><strong>' + escapeHtml(trainingTitle || (rows[0] && rows[0].training_title) || '') + '</strong></div>';
-                var table = '';
-                var activities = '';
-
-                if (rows.length) {
-                    activities = rows[0].proposed_ldi_activity || '';
-                }
-
-                table += '<div class="table-responsive">';
-                table += '<table class="table table-bordered table-hover" width="100%">';
-                table += '<thead><tr>' +
-                    '<th width="12%" class="text-center">Quarter</th>' +
-                    '<th width="15%" class="text-center">Platform</th>' +
-                    '<th width="12%" class="text-center">Proposed Date</th>' +
-                    '<th width="25%">Target Participants</th>' +
-                    '<th width="15%">Budget</th>' +
-                    '<th width="21%">Category</th>' +
-                    '</tr></thead>';
-                table += '<tbody>';
-
-                if (!rows.length) {
-                    table += '<tr><td colspan="6" class="text-center">No LDI Plan record found for this Training Title.</td></tr>';
-                } else {
-                    for (var i = 0; i < rows.length; i++) {
-                        var r = rows[i] || {};
-                        table += '<tr>' +
-                            '<td class="text-center">' + escapeHtml(r.quarter || '') + '</td>' +
-                            '<td class="text-center">' + escapeHtml(r.platform || '') + '</td>' +
-                            '<td class="text-center">' + escapeHtml(formatDateYmdToMonDYear(r.proposed_date || '')) + '</td>' +
-                            '<td style="word-break: break-word;">' + escapeHtml(r.target_participants || '') + '</td>' +
-                            '<td style="word-break: break-word;">' + escapeHtml(r.budgetary_requirements || '') + '</td>' +
-                            '<td style="word-break: break-word;">' + escapeHtml(r.training_category || '') + '</td>' +
-                            '</tr>';
+            container.load(
+                '{% url "lds_training_list_details" 0 %}'.replace('/0/', '/' + trainingId + '/'),
+                function (response, status) {
+                    if (status === 'error') {
+                        container.html('<div class="text-center text-danger p-3">Unable to load requests.</div>');
                     }
                 }
-
-                table += '</tbody></table></div>';
-
-                var activitiesHtml = '';
-                activitiesHtml += '<div class="mt-3">';
-                activitiesHtml += '<label class="mb-1"><strong>Proposed LDI / Activities</strong></label>';
-                activitiesHtml += '<div class="border rounded p-2" style="white-space: pre-wrap; word-break: break-word;">';
-                activitiesHtml += escapeHtml(activities);
-                activitiesHtml += '</div></div>';
-
-                container.html(heading + table + activitiesHtml);
-            }).fail(function () {
-                container.html('<div class="text-center text-danger p-3">Unable to load LDI plan details.</div>');
-            });
+            );
         }
 
         function openLdiModalForTraining(trainingId, trainingTitle) {
@@ -419,6 +384,72 @@
                 ldiModal.modal('show');
             });
         }
+
+        $(document).on('click', 'a.ldi-plan-title-toggle', function () {
+            var trainingId = $(this).data('training-id');
+            var tr = $(this).closest('tr');
+            if (tr.hasClass('child')) {
+                tr = tr.prev();
+            }
+            var row = trainingTitlesTable.row(tr).data();
+            var trainingTitle = (row && row.tt_name) ? row.tt_name : '';
+
+            $('#ldi_plan_details').modal('show');
+            loadLdiPlanDetails(trainingId, trainingTitle);
+        });
+
+        $(document).on('click', 'a[data-role=view-participants]', function (e) {
+            e.preventDefault();
+
+            var rsoId = $(this).data('rso-id');
+            var $root = $(this).closest('.modal-body, #details-content, body');
+            var $panel = $root.find('[data-bottom-participants-panel]').first();
+            var $target = $root.find('[data-bottom-participants-container]').first();
+            if (!$panel.length || !$target.length) {
+                return;
+            }
+
+            var openId = $panel.data('open-rso-id');
+            if (String(openId || '') === String(rsoId || '')) {
+                $panel.addClass('d-none');
+                $panel.removeData('open-rso-id');
+                $target.empty();
+                return;
+            }
+
+            $panel.data('open-rso-id', rsoId);
+            $panel.removeClass('d-none');
+            $target.empty().html('<div class="text-center p-2">Loading...</div>');
+
+            $target.load(
+                '{% url "lds_training_list_participants" 0 %}'.replace('/0/', '/' + rsoId + '/'),
+                function (response, status) {
+                    if (status === 'error') {
+                        $target.html('<div class="text-center text-danger p-2">Unable to load participants.</div>');
+                        return;
+                    }
+
+                    $target.find('.ldi-facilitators-table, .ldi-participants-table').each(function () {
+                        var $t = $(this);
+                        if ($.fn.DataTable && $.fn.DataTable.isDataTable($t)) {
+                            $t.DataTable().destroy();
+                        }
+
+                        if ($.fn.DataTable) {
+                            $t.DataTable({
+                                paging: true,
+                                searching: true,
+                                info: true,
+                                lengthMenu: [10, 25, 50, 100],
+                                pageLength: 10,
+                                ordering: true,
+                                autoWidth: false,
+                            });
+                        }
+                    });
+                }
+            );
+        });
 
         var trainingTitlesTable = $('#training-titles-table').DataTable({
             'processing': true,
@@ -483,6 +514,7 @@
                     'render': function (data, type, row, meta) {
                         return (
                             '<span class="row-actions">' +
+                            '<a href="javascript:;" class="mr-2 ldi-plan-title-toggle" data-training-id="' + row.id + '">Details</a>' +
                             '<a href="javascript:;" class="mr-2 ldi-plan-edit-toggle" data-training-id="' + row.id + '">Edit</a>' +
                             '<a href="javascript:;" class="action-delete" data-role="ldi-row-delete" data-id="' + row.id + '">Delete</a>' +
                             '</span>'
