@@ -120,6 +120,15 @@
         </nav>
         <!-- /.navbar -->
 
+        <div class="px-3 pt-2" id="global-training-approved-alert-container" style="display: none;">
+            <div class="alert alert-success alert-dismissible fade show mb-0" role="alert" id="global-training-approved-alert">
+                A new training has been approved, check your Dashboard
+                <button type="button" class="close" aria-label="Close" id="global-training-approved-alert-close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        </div>
+
         <!-- Content Wrapper. Contains page content -->
         <div class="content-wrapper">
             {% block content %}{% endblock %}
@@ -504,6 +513,72 @@
                 }
             });
         });
+
+        (function () {
+            var endpointUrl = '/api/learning-and-development/latest-approved-training/';
+            var storageKey = 'latest_approved_training_id_seen';
+            var autoCloseTimer = null;
+
+            function showApprovedTrainingAlert() {
+                $('#global-training-approved-alert-container').stop(true, true).fadeIn(150);
+
+                if (autoCloseTimer) {
+                    clearTimeout(autoCloseTimer);
+                    autoCloseTimer = null;
+                }
+                autoCloseTimer = setTimeout(function () {
+                    hideApprovedTrainingAlert();
+                }, 10000);
+            }
+
+            function hideApprovedTrainingAlert() {
+                $('#global-training-approved-alert-container').stop(true, true).fadeOut(150);
+            }
+
+            $(document).on('click', '#global-training-approved-alert-close', function () {
+                hideApprovedTrainingAlert();
+            });
+
+            function pollLatestApprovedTraining() {
+                $.ajax({
+                    url: endpointUrl,
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        if (!data || !data.has_latest) {
+                            return;
+                        }
+
+                        var latestId = data.id;
+                        if (!latestId) {
+                            return;
+                        }
+
+                        var seenId = null;
+                        try {
+                            seenId = localStorage.getItem(storageKey);
+                        } catch (e) {
+                            seenId = null;
+                        }
+
+                        if (seenId && String(seenId) === String(latestId)) {
+                            return;
+                        }
+
+                        try {
+                            localStorage.setItem(storageKey, String(latestId));
+                        } catch (e) {}
+
+                        showApprovedTrainingAlert();
+                    }
+                });
+            }
+
+            $(document).ready(function () {
+                pollLatestApprovedTraining();
+                setInterval(pollLatestApprovedTraining, 5000);
+            });
+        })();
     </script>
     <script type="text/javascript" for="contact-tracing">
 	    $('#contacts-search').on('submit', function(e){
