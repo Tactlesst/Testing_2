@@ -23,6 +23,44 @@
 {% endif %}
 {% endif %}
 
+{% if rows %}
+<div class="mt-3">
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover mb-0">
+            <thead>
+                <tr>
+                    <th width="10%" class="text-center">Quarter</th>
+                    <th width="14%" class="text-center">Proposed Date</th>
+                    <th width="16%" class="text-center">Start - End</th>
+                    <th width="14%" class="text-center">Platform</th>
+                    <th width="16%" class="text-center">Participants</th>
+                    <th width="16%" class="text-center">Budget</th>
+                    <th width="14%" class="text-center">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in rows %}
+                <tr>
+                    <td class="text-center">{{ p.quarter|default:"" }}</td>
+                    <td class="text-center">{{ p.proposed_date|date:"Y-m-d" }}</td>
+                    <td class="text-center">
+                        {% if p.start_date %}{{ p.start_date|date:"Y-m-d" }}{% endif %}
+                        {% if p.end_date %} - {{ p.end_date|date:"Y-m-d" }}{% endif %}
+                    </td>
+                    <td class="text-center">{{ p.platform|default:"" }}</td>
+                    <td class="text-center">{{ p.target_participants|default:"" }}</td>
+                    <td class="text-center">{{ p.budgetary_requirements|default:"" }}</td>
+                    <td class="text-center">
+                        <a href="javascript:;" class="ldi-plan-edit-by-id" data-plan-id="{{ p.id }}">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
 
 
 <div class="mt-4">

@@ -84,6 +84,17 @@
                             required></select>
                         {# nazef working in this code end #}
                     </div>
+
+                    <div class="form-group">
+                        <label>Quarter <span class="asteriskField">*</span></label>
+                        <select class="form-control" name="quarter" id="rrso-quarter" required>
+                            <option value="Q1">1st Quarter</option>
+                            <option value="Q2">2nd Quarter</option>
+                            <option value="Q3">3rd Quarter</option>
+                            <option value="Q4">4th Quarter</option>
+                        </select>
+                    </div>
+
                     <div class="form-group">
                         <label id="venue">Venue </label> (if online platform please indicate if it's Zoom, Google Meet
                         or any other online platform) <label><span class="asteriskField">*</span></label>
@@ -107,6 +118,20 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <label class="text-muted">Planned Max Participants (LDI Plan)</label>
+                                <input type="text" id="planned_participants" class="form-control" readonly>
+                            </div>
+                            <div class="col-lg-6">
+                                <label class="text-muted">Planned Budget (LDI Plan)</label>
+                                <input type="text" id="planned_budget" class="form-control" readonly>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <div class="row">
                             <div class="col-lg-6">
@@ -174,176 +199,241 @@
     $(document).ready(function () {
         var CAN_TRAINING_REQUESTER = {% if perms.auth.training_requester %}true{% else %}false{% endif %};
 
-    $('#participant_amount').on('input', function () {
-        const value = this.value;
-        const regex = /^[0-9]+$/;
+        function setQuarterOptions(quarters, selected) {
+            var $q = $('#rrso-quarter');
+            var current = selected || ($q.val() || 'Q1');
+            var allowed = ['Q1', 'Q2', 'Q3', 'Q4'];
+            var items = (quarters && quarters.length) ? quarters : allowed;
 
-        if (!regex.test(value)) {
-            $('#participant-error')
-                .text('Amount of Participants must be a whole number only')
-                .removeClass('d-none');
-        } else {
-            $('#participant-error').addClass('d-none');
-        }
-    });
-
-    $('#budget_amount').on('input', function () {
-        const value = this.value;
-        const regex = /^\d+(\.\d{0,2})?$/;
-
-        if (!regex.test(value)) {
-            $('#budget-error')
-                .text('Budget Amount must be a valid number (e.g. 100 or 100.50)')
-                .removeClass('d-none');
-        } else {
-            $('#budget-error').addClass('d-none');
-        }
-    });
-
-    function toggleSubmit() {
-        const validParticipants = /^[0-9]+$/.test($('#participant_amount').val());
-        const validBudget = /^\d+(\.\d{1,2})?$/.test($('#budget_amount').val());
-
-        $('#submitForm button[type="submit"]').prop(
-            'disabled',
-            !(validParticipants && validBudget)
-        );
-    }
-
-    // Run toggleSubmit whenever user types
-    $('#participant_amount, #budget_amount').on('input', toggleSubmit);
-
-    // Initial check in case fields are prefilled
-    toggleSubmit();
-
-
-
-    // Set min date for all date inputs to today (disable past dates)
-    var today = new Date().toISOString().split('T')[0];
-    $('input[type="date"]').attr('min', today);
-
-    // Dynamic end date constraint based on start date
-    $(document).on('change', 'input[name="start_date"]', function () {
-        var startDate = $(this).val();
-        $('input[name="end_date"]').attr('min', startDate);
-    });
-
-    // {# nazef working in this code start #}
-    $('#training-id').select2({
-        width: '100%',
-        allowClear: true,
-        placeholder: 'Type to search training title..',
-        minimumInputLength: 0,
-        dropdownParent: $('#new_training'),
-        escapeMarkup: function (markup) { return markup; },
-        templateSelection: function (data) {
-            if (!data || !data.id) {
-                return data && data.text ? data.text : '';
-            }
-
-            var text = data.text || '';
-            return (
-                '<span>' +
-                '<a href="javascript:;" class="ldi-plan-info-toggle" data-training-id="' + data.id + '" style="margin-right:6px;">' +
-                '<i class="fas fa-exclamation-circle text-info"></i>' +
-                '</a>' +
-                '<span>' + text + '</span>' +
-                '</span>'
-            );
-        },
-        ajax: {
-            url: '{% url "lds_trainingtitle_search" %}',
-            dataType: 'json',
-            delay: 250,
-            data: function (params) {
-                return { q: params.term || '' };
-            },
-            processResults: function (data) {
-                return data;
-            },
-            cache: true
-        }
-    });
-
-    $(document).on('mousedown', '.select2-container .ldi-plan-info-toggle', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-    });
-
-    $(document).on('click', '.ldi-plan-info-toggle', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        try {
-            $('#training-id').select2('close');
-        } catch (err) { }
-        $('.select2-container--open .select2-search__field').trigger('blur');
-        var trainingId = $(this).data('training-id');
-        if (!trainingId) {
-            return;
-        }
-        $('#ldi_plan_info').modal('show').find('#ldi-plan-info-content').load(
-            '{% url "ldi_plan_details" 0 %}'.replace('/0/', '/' + trainingId + '/')
-        );
-    });
-    // {# nazef working in this code end #}
-
-    $('#submitForm').on('submit', function (e) {
-        e.preventDefault();
-
-        // Validate date range
-        var startDate = new Date($('input[name="start_date"]').val());
-        var endDate = new Date($('input[name="end_date"]').val());
-        var startTime = $('input[name="time_start"]').val();
-        var endTime = $('input[name="time_end"]').val();
-        var participants = $('#participant_amount').val().trim();
-        var budget = $('#budget_amount').val().trim();
-        var participantRegex = /^[0-9]+$/;
-        var budgetRegex = /^\d+(\.\d{1,2})?$/;
-
-        $('#participant-error').addClass('d-none');
-        $('#budget-error').addClass('d-none');
-
-        if (!participantRegex.test(participants)) {
-            $('#participant-error')
-                .text('Amount of Participants must be a whole number only')
-                .removeClass('d-none');
-            hasError = true;
-        }
-
-        if (!budgetRegex.test(budget)) {
-            $('#budget-error')
-                .text('Budget Amount must be a valid number (e.g. 100 or 100.50)')
-                .removeClass('d-none');
-            hasError = true;
-        }
-
-        // Check if end date is before start date
-        if (endDate < startDate) {
-            Swal.fire({
-                title: "Invalid Date Range",
-                text: "End date cannot be before start date. Adjusting end date to next day.",
-                icon: "warning",
-                confirmButtonColor: "#3498DB",
+            $q.empty();
+            items.forEach(function (q) {
+                if (allowed.indexOf(q) === -1) {
+                    return;
+                }
+                var label = q === 'Q1' ? '1st Quarter' : q === 'Q2' ? '2nd Quarter' : q === 'Q3' ? '3rd Quarter' : '4th Quarter';
+                $q.append('<option value="' + q + '">' + label + '</option>');
             });
 
-            // Set end date to next day
-            var nextDay = new Date(startDate);
-            nextDay.setDate(nextDay.getDate() + 1);
-            $('input[name="end_date"]').val(nextDay.toISOString().split('T')[0]);
-            return false;
+            if ($q.find('option[value="' + current + '"]').length) {
+                $q.val(current);
+            } else {
+                $q.val(items[0] || 'Q1');
+            }
         }
 
-        // Check if same day but end time is before start time
-        if (startDate.toDateString() === endDate.toDateString() && startTime && endTime) {
-            var startHour = parseInt(startTime.split(':')[0]);
-            var startMin = parseInt(startTime.split(':')[1]);
-            var endHour = parseInt(endTime.split(':')[0]);
-            var endMin = parseInt(endTime.split(':')[1]);
+        $('#participant_amount').on('input', function () {
+            const value = this.value;
+            const regex = /^[0-9]+$/;
 
-            if ((endHour < startHour) || (endHour === startHour && endMin < startMin)) {
+            if (!regex.test(value)) {
+                $('#participant-error')
+                    .text('Amount of Participants must be a whole number only')
+                    .removeClass('d-none');
+            } else {
+                $('#participant-error').addClass('d-none');
+            }
+        });
+
+        $('#budget_amount').on('input', function () {
+            const value = this.value;
+            const regex = /^\d+(\.\d{0,2})?$/;
+
+            if (!regex.test(value)) {
+                $('#budget-error')
+                    .text('Budget Amount must be a valid number (e.g. 100 or 100.50)')
+                    .removeClass('d-none');
+            } else {
+                $('#budget-error').addClass('d-none');
+            }
+        });
+
+        function toggleSubmit() {
+            const validParticipants = /^[0-9]+$/.test($('#participant_amount').val());
+            const validBudget = /^\d+(\.\d{1,2})?$/.test($('#budget_amount').val());
+
+            $('#submitForm button[type="submit"]').prop(
+                'disabled',
+                !(validParticipants && validBudget)
+            );
+        }
+
+        // Run toggleSubmit whenever user types
+        $('#participant_amount, #budget_amount').on('input', toggleSubmit);
+
+        // Initial check in case fields are prefilled
+        toggleSubmit();
+
+        function loadTrainingBaseline(trainingId, quarter){
+            $('#planned_participants').val('');
+            $('#planned_budget').val('');
+            if (!trainingId){
+                return;
+            }
+
+            var q = quarter || ($('#rrso-quarter').val() || '');
+
+            $.ajax({
+                url: '{% url "lds_training_baseline" 0 %}'.replace('/0/', '/' + trainingId + '/') + (q ? ('?quarter=' + encodeURIComponent(q)) : ''),
+                type: 'GET',
+            }).done(function(resp){
+                if (resp && resp.data === 'success'){
+                    $('#planned_participants').val(resp.planned_participants != null ? String(resp.planned_participants) : '');
+                    $('#planned_budget').val(resp.planned_budget != null ? String(resp.planned_budget) : '');
+                }
+            });
+        }
+
+        function loadTrainingQuarters(trainingId) {
+            if (!trainingId) {
+                setQuarterOptions(null, 'Q1');
+                return;
+            }
+
+            $.ajax({
+                url: '{% url "lds_training_quarters" 0 %}'.replace('/0/', '/' + trainingId + '/'),
+                type: 'GET',
+            }).done(function (resp) {
+                if (resp && resp.data === 'success') {
+                    setQuarterOptions(resp.quarters || null, $('#rrso-quarter').val());
+                    loadTrainingBaseline(trainingId, $('#rrso-quarter').val());
+                }
+            }).fail(function () {
+                setQuarterOptions(null, $('#rrso-quarter').val());
+            });
+        }
+
+        $('#training-id').on('select2:select', function(e){
+            var data = e && e.params ? e.params.data : null;
+            loadTrainingQuarters(data ? data.id : null);
+        });
+
+        $('#training-id').on('select2:clear', function(){
+            setQuarterOptions(null, 'Q1');
+            loadTrainingBaseline(null, $('#rrso-quarter').val());
+        });
+
+        $('#rrso-quarter').on('change', function(){
+            try {
+                var trainingId = $('#training-id').val();
+                loadTrainingBaseline(trainingId, $(this).val());
+            } catch (e) {}
+        });
+
+        // Set min date for all date inputs to today (disable past dates)
+        var today = new Date().toISOString().split('T')[0];
+        $('input[type="date"]').attr('min', today);
+
+        // Dynamic end date constraint based on start date
+        $(document).on('change', 'input[name="start_date"]', function () {
+            var startDate = $(this).val();
+            $('input[name="end_date"]').attr('min', startDate);
+        });
+
+        // {# nazef working in this code start #}
+        $('#training-id').select2({
+            width: '100%',
+            allowClear: true,
+            placeholder: 'Type to search training title..',
+            minimumInputLength: 0,
+            dropdownParent: $('#new_training'),
+            escapeMarkup: function (markup) { return markup; },
+            templateSelection: function (data) {
+                if (!data || !data.id) {
+                    return data && data.text ? data.text : '';
+                }
+
+                var text = data.text || '';
+                return (
+                    '<span>' +
+                    '<a href="javascript:;" class="ldi-plan-info-toggle" data-training-id="' + data.id + '" style="margin-right:6px;">' +
+                    '<i class="fas fa-exclamation-circle text-info"></i>' +
+                    '</a>' +
+                    '<span>' + text + '</span>' +
+                    '</span>'
+                );
+            },
+            ajax: {
+                url: '{% url "lds_trainingtitle_search" %}',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return { q: params.term || '' };
+                },
+                processResults: function (data) {
+                    return data;
+                },
+                cache: true
+            }
+        });
+
+        $(document).on('mousedown', '.select2-container .ldi-plan-info-toggle', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        $(document).on('click', '.ldi-plan-info-toggle', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if ($('#training_details').hasClass('show')) {
+                return;
+            }
+
+            try {
+                $('#training-id').select2('close');
+            } catch (err) { }
+            $('.select2-container--open .select2-search__field').trigger('blur');
+
+            var trainingId = $(this).data('training-id');
+            if (!trainingId) {
+                return;
+            }
+
+            $('#ldi_plan_info').modal('show').find('#ldi-plan-info-content').load(
+                '{% url "ldi_plan_details_user" 0 %}'.replace('/0/', '/' + trainingId + '/')
+            );
+        });
+
+        $('#submitForm').on('submit', function (e) {
+            e.preventDefault();
+
+            // Validate date range
+            var startDate = new Date($('input[name="start_date"]').val());
+            var endDate = new Date($('input[name="end_date"]').val());
+            var startTime = $('input[name="time_start"]').val();
+            var endTime = $('input[name="time_end"]').val();
+            var participants = ($('#participant_amount').val() || '').trim();
+            var budget = ($('#budget_amount').val() || '').trim();
+            var participantRegex = /^[0-9]+$/;
+            var budgetRegex = /^\d+(\.\d{1,2})?$/;
+            var hasError = false;
+
+            $('#participant-error').addClass('d-none');
+            $('#budget-error').addClass('d-none');
+
+            if (!participantRegex.test(participants)) {
+                $('#participant-error')
+                    .text('Amount of Participants must be a whole number only')
+                    .removeClass('d-none');
+                hasError = true;
+            }
+
+            if (!budgetRegex.test(budget)) {
+                $('#budget-error')
+                    .text('Budget Amount must be a valid number (e.g. 100 or 100.50)')
+                    .removeClass('d-none');
+                hasError = true;
+            }
+
+            if (hasError) {
+                return false;
+            }
+
+            // Check if end date is before start date
+            if (endDate < startDate) {
                 Swal.fire({
-                    title: "Invalid Time Range",
-                    text: "End time cannot be before start time on the same day. Adjusting end date to next day.",
+                    title: "Invalid Date Range",
+                    text: "End date cannot be before start date. Adjusting end date to next day.",
                     icon: "warning",
                     confirmButtonColor: "#3498DB",
                 });
@@ -354,137 +444,157 @@
                 $('input[name="end_date"]').val(nextDay.toISOString().split('T')[0]);
                 return false;
             }
-        }
 
-        var form = new FormData(this);
-        Swal.fire({
-            title: "Are you sure",
-            text: "You want to add new training?",
-            icon: "info",
-            showCancelButton: true,
-            confirmButtonColor: "#3498DB",
-            confirmButtonText: "Yes",
-            allowOutsideClick: false,
-            showLoaderOnConfirm: true,
-            preConfirm: function () {
-                // {# nazef working in this code start # }
-                return $.ajax({
-                    data: form,
-                    url: '{% url "lds_rrso" %}',
-                    type: 'POST',
-                    cache: false,
-                    contentType: false,
-                    processData: false,
-                }).catch(function (xhr) {
-                    var msg = 'Unable to submit.';
-                    if (xhr && xhr.responseJSON && xhr.responseJSON.msg) {
-                        msg = xhr.responseJSON.msg;
-                    }
-                    Swal.showValidationMessage(msg);
-                });
-                // {# nazef working in this code end # }
-            },
-        }).then(function (response) {
-            if (response.value.data == "success") {
-                Swal.fire({
-                    title: "Good job!",
-                    text: response.value.msg,
-                    icon: "success",
-                    confirmButtonColor: "#3498DB",
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        $('#submitForm').trigger('reset');
-                        $('#new_training').modal('hide');
-                        $('#lds-rso-table').DataTable().ajax.reload();
-                    }
-                });
-            } else {
-                Swal.fire({
-                    title: "Unauthorized transaction",
-                    text: response.value.errors,
-                    icon: "error",
-                    confirmButtonColor: "#3498DB",
-                });
+            // Check if same day but end time is before start time
+            if (startDate.toDateString() === endDate.toDateString() && startTime && endTime) {
+                var startHour = parseInt(startTime.split(':')[0]);
+                var startMin = parseInt(startTime.split(':')[1]);
+                var endHour = parseInt(endTime.split(':')[0]);
+                var endMin = parseInt(endTime.split(':')[1]);
+
+                if ((endHour < startHour) || (endHour === startHour && endMin < startMin)) {
+                    Swal.fire({
+                        title: "Invalid Time Range",
+                        text: "End time cannot be before start time on the same day. Adjusting end date to next day.",
+                        icon: "warning",
+                        confirmButtonColor: "#3498DB",
+                    });
+
+                    // Set end date to next day
+                    var nextDay2 = new Date(startDate);
+                    nextDay2.setDate(nextDay2.getDate() + 1);
+                    $('input[name="end_date"]').val(nextDay2.toISOString().split('T')[0]);
+                    return false;
+                }
             }
+
+            var form = new FormData(this);
+            Swal.fire({
+                title: "Are you sure",
+                text: "You want to add new training?",
+                icon: "info",
+                showCancelButton: true,
+                confirmButtonColor: "#3498DB",
+                confirmButtonText: "Yes",
+                allowOutsideClick: false,
+                showLoaderOnConfirm: true,
+                preConfirm: function () {
+                    return $.ajax({
+                        data: form,
+                        url: '{% url "lds_rrso" %}',
+                        type: 'POST',
+                        cache: false,
+                        contentType: false,
+                        processData: false,
+                    }).catch(function (xhr) {
+                        var msg = 'Unable to submit.';
+                        if (xhr && xhr.responseJSON && xhr.responseJSON.msg) {
+                            msg = xhr.responseJSON.msg;
+                        }
+                        Swal.showValidationMessage(msg);
+                    });
+                },
+            }).then(function (response) {
+                if (response.value && response.value.data === "success") {
+                    Swal.fire({
+                        title: "Good job!",
+                        text: response.value.msg,
+                        icon: "success",
+                        confirmButtonColor: "#3498DB",
+                    }).then(function (result) {
+                        if (result.isConfirmed) {
+                            $('#submitForm').trigger('reset');
+                            $('#new_training').modal('hide');
+                            $('#lds-rso-table').DataTable().ajax.reload();
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        title: "Unauthorized transaction",
+                        text: (response.value && response.value.errors) ? response.value.errors : 'Unable to submit.',
+                        icon: "error",
+                        confirmButtonColor: "#3498DB",
+                    });
+                }
+            });
         });
-    });
 
-    $('#lds-rso-table').DataTable({
-        'serverSide': true,
-        'processing': true,
-        'deferRender': true,
-        'order': [[6, 'desc']],
-        'lengthMenu': [25, 50, 100],
-        'ajax': {
-            'url': '/api/learning-and-development/?format=datatables&pk=' + '{% getHash request.session.emp_id as employee_id %}{{ employee_id }}',
-            'type': 'GET',
-        },
-        'fnCreatedRow': function (row, data, index) {
-            $(row).attr('id', data['id']);
-        },
-        'columnDefs': CAN_TRAINING_REQUESTER ? [] : [
-            { 'targets': [0], 'visible': false, 'searchable': false }
-        ],
-        'columns': [
-            {
-                'data': 'id',
-                'render': function (data, type, row, meta) {
-                    if (!CAN_TRAINING_REQUESTER) {
-                        return '';
-                    }
-                    return '<a href="javascript:;" data-role="details" data-id="' + data + '">Details</a>'
-                }
+        $('#lds-rso-table').DataTable({
+            'serverSide': true,
+            'processing': true,
+            'deferRender': true,
+            'order': [[6, 'desc']],
+            'lengthMenu': [25, 50, 100],
+            'ajax': {
+                'url': '/api/learning-and-development/?format=datatables&pk=' + '{% getHash request.session.emp_id as employee_id %}{{ employee_id }}',
+                'type': 'GET',
             },
-            { 'data': 'training_title', 'name': 'training.tt_name' },
-            { 'data': 'venue', 'className': 'text-center' },
-            { 'data': 'inclusive_dates', 'searchable': false, 'className': 'text-center' },
-            {
-                'data': 'time_range', 'searchable': false, 'orderable': false, 'className': 'text-center',
-                'render': function (data, type, row, meta) {
-                    if (!data || data === '') {
-                        return 'No Time Range Yet';
-                    } else if (data.includes('None') || data.includes('null')) {
-                        return 'Inconclusive';
-                    } else {
-                        return data;
-                    }
-                }
+            'fnCreatedRow': function (row, data, index) {
+                $(row).attr('id', data['id']);
             },
-            { 'data': 'status', 'className': 'text-center' },
-            { 'data': 'date_added', 'className': 'text-right' }
-        ],
-    });
+            'columnDefs': CAN_TRAINING_REQUESTER ? [] : [
+                { 'targets': [0], 'visible': false, 'searchable': false }
+            ],
+            'columns': [
+                {
+                    'data': 'id',
+                    'render': function (data, type, row, meta) {
+                        if (!CAN_TRAINING_REQUESTER) {
+                            return '';
+                        }
+                        return '<a href="javascript:;" data-role="details" data-id="' + data + '">Details</a>'
+                    }
+                },
+                { 'data': 'training_title', 'name': 'training.tt_name' },
+                { 'data': 'venue', 'className': 'text-center' },
+                { 'data': 'inclusive_dates', 'searchable': false, 'className': 'text-center' },
+                {
+                    'data': 'time_range', 'searchable': false, 'orderable': false, 'className': 'text-center',
+                    'render': function (data, type, row, meta) {
+                        if (!data || data === '') {
+                            return 'No Time Range Yet';
+                        } else if (data.includes('None') || data.includes('null')) {
+                            return 'Inconclusive';
+                        } else {
+                            return data;
+                        }
+                    }
+                },
+                { 'data': 'status', 'className': 'text-center' },
+                { 'data': 'date_added', 'className': 'text-right' }
+            ],
+        });
 
-    $('#training_details').on('hidden.bs.modal', function () {
-        $('#lds-rso-table').DataTable().ajax.reload();
-    });
+        $('#training_details').on('hidden.bs.modal', function () {
+            $('#lds-rso-table').DataTable().ajax.reload();
+        });
 
-    $(document).on('click', 'a[data-role=details]', function () {
-        var id = $(this).data('id');
-        $('#training_details').modal('show').find('#details-content').load('/learning-and-development/details/' + id, function () {
-            // Set min date for date inputs in the loaded content
-            var today = new Date().toISOString().split('T')[0];
-            var currentStartDate = $('#training_details input[name="start_date"]').val();
+        $(document).on('click', 'a[data-role=details]', function () {
+            var id = $(this).data('id');
+            $('#training_details').modal('show').find('#details-content').load('/learning-and-development/details/' + id, function () {
+                // Set min date for date inputs in the loaded content
+                var today = new Date().toISOString().split('T')[0];
+                var currentStartDate = $('#training_details input[name="start_date"]').val();
 
-            // Check if current start date is in the past
-            var isStartDateInPast = currentStartDate < today;
+                // Check if current start date is in the past
+                var isStartDateInPast = currentStartDate < today;
 
-            if (isStartDateInPast) {
-                // Disable start date input if it's in the past
-                $('#training_details input[name="start_date"]').prop('readonly', true);
-                // Set end date min to current start date (can't go before it)
-                $('#training_details input[name="end_date"]').attr('min', currentStartDate);
-            } else {
-                // Enable start date input and set min to today
-                $('#training_details input[name="start_date"]').prop('readonly', false);
-                $('#training_details input[type="date"]').attr('min', today);
-                // Set end date min to current start date
-                if (currentStartDate) {
+                if (isStartDateInPast) {
+                    // Disable start date input if it's in the past
+                    $('#training_details input[name="start_date"]').prop('readonly', true);
+                    // Set end date min to current start date (can't go before it)
                     $('#training_details input[name="end_date"]').attr('min', currentStartDate);
+                } else {
+                    // Enable start date input and set min to today
+                    $('#training_details input[name="start_date"]').prop('readonly', false);
+                    $('#training_details input[type="date"]').attr('min', today);
+                    // Set end date min to current start date
+                    if (currentStartDate) {
+                        $('#training_details input[name="end_date"]').attr('min', currentStartDate);
+                    }
                 }
-            }
+            });
         });
     });
-});
 </script>
 {% endblock %}

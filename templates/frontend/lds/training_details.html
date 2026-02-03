@@ -39,6 +39,11 @@
                             </div>
 
                             <div class="form-group">
+                                <label>Quarter</label>
+                                <input type="text" class="form-control" value="{{ training.quarter|default_if_none:'' }}" readonly>
+                            </div>
+
+                            <div class="form-group">
                                 <label id="venue">Venue </label> (if online platform please indicate if it's Zoom, Google Meet or any other online platform) <label><span class="asteriskField">*</span></label>
                                 <textarea class="form-control" name="venue" rows="3" autocomplete="off" required>{{ training.venue }}</textarea>
                             </div>
@@ -80,6 +85,12 @@
                                 <input type="text" class="form-control" name="title" value="{{ training.training.tt_name }}" autocomplete="off" readonly>
                             </div>
                         </div>
+
+                        <div class="form-group">
+                            <label>Quarter</label>
+                            <input type="text" class="form-control" value="{{ training.quarter|default_if_none:'' }}" readonly>
+                        </div>
+
                         <div class="form-group">
                             <label>Venue<span class="asteriskField">*</span></label>
                             <textarea class="form-control" name="venue" rows="3" autocomplete="off" readonly>{{ training.venue }}</textarea>
@@ -301,9 +312,12 @@
                 return;
             }
 
+            var quarter = '{{ training.quarter|default_if_none:"" }}';
+            var quarterQuery = quarter ? ('?quarter=' + encodeURIComponent(quarter)) : '';
+
             if ($('#ldi_plan_info').length){
                 $('#ldi_plan_info').modal('show').find('#ldi-plan-info-content').load(
-                    '{% url "ldi_plan_details_user" 0 %}'.replace('/0/', '/' + trainingId + '/')
+                    '{% url "ldi_plan_details_user" 0 %}'.replace('/0/', '/' + trainingId + '/') + quarterQuery
                 );
             }
         });

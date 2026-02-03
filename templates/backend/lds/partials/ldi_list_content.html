@@ -236,6 +236,39 @@
                         </div>
                     </div>
 
+                    <div class="form-row">
+                        <div class="form-group col-12">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="ldi-multi-quarter" name="multi_quarter" value="1">
+                                <label class="custom-control-label" for="ldi-multi-quarter">Create for multiple quarters</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row d-none" id="ldi-quarters-container">
+                        <div class="form-group col-12">
+                            <label class="mb-1">Select quarters</label>
+                            <div>
+                                <div class="custom-control custom-checkbox custom-control-inline">
+                                    <input type="checkbox" class="custom-control-input" id="ldi-q1" name="quarters" value="Q1">
+                                    <label class="custom-control-label" for="ldi-q1">Q1</label>
+                                </div>
+                                <div class="custom-control custom-checkbox custom-control-inline">
+                                    <input type="checkbox" class="custom-control-input" id="ldi-q2" name="quarters" value="Q2">
+                                    <label class="custom-control-label" for="ldi-q2">Q2</label>
+                                </div>
+                                <div class="custom-control custom-checkbox custom-control-inline">
+                                    <input type="checkbox" class="custom-control-input" id="ldi-q3" name="quarters" value="Q3">
+                                    <label class="custom-control-label" for="ldi-q3">Q3</label>
+                                </div>
+                                <div class="custom-control custom-checkbox custom-control-inline">
+                                    <input type="checkbox" class="custom-control-input" id="ldi-q4" name="quarters" value="Q4">
+                                    <label class="custom-control-label" for="ldi-q4">Q4</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label>Proposed LDI / Activities <span class="text-danger">*</span></label>
                         <textarea class="form-control" name="proposed_ldi_activity" id="ldi-proposed-ldi-activity" rows="3"></textarea>
@@ -246,14 +279,33 @@
                             <label>Proposed Date <span class="text-danger">*</span></label>
                             <input type="date" name="proposed_date" id="ldi-proposed-date" class="form-control">
                         </div>
+                        <div class="form-group col-md-4">
+                            <label>Start Date</label>
+                            <input type="date" name="start_date" id="ldi-start-date" class="form-control">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>End Date</label>
+                            <input type="date" name="end_date" id="ldi-end-date" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Start Time</label>
+                            <input type="time" name="start_time" id="ldi-start-time" class="form-control" value="08:00">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label>End Time</label>
+                            <input type="time" name="end_time" id="ldi-end-time" class="form-control" value="17:00">
+                        </div>
                         <div class="form-group col-12 col-md-4">
                             <label>Target Amount of Participants <span class="text-danger">*</span></label>
-                            <input type="number" name="target_participants" id="ldi-target-participants" class="form-control" placeholder="e.g. 25" inputmode="numeric" autocomplete="off">
+                            <input type="text" name="target_participants" id="ldi-target-participants" class="form-control" placeholder="e.g. 25" inputmode="numeric" autocomplete="off" oninput="this.value = this.value.replace(/[^0-9]/g,'')">
                             <small class="text-danger d-none" id="participants-error"></small>
                         </div>
                         <div class="form-group col-12 col-md-4">
                             <label>Budget <span class="text-danger">*</span></label>
-                            <input type="text" name="budgetary_requirements" id="ldi-budgetary-requirements" class="form-control" placeholder="e.g. 1000 or 1000.50" inputmode="decimal" autocomplete="off">
+                            <input type="text" name="budgetary_requirements" id="ldi-budgetary-requirements" class="form-control" placeholder="e.g. 1000 or 1000.50" inputmode="decimal" autocomplete="off" oninput="this.value = this.value.replace(/[^0-9.]/g,'')">
                             <small class="text-danger d-none" id="budget-error"></small>
                         </div>
                     </div>

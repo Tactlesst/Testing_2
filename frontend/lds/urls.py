@@ -6,7 +6,7 @@ from frontend.lds.views import lds_rrso, training_details, print_rrso, add_train
     tag_as_resource_person, remove_tag_as_resource_person, upload_ld_attachment, print_ld_attendance, \
     certificate_authenticity, delete_participants, delete_facilitator, generate_certificate_of_appearance, tag_as_group, \
     remove_tag_as_group, idp, update_idp_contents, remove_idp, view_idp_contents, duplicate_idp_contents, print_idp, \
-    update_idp_details, lds_trainingtitle_search, ldi_plan_details_user
+    update_idp_details, lds_trainingtitle_search, ldi_plan_details_user, lds_training_baseline, lds_training_quarters
 
 urlpatterns = [
     path('requests/', lds_rrso, name='lds_rrso'),
@@ -14,6 +14,8 @@ urlpatterns = [
     # nazef working in this code start
     path('training-titles/search/', lds_trainingtitle_search, name='lds_trainingtitle_search'),
     path('ldi-plan/details/<int:training_id>/', ldi_plan_details_user, name='ldi_plan_details_user'),
+    path('training-titles/<int:training_id>/baseline/', lds_training_baseline, name='lds_training_baseline'),
+    path('training-titles/<int:training_id>/quarters/', lds_training_quarters, name='lds_training_quarters'),
     # nazef working in this code end
 
     path('details/<int:pk>', training_details, name='training_details'),
