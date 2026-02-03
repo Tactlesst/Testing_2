@@ -394,6 +394,52 @@
         {% endif %}
                
        
+        <div class="card card-success card-outline" id="training-notification-card">
+            <div class="card-header border-0 pb-0">
+                <div class="row">
+                    <div class="col-lg-12 mt-2">
+                        <h3 class="card-title font-weight-bold pull-left">New Trainings</h3>
+                        <span class="pull-right">
+                            <select class="form-control form-control-sm d-inline-block" id="new-trainings-filter" style="width: 160px;">
+                                <option value="current_month" selected>This Month</option>
+                                <option value="all">All</option>
+                            </select>
+                            <a href="{% url 'lds_rrso' %}" class="text-info ml-2">See All</a>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body pt-0">
+                <div id="training-notification-details" style="display: none;">
+                    <div class="mt-3">
+                        <h4 class="mb-1" id="training-notification-title"></h4>
+                        <div style="font-size: 14px;" id="training-notification-dates"></div>
+                        <div style="font-size: 14px;" id="training-notification-venue"></div>
+                    </div>
+
+                    <div class="alert mt-3 mb-0" id="training-notification-banner" style="display: none;"></div>
+
+                    <div class="mt-3" id="training-notification-progress" style="display: none;">
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="training-notification-progressbar"></div>
+                        </div>
+                        <div class="mt-2" style="font-size: 13px;" id="training-notification-progress-text"></div>
+                    </div>
+                </div>
+
+                <div class="table-responsive" id="new-trainings-table-container">
+                    <table class="table table-bordered table-hover table-sm mb-0" id="new-trainings-table" width="100%" style="font-size: 14px;">
+                        <thead>
+                            <tr>
+                                <th width="70%">Title</th>
+                                <th width="30%" class="text-center">Date Added</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <div class="card card-success card-outline">
             <div class="card-header border-0 pb-0">
                 <div class="row">
@@ -435,6 +481,7 @@
                 </div>
             {% endif %}
         </div>
+        
         <div class="card card-success card-outline">
             <div class="card-header border-0">
                 <h3 class="card-title font-weight-bold pull-left mt-2">Birthday Celebrants for {{ month|date:"F Y" }}</h3>
@@ -577,30 +624,6 @@
                 </div>
             </div>
 
-            <div class="card card-success card-outline">
-                <div class="card-header border-0 pb-0">
-                    <div class="row">
-                        <div class="col-lg-12 mt-2">
-                            <h3 class="card-title font-weight-bold pull-left">New Trainings</h3>
-                            <span class="pull-right">
-                                <a href="{% url 'lds_rrso' %}" class="text-info">See All</a>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body pt-0">
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover table-sm mb-0" id="new-trainings-table" width="100%" style="font-size: 14px;">
-                            <thead>
-                                <tr>
-                                    <th width="70%">Title</th>
-                                    <th width="30%" class="text-center">Date Added</th>
-                                </tr>
-                            </thead>
-                        </table>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -682,7 +705,7 @@
             'pageLength': 5
         });
 
-        $('#new-trainings-table').DataTable({
+        var trainingsTable = $('#new-trainings-table').DataTable({
             'serverSide': true,
             'processing': true,
             'deferRender': true,
@@ -694,7 +717,7 @@
             'pageLength': 5,
             'order': [[1, 'desc']],
             'ajax': {
-                'url': '/api/learning-and-development/approved-trainings/',
+                'url': '/api/learning-and-development/approved-trainings/?current_month=1',
                 'type': 'GET'
             },
             'columns': [
@@ -712,6 +735,100 @@
                 { 'data': 'date_added', 'className': 'text-center' }
             ]
         });
+
+        function setTrainingCardStyle(style) {
+            var card = $('#training-notification-card');
+            card.removeClass('card-success card-warning card-danger card-info');
+
+            if (style === 'warning') {
+                card.addClass('card-warning');
+            } else if (style === 'danger') {
+                card.addClass('card-danger');
+            } else if (style === 'info') {
+                card.addClass('card-info');
+            } else {
+                card.addClass('card-success');
+            }
+        }
+
+        function updateTrainingsTableUrl() {
+            var filter = $('#new-trainings-filter').val();
+            var url = '/api/learning-and-development/approved-trainings/';
+            if (filter === 'current_month') {
+                url += '?current_month=1';
+            }
+            trainingsTable.ajax.url(url).load();
+        }
+
+        $('#new-trainings-filter').on('change', function(){
+            updateTrainingsTableUrl();
+        });
+
+        function applyTrainingNotification() {
+            $.ajax({
+                url: '/api/learning-and-development/training-notification/',
+                type: 'GET'
+            }).done(function(response){
+                var hasTraining = response && response.has_training;
+
+                if (!hasTraining) {
+                    $('#training-notification-details').hide();
+                    $('#new-trainings-table-container').show();
+                    setTrainingCardStyle('success');
+                    updateTrainingsTableUrl();
+                    return;
+                }
+
+                $('#new-trainings-table-container').hide();
+                $('#training-notification-details').show();
+
+                var tr = (response.training || {});
+                $('#training-notification-title').text(tr.title || '');
+
+                var dates = '';
+                if (tr.inclusive_dates) {
+                    dates = 'Date: ' + tr.inclusive_dates;
+                } else if (tr.start_date || tr.end_date) {
+                    dates = 'Date: ' + (tr.start_date || '') + (tr.end_date ? (' - ' + tr.end_date) : '');
+                }
+                $('#training-notification-dates').text(dates);
+                $('#training-notification-venue').text(tr.venue ? ('Venue: ' + tr.venue) : '');
+
+                var banner = $('#training-notification-banner');
+                banner.hide().removeClass('alert-warning alert-danger alert-info');
+
+                var progressWrap = $('#training-notification-progress');
+                progressWrap.hide();
+
+                if (response.state === 'near') {
+                    setTrainingCardStyle('warning');
+                    banner.addClass('alert-warning').text('Training Day is Near').show();
+                } else if (response.state === 'ongoing') {
+                    setTrainingCardStyle('danger');
+                    banner.addClass('alert-danger').text('Training is Ongoing').show();
+
+                    var pg = (response.progress || {});
+                    var percent = parseInt(pg.percent || 0);
+                    if (percent < 0) percent = 0;
+                    if (percent > 100) percent = 100;
+
+                    $('#training-notification-progressbar')
+                        .css('width', percent + '%')
+                        .attr('aria-valuenow', percent)
+                        .text(percent + '%');
+
+                    $('#training-notification-progress-text').text(
+                        'Day ' + (pg.elapsed_days || 0) + ' of ' + (pg.total_days || 0) +
+                        (pg.remaining_days !== undefined ? (' | Remaining: ' + pg.remaining_days + ' day(s)') : '')
+                    );
+                    progressWrap.show();
+                } else {
+                    setTrainingCardStyle('info');
+                }
+            });
+        }
+
+        applyTrainingNotification();
 
         $.ajax({
             url: "{% url 'get_password_countdown' request.session.username %}",
