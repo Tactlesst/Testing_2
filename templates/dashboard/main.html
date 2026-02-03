@@ -392,6 +392,72 @@
             </div>
         </div>
         {% endif %}
+
+        <div class="card {% if my_training_status == 'ongoing' %}card-danger{% elif my_training_status == 'near' %}card-warning{% else %}card-success{% endif %} card-outline">
+            <div class="card-header border-0 pb-0">
+                <div class="row">
+                    <div class="col-lg-12 mt-2">
+                        <h3 class="card-title font-weight-bold pull-left">New Trainings</h3>
+                        <span class="pull-right">
+                            <a href="{% url 'lds_rrso' %}" class="text-info">See All</a>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body pt-0">
+                {% if my_training %}
+                    <div class="mb-2">
+                        {% if my_training_status == 'near' %}
+                            <div class="alert alert-warning mb-2">Training Day is Near</div>
+                        {% elif my_training_status == 'ongoing' %}
+                            <div class="alert alert-danger mb-2">Training is Ongoing</div>
+                        {% endif %}
+
+                        <h5 class="font-weight-bold mb-1">{{ my_training.training.tt_name }}</h5>
+                        <div class="text-muted" style="font-size: 14px;">
+                            <div><strong>Date:</strong> {{ my_training.get_inclusive_dates_v2 }}</div>
+                            {% if my_training.venue %}
+                                <div><strong>Venue:</strong> {{ my_training.venue }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if my_training_status == 'ongoing' and my_training_progress %}
+                        <div class="mb-2" style="font-size: 14px;">
+                            <strong>{{ my_training_progress.elapsed_days }}</strong> of <strong>{{ my_training_progress.total_days }}</strong> day(s) completed
+                            {% if my_training_progress.remaining_days != None %}
+                                <span class="text-muted">({{ my_training_progress.remaining_days }} day(s) remaining)</span>
+                            {% endif %}
+                        </div>
+                        <div class="progress" style="height: 12px;">
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: 0%;" data-progress="{{ my_training_progress.progress_pct }}" aria-valuenow="{{ my_training_progress.progress_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="mb-2">
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Training filters">
+                            <button type="button" class="btn btn-outline-secondary" id="trainings-filter-all" data-status="">All</button>
+                            <button type="button" class="btn btn-outline-success" id="trainings-filter-approved" data-status="approved">Approved</button>
+                            <button type="button" class="btn btn-outline-primary" id="trainings-filter-pending" data-status="pending">Pending</button>
+                            <button type="button" class="btn btn-outline-danger" id="trainings-filter-rejected" data-status="rejected">Rejected</button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover table-sm mb-0" id="new-trainings-table" width="100%" style="font-size: 14px;">
+                            <thead>
+                                <tr>
+                                    <th width="55%">Title</th>
+                                    <th width="25%" class="text-center">Date Added</th>
+                                    <th width="20%" class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
                
        
         <div class="card card-success card-outline">
@@ -435,6 +501,7 @@
                 </div>
             {% endif %}
         </div>
+        
         <div class="card card-success card-outline">
             <div class="card-header border-0">
                 <h3 class="card-title font-weight-bold pull-left mt-2">Birthday Celebrants for {{ month|date:"F Y" }}</h3>
@@ -577,30 +644,6 @@
                 </div>
             </div>
 
-            <div class="card card-success card-outline">
-                <div class="card-header border-0 pb-0">
-                    <div class="row">
-                        <div class="col-lg-12 mt-2">
-                            <h3 class="card-title font-weight-bold pull-left">New Trainings</h3>
-                            <span class="pull-right">
-                                <a href="{% url 'lds_rrso' %}" class="text-info">See All</a>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body pt-0">
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-hover table-sm mb-0" id="new-trainings-table" width="100%" style="font-size: 14px;">
-                            <thead>
-                                <tr>
-                                    <th width="70%">Title</th>
-                                    <th width="30%" class="text-center">Date Added</th>
-                                </tr>
-                            </thead>
-                        </table>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>
@@ -682,35 +725,75 @@
             'pageLength': 5
         });
 
-        $('#new-trainings-table').DataTable({
-            'serverSide': true,
-            'processing': true,
-            'deferRender': true,
-            'lengthChange': false,
-            'searching': false,
-            'paging': true,
-            'info': false,
-            'pagingType': 'numbers',
-            'pageLength': 5,
-            'order': [[1, 'desc']],
-            'ajax': {
-                'url': '/api/learning-and-development/approved-trainings/',
-                'type': 'GET'
-            },
-            'columns': [
-                {
-                    'data': 'training_title',
-                    'render': function (data, type, row, meta) {
-                        if (type === 'display') {
-                            var full = (data || '');
-                            var safe = $('<div/>').text(full).html();
-                            return '<div title="' + safe + '" style="max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + safe + '</div>';
-                        }
-                        return data;
-                    }
+        if ($('#new-trainings-table').length) {
+            var newTrainingsTable = $('#new-trainings-table').DataTable({
+                'serverSide': true,
+                'processing': true,
+                'deferRender': true,
+                'lengthChange': false,
+                'searching': false,
+                'paging': true,
+                'info': false,
+                'pagingType': 'numbers',
+                'pageLength': 5,
+                'order': [[1, 'desc']],
+                'ajax': {
+                    'url': '/api/learning-and-development/approved-trainings/',
+                    'type': 'GET'
                 },
-                { 'data': 'date_added', 'className': 'text-center' }
-            ]
+                'columns': [
+                    {
+                        'data': 'training_title',
+                        'render': function (data, type, row, meta) {
+                            if (type === 'display') {
+                                var full = (data || '');
+                                var safe = $('<div/>').text(full).html();
+                                return '<div title="' + safe + '" style="max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + safe + '</div>';
+                            }
+                            return data;
+                        }
+                    },
+                    { 'data': 'date_added', 'className': 'text-center' },
+                    {
+                        'data': 'status',
+                        'className': 'text-center',
+                        'render': function (data, type, row, meta) {
+                            if (type !== 'display') {
+                                return data;
+                            }
+
+                            var s = (data || '').toString().toLowerCase();
+                            if (s === 'approved') {
+                                return "<span class='badge badge-success'>Approved</span>";
+                            }
+                            if (s === 'rejected') {
+                                return "<span class='badge badge-danger'>Rejected</span>";
+                            }
+                            return "<span class='badge badge-primary'>Pending</span>";
+                        }
+                    }
+                ]
+            });
+
+            $('[id^=trainings-filter-]').on('click', function () {
+                var status = $(this).data('status') || '';
+                var url = '/api/learning-and-development/approved-trainings/';
+                if (status) {
+                    url += '?status=' + encodeURIComponent(status);
+                }
+                newTrainingsTable.ajax.url(url).load();
+            });
+        }
+
+        $('.progress-bar[data-progress]').each(function () {
+            var pct = parseInt($(this).attr('data-progress') || '0', 10);
+            if (isNaN(pct) || pct < 0) {
+                pct = 0;
+            }
+            if (pct > 100) {
+                pct = 100;
+            }
+            $(this).css('width', pct + '%');
         });
 
         $.ajax({

@@ -41,17 +41,31 @@ class LdsApprovedTrainingsDashboardDataTableViews(generics.ListAPIView):
     def get_queryset(self):
         return (
             LdsRso.objects.select_related('training')
-            .filter(rrso_status=1, rso_status=1)
             .order_by('-date_approved', '-date_added')
         )
+
+    def _apply_status_filter(self, qs, status):
+        status = (status or '').strip().lower()
+        if not status:
+            return qs
+
+        if status == 'approved':
+            return qs.filter(rrso_status=1, rso_status=1)
+        if status == 'rejected':
+            return qs.filter(Q(rrso_status=-1) | Q(rso_status=-1))
+        if status == 'pending':
+            return qs.exclude(Q(rrso_status=-1) | Q(rso_status=-1)).exclude(Q(rrso_status=1) & Q(rso_status=1))
+
+        return qs
 
     def list(self, request, *args, **kwargs):
         draw = int(request.query_params.get('draw', '1') or 1)
         start = int(request.query_params.get('start', '0') or 0)
         length = int(request.query_params.get('length', '5') or 5)
         search_value = (request.query_params.get('search[value]') or '').strip()
+        status_filter = request.query_params.get('status')
 
-        base_qs = self.get_queryset().distinct()
+        base_qs = self._apply_status_filter(self.get_queryset().distinct(), status_filter)
         records_total = base_qs.count()
 
         qs = base_qs

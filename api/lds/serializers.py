@@ -61,10 +61,21 @@ class TrainingtitleSerializer(serializers.ModelSerializer):
 class LdsApprovedTrainingsDashboardSerializer(serializers.ModelSerializer):
     training_title = serializers.CharField(source='training.tt_name', read_only=True)
     date_added = serializers.DateTimeField(format="%b %d, %Y", read_only=True)
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = LdsRso
-        fields = ['id', 'training_title', 'date_added']
+        fields = ['id', 'training_title', 'date_added', 'status']
+
+    def get_status(self, obj):
+        try:
+            if obj.rrso_status == 1 and obj.rso_status == 1:
+                return 'Approved'
+            if obj.rrso_status == -1 or obj.rso_status == -1:
+                return 'Rejected'
+            return 'Pending'
+        except Exception:
+            return 'Pending'
 #nazef added
 
 class LdsTrainingTitleListSerializer(serializers.ModelSerializer):
