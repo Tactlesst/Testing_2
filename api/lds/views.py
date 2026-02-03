@@ -14,6 +14,37 @@ from backend.lds.models import LdsLdiPlan
 from backend.models import Empprofile
 from frontend.models import Trainingtitle
 
+
+class LdsLatestApprovedTrainingView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        latest = (
+            LdsRso.objects
+            .filter(rrso_status=1, rso_status=1)
+            .exclude(date_approved__isnull=True)
+            .order_by('-date_approved', '-id')
+            .select_related('training')
+            .first()
+        )
+
+        if not latest:
+            return Response({'has_latest': False})
+
+        approved_at = latest.date_approved
+        try:
+            approved_at_iso = approved_at.isoformat() if approved_at else None
+        except Exception:
+            approved_at_iso = None
+
+        return Response({
+            'has_latest': True,
+            'id': latest.id,
+            'training_title': getattr(latest.training, 'tt_name', '') if latest.training_id else '',
+            'date_approved': approved_at_iso,
+        })
+
+
 class LdsRsoViews(generics.ListAPIView):
     serializer_class = LdsRsoSerializer
     permission_classes = [IsAuthenticated]
@@ -198,15 +229,21 @@ class LdsApprovedTrainingsDashboardDataTableViews(generics.ListAPIView):
 
         column_map = {
             0: 'training__tt_name',
-            1: 'date_added',
+            1: 'date_approved',
         }
 
         order_col = int(request.query_params.get('order[0][column]', '1') or 1)
         order_dir = request.query_params.get('order[0][dir]', 'desc')
         order_field = column_map.get(order_col, 'date_added')
-        if order_dir == 'desc':
-            order_field = '-' + order_field
-        qs = qs.order_by(order_field)
+        if order_field == 'date_approved':
+            if order_dir == 'desc':
+                qs = qs.order_by('-date_approved', '-date_added')
+            else:
+                qs = qs.order_by('date_approved', 'date_added')
+        else:
+            if order_dir == 'desc':
+                order_field = '-' + order_field
+            qs = qs.order_by(order_field)
 
         qs = qs[start:start + length]
 
