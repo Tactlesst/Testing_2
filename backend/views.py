@@ -309,81 +309,10 @@ def main_dashboard(request):
     trainings_page_number = request.GET.get('trainings_page')
     approved_trainings = trainings_paginator.get_page(trainings_page_number)
 
-    my_training = None
-    my_training_status = None
-    my_training_progress = None
-    try:
-        my_participant_rso_ids = (
-            LdsParticipants.objects.filter(emp_id=request.session['emp_id'])
-            .values_list('rso_id', flat=True)
-            .distinct()
-        )
-
-        if my_participant_rso_ids:
-            my_rsos_qs = (
-                LdsRso.objects.select_related('training')
-                .filter(id__in=my_participant_rso_ids, rrso_status=1, rso_status=1)
-                .exclude(start_date=None)
-                .exclude(end_date=None)
-            )
-
-            today_date = date.today()
-            ongoing_qs = my_rsos_qs.filter(
-                start_date__date__lte=today_date,
-                end_date__date__gte=today_date,
-            ).order_by('start_date')
-
-            if ongoing_qs.exists():
-                my_training = ongoing_qs.first()
-            else:
-                upcoming_qs = my_rsos_qs.filter(start_date__date__gt=today_date).order_by('start_date')
-                if upcoming_qs.exists():
-                    my_training = upcoming_qs.first()
-
-            if my_training:
-                start_date = my_training.start_date.date()
-                end_date = my_training.end_date.date()
-
-                days_to_start = (start_date - today_date).days
-                is_ongoing = start_date <= today_date <= end_date
-                is_near = (not is_ongoing) and (0 <= days_to_start <= 2)
-
-                if is_ongoing:
-                    my_training_status = 'ongoing'
-                elif is_near:
-                    my_training_status = 'near'
-                else:
-                    my_training_status = 'upcoming'
-
-                total_days = max((end_date - start_date).days + 1, 1)
-                if today_date < start_date:
-                    elapsed_days = 0
-                elif today_date > end_date:
-                    elapsed_days = total_days
-                else:
-                    elapsed_days = (today_date - start_date).days + 1
-
-                remaining_days = max(total_days - elapsed_days, 0)
-                progress_pct = int(round((elapsed_days / total_days) * 100))
-
-                my_training_progress = {
-                    'total_days': total_days,
-                    'elapsed_days': elapsed_days,
-                    'remaining_days': remaining_days,
-                    'progress_pct': progress_pct,
-                }
-    except Exception:
-        my_training = None
-        my_training_status = None
-        my_training_progress = None
-
 
     context = {
         'vacancy': vacancy,
         'approved_trainings': approved_trainings,
-        'my_training': my_training,
-        'my_training_status': my_training_status,
-        'my_training_progress': my_training_progress,
         'announcements': announcements,
         'birthday_celebrants': Paginator(
             Empprofile.objects.filter(pi__dob__month=today.month, pi__dob__day__gte=today.day,

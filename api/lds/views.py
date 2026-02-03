@@ -1,15 +1,18 @@
+from datetime import datetime, time, timedelta
 from django_mysql.models.functions import SHA1
 from django.db.models import Count, OuterRef, Subquery, Q
+from django.utils import timezone
 from rest_framework import generics, permissions
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from api.lds.serializers import LdsRsoSerializer, LdsParticipantsSerializer, LdsFacilitatorSerializer, LdsIDPSerializer, LdsTrainingTitleListSerializer, LdsLdiPlanSerializer, LdsApprovedTrainingsDashboardSerializer
 from backend.templatetags.tags import check_permission
 from frontend.lds.models import LdsRso, LdsParticipants, LdsFacilitator, LdsIDP
 from backend.lds.models import LdsLdiPlan
+from backend.models import Empprofile
 from frontend.models import Trainingtitle
-
 
 class LdsRsoViews(generics.ListAPIView):
     serializer_class = LdsRsoSerializer
@@ -18,6 +21,115 @@ class LdsRsoViews(generics.ListAPIView):
     def get_queryset(self):
         queryset = LdsRso.objects.annotate(hash=SHA1('created_by_id')).filter(hash=self.request.query_params.get('pk')).order_by('-date_added')
         return queryset
+
+
+class LdsTrainingNotificationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        emp = Empprofile.objects.filter(pi__user_id=request.user.id).first()
+        if not emp:
+            return Response({'state': 'none', 'has_training': False, 'message': ''})
+
+        try:
+            today = timezone.now().date()
+        except Exception:
+            today = datetime.now().date()
+
+        participants_qs = (
+            LdsParticipants.objects.select_related('rso', 'rso__training')
+            .filter(
+                emp_id=emp.id,
+                rso__rrso_status=1,
+                rso__rso_status=1,
+            )
+        )
+
+        rso_qs = LdsRso.objects.filter(id__in=participants_qs.values('rso_id'))
+
+        def _safe_date(dt):
+            try:
+                return dt.date() if dt else None
+            except Exception:
+                return None
+
+        ongoing = []
+        upcoming = []
+        for rso in rso_qs.select_related('training'):
+            start = _safe_date(rso.start_date)
+            end = _safe_date(rso.end_date)
+            if not start or not end:
+                continue
+
+            if start <= today <= end:
+                ongoing.append((rso, start, end))
+            elif today < start:
+                upcoming.append((rso, start, end))
+
+        chosen = None
+        state = 'none'
+        message = ''
+
+        if ongoing:
+            ongoing.sort(key=lambda x: (x[1], x[0].id))
+            chosen = ongoing[0]
+            state = 'ongoing'
+            message = 'Training is Ongoing'
+        elif upcoming:
+            upcoming.sort(key=lambda x: (x[1], x[0].id))
+            chosen = upcoming[0]
+            rso, start, end = chosen
+            days_to_start = (start - today).days
+            if 1 <= days_to_start <= 2:
+                state = 'near'
+                message = 'Training Day is Near'
+            else:
+                state = 'upcoming'
+                message = ''
+
+        if not chosen:
+            return Response({'state': 'none', 'has_training': False, 'message': ''})
+
+        rso, start, end = chosen
+        total_days = (end - start).days + 1
+        elapsed_days = 0
+        remaining_days = 0
+        progress_percent = 0
+        if total_days > 0:
+            if today < start:
+                elapsed_days = 0
+                remaining_days = total_days
+            elif today > end:
+                elapsed_days = total_days
+                remaining_days = 0
+            else:
+                elapsed_days = (today - start).days + 1
+                remaining_days = (end - today).days
+
+            try:
+                progress_percent = int(round((elapsed_days / float(total_days)) * 100))
+            except Exception:
+                progress_percent = 0
+
+        return Response({
+            'state': state,
+            'has_training': True,
+            'message': message,
+            'training': {
+                'rso_id': rso.id,
+                'title': getattr(rso.training, 'tt_name', '') if rso.training_id else '',
+                'start_date': start.strftime('%b %d, %Y') if start else '',
+                'end_date': end.strftime('%b %d, %Y') if end else '',
+                'inclusive_dates': getattr(rso, 'get_inclusive_dates_v2', '') or getattr(rso, 'get_inclusive_dates', ''),
+                'venue': rso.venue or '',
+            },
+            'progress': {
+                'total_days': total_days,
+                'elapsed_days': elapsed_days,
+                'remaining_days': remaining_days,
+                'percent': progress_percent,
+            }
+        })
 
 
 class LdsManagerPermissions(permissions.BasePermission):
@@ -39,22 +151,33 @@ class LdsApprovedTrainingsDashboardDataTableViews(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return (
+        qs = (
             LdsRso.objects.select_related('training')
+            .filter(rrso_status=1, rso_status=1)
             .order_by('-date_approved', '-date_added')
         )
 
-    def _apply_status_filter(self, qs, status):
-        status = (status or '').strip().lower()
-        if not status:
-            return qs
+        if (self.request.query_params.get('current_month') or '').strip() == '1':
+            try:
+                now_date = timezone.now().date()
+            except Exception:
+                now_date = datetime.now().date()
 
-        if status == 'approved':
-            return qs.filter(rrso_status=1, rso_status=1)
-        if status == 'rejected':
-            return qs.filter(Q(rrso_status=-1) | Q(rso_status=-1))
-        if status == 'pending':
-            return qs.exclude(Q(rrso_status=-1) | Q(rso_status=-1)).exclude(Q(rrso_status=1) & Q(rso_status=1))
+            month_start_date = now_date.replace(day=1)
+            start_dt = datetime.combine(month_start_date, time.min)
+            end_dt = datetime.combine(now_date + timedelta(days=1), time.min)
+
+            if timezone.is_aware(timezone.now()):
+                try:
+                    start_dt = timezone.make_aware(start_dt)
+                    end_dt = timezone.make_aware(end_dt)
+                except Exception:
+                    pass
+
+            qs = qs.filter(
+                Q(date_approved__gte=start_dt, date_approved__lt=end_dt)
+                | Q(date_approved__isnull=True, date_added__gte=start_dt, date_added__lt=end_dt)
+            )
 
         return qs
 
@@ -63,9 +186,8 @@ class LdsApprovedTrainingsDashboardDataTableViews(generics.ListAPIView):
         start = int(request.query_params.get('start', '0') or 0)
         length = int(request.query_params.get('length', '5') or 5)
         search_value = (request.query_params.get('search[value]') or '').strip()
-        status_filter = request.query_params.get('status')
 
-        base_qs = self._apply_status_filter(self.get_queryset().distinct(), status_filter)
+        base_qs = self.get_queryset().distinct()
         records_total = base_qs.count()
 
         qs = base_qs
