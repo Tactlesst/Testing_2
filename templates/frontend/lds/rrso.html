@@ -461,7 +461,7 @@
 
     $(document).on('click', 'a[data-role=details]', function () {
         var id = $(this).data('id');
-        $('#training_details').modal('show').find('#details-content').load('/learning-and-development/details/' + id, function () {
+        $('#training_details').modal('show').find('#details-content').load('{% url "training_details" 0 %}'.replace('0', id), function () {
             // Set min date for date inputs in the loaded content
             var today = new Date().toISOString().split('T')[0];
             var currentStartDate = $('#training_details input[name="start_date"]').val();

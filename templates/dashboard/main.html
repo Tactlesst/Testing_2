@@ -880,6 +880,52 @@
 
         </div>
 
+        <div class="modal" id="dashboard_training_participants" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content animated bounceInDown">
+                    <div class="modal-header bg-info">
+                        <h3 class="modal-title">TRAINING PARTICIPANTS</h3>
+                        <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <h6 class="font-weight-bold mb-3">Internal Participants</h6>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover" id="dashboard-internal-participants-table" width="100%">
+                                    <thead class="table-info">
+                                        <tr>
+                                            <th width="50%">EMPLOYEE NAME</th>
+                                            <th width="50%">POSITION</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <hr style="margin-right:-15px; margin-left:-15px;">
+
+                        <div class="form-group" style="margin-bottom:0px;">
+                            <h6 class="font-weight-bold mb-3">External Participants</h6>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover" id="dashboard-external-participants-table" width="100%">
+                                    <thead class="table-info">
+                                        <tr>
+                                            <th width="100%">PARTICIPANT NAME</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
 
 
         <div class="card card-success card-outline">
@@ -1470,6 +1516,65 @@
 
             ]
 
+        });
+
+        function escapeHtml(value) {
+            return $('<div/>').text(value || '').html();
+        }
+
+        function loadDashboardTrainingParticipants(rsoId) {
+            $('#dashboard-internal-participants-table tbody').html('<tr><td colspan="2" class="text-center">Loading...</td></tr>');
+            $('#dashboard-external-participants-table tbody').html('<tr><td class="text-center">Loading...</td></tr>');
+
+            $.ajax({
+                url: '/api/learning-and-development/participants-by-rso/' + rsoId + '/',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    var internalRows = '';
+                    var externalRows = '';
+
+                    var internal = (data && data.internal) ? data.internal : [];
+                    var external = (data && data.external) ? data.external : [];
+
+                    if (internal.length) {
+                        internal.forEach(function (row) {
+                            internalRows += '<tr>' +
+                                '<td>' + escapeHtml(row.full_name) + '</td>' +
+                                '<td>' + escapeHtml(row.position) + '</td>' +
+                                '</tr>';
+                        });
+                    } else {
+                        internalRows = '<tr><td colspan="2" class="text-center">No internal participants</td></tr>';
+                    }
+
+                    if (external.length) {
+                        external.forEach(function (row) {
+                            externalRows += '<tr>' +
+                                '<td>' + escapeHtml(row.participants_name) + '</td>' +
+                                '</tr>';
+                        });
+                    } else {
+                        externalRows = '<tr><td class="text-center">No external participants</td></tr>';
+                    }
+
+                    $('#dashboard-internal-participants-table tbody').html(internalRows);
+                    $('#dashboard-external-participants-table tbody').html(externalRows);
+                },
+                error: function () {
+                    $('#dashboard-internal-participants-table tbody').html('<tr><td colspan="2" class="text-center">Error loading participants</td></tr>');
+                    $('#dashboard-external-participants-table tbody').html('<tr><td class="text-center">Error loading participants</td></tr>');
+                }
+            });
+        }
+
+        $('#new-trainings-table tbody').on('click', 'tr', function () {
+            var rowData = trainingsTable.row(this).data();
+            if (!rowData || !rowData.id) {
+                return;
+            }
+            $('#dashboard_training_participants').modal('show');
+            loadDashboardTrainingParticipants(rowData.id);
         });
 
 

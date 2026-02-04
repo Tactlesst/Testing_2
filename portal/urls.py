@@ -9,6 +9,7 @@ from backend.views import login, logout, dashboard, birthday_celebrants, dtr_log
     issuances_dashboard, issuances_dashboard_view, add_additional_info, delete_additional_info, load_ticket_message, \
     get_help_desk_total, birthday_celebrants_view, leaderboards_dashboard, export_qr, print_drf, \
     delete_ticket_request, vacancies, reset_portal_account, test_user_login, update_request, generate_bulk_import_template
+from backend.views import generate_training_qr
 from frontend.lds.views import email_confirmation_participants
 from frontend.views import wfh_attendance, wfh_dtr, load_employees, \
     getemployeebyempid, profiles, get_attendance_status_for_today, forgot_password, forgot_password_code, \
@@ -103,5 +104,6 @@ urlpatterns = [
     path('api/users/', UserListAPIView.as_view(), name='user-list'),
     path('api/login/', LoginAPIView.as_view(), name='login-api'),
     path('generate-bulk-import-template/', generate_bulk_import_template, name='generate_bulk_import_template'),
+    path('learning-and-development/qr/hello-world/', generate_training_qr, name='generate_training_qr'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

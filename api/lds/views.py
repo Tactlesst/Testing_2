@@ -45,6 +45,41 @@ class LdsLatestApprovedTrainingView(APIView):
         })
 
 
+class LdsRsoParticipantsByRsoView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, rso_id, *args, **kwargs):
+        internal = (
+            LdsParticipants.objects.select_related('emp__pi__user', 'emp__position')
+            .filter(rso_id=rso_id, type=0)
+            .order_by('order', 'id')
+        )
+        external = (
+            LdsParticipants.objects.filter(rso_id=rso_id, type=1)
+            .order_by('order', 'id')
+        )
+
+        internal_data = []
+        for row in internal:
+            full_name = ''
+            position = ''
+            try:
+                full_name = row.emp.pi.user.get_fullname if row.emp_id else ''
+            except Exception:
+                full_name = ''
+            try:
+                position = row.emp.position.name if row.emp_id and row.emp.position_id else ''
+            except Exception:
+                position = ''
+            internal_data.append({'full_name': full_name, 'position': position})
+
+        external_data = []
+        for row in external:
+            external_data.append({'participants_name': row.participants_name or ''})
+
+        return Response({'internal': internal_data, 'external': external_data})
+
+
 class LdsRsoViews(generics.ListAPIView):
     serializer_class = LdsRsoSerializer
     permission_classes = [IsAuthenticated]
