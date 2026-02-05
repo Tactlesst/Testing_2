@@ -21,6 +21,7 @@
             <li class="nav-item"><a class="nav-link text-dark active" data-toggle="tab" href="#details"> Details</a></li>
             <li class="nav-item"><a class="nav-link text-dark" data-toggle="tab" href="#participants">Participants</a></li>
             <li class="nav-item"><a class="nav-link text-dark" data-toggle="tab" href="#facilitators">Facilitators</a></li>
+            <li class="nav-item"><a class="nav-link text-dark" data-toggle="tab" href="#qr_code">QR Attendance</a></li>
         </ul>
         <div class="tab-content" style="border: 0px !important;">
             <div id="details" class="tab-pane active">
@@ -32,11 +33,11 @@
                             <div class="form-group">
                                 <label>Title<span class="asteriskField">*</span></label>
                                 <div class="pull-right"><input type="checkbox" name="is_online_platform" {% if training.is_online_platform %}checked{% endif %}> Is online platform?</div>
-                                {# nazef working in this code start #}
+                                <!-- {# nazef working in this code start #} -->
                                 <select class="form-control" name="training_id" id="training-id-update" style="width: 100%;" required>
                                     <option value="{{ training.training_id }}" selected>{{ training.training.tt_name }}</option>
                                 </select>
-                                {# nazef working in this code end #}
+                                <!-- {# nazef working in this code end #} -->
                             </div>
 
                             <div class="form-group">
@@ -141,13 +142,6 @@
                                 </div>
                             </form>
 
-                            <div class="d-flex my-2">
-                                <button type="button" class="btn btn-info" id="generate-training-qr">Generate QR</button>
-                                <div class="ml-auto border border-secondary p-2">
-                                    <img id="training-qr-preview" src="{% static 'image/qr.png' %}" width="150" height="150">
-                                </div>
-                            </div>
-
                             <br>
                             {% endif %}
                             <div class="table-responsive">
@@ -235,6 +229,33 @@
                     </div>
                 </div>
             </div>
+            <div id="qr_code" class="tab-pane">
+                <div class="border p-3">
+                    {% if user|check_permission:'ld_manager' or user|check_permission:'superadmin' or training.rrso_status == 0 or training.created_by_id == request.session.emp_id %}
+                       <div class="d-flex flex-column align-items-center justify-content-center text-center gap-3">
+                            <div class="mb-3">
+                                <h3>Title Placeholder</h3>
+                                <button type="button" class="btn btn-info" id="generate-training-qr">
+                                    Generate QR
+                                </button>
+                            </div>
+
+                            <div class="border border-secondary p-2">
+                                <img id="training-qr-preview"
+                                    src="{% static 'image/qr.png' %}"
+                                    width="150"
+                                    height="150">
+                            </div>
+                        </div>
+
+                    {% endif %}
+                    
+                   
+                     
+                       
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -269,7 +290,7 @@
             $('#training-qr-preview').attr('src', url + '?_=' + new Date().getTime());
         });
 
-        {# nazef working in this code start #}
+        // {# nazef working in this code start #}
         $('#training-id-update').select2({
             width: '100%',
             allowClear: true,
@@ -299,7 +320,7 @@
                 cache: true
             }
         });
-        {# nazef working in this code end #}
+        // {# nazef working in this code end #}
 
         $(document).on('mousedown', '.select2-container .ldi-plan-info-toggle', function(e){
             e.preventDefault();

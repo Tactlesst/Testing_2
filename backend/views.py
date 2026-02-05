@@ -1458,12 +1458,13 @@ def generate_training_qr(request):
         box_size=10,
         border=4,
     )
-    current_date = datetime.now().strftime("%Y-%m-%d")
+    current_date = datetime.now().strftime("%b %d, %Y %I:%M %p")
+
 
     qr.add_data({
-        "type": "Training Here",
+        "Employee ID": "10-3456789",
         "date": current_date,
-        "message": "Hello World"
+        "Location": "Jollibee",
     })
     qr.make(fit=True)
 
