@@ -98,6 +98,26 @@
             </ul>
             <!-- Right navbar links -->
             <ul class="navbar-nav ml-auto mr-4">
+                <!-- Notifications Bell -->
+                <li class="nav-item dropdown position-relative">
+                    <a class="nav-link position-relative" href="javascript:;" onclick="toggleNotifications()">
+                        <i class="fas fa-bell"></i>
+                        <span id="notification-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none; font-size: 0.6rem;">0</span>
+                    </a>
+
+                    <div id="notification-container" class="position-absolute" style="top: calc(100% + 8px); right: 0; width: min(360px, calc(100vw - 2rem)); max-height: min(420px, 60vh); overflow: hidden; z-index: 1050; display: none;">
+                        <div class="card shadow-sm mb-0" style="overflow: hidden;">
+                            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center" style="gap: 8px;">
+                                <strong class="text-truncate"><i class="fas fa-bell"></i> Notifications</strong>
+                                <button type="button" class="btn btn-sm btn-outline-light" onclick="clearAllNotifications()" style="white-space: nowrap;">Clear All</button>
+                            </div>
+                            <div class="card-body p-0" id="notification-list" style="max-height: calc(min(420px, 60vh) - 56px); overflow-y: auto;">
+                                <!-- Notifications will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="javascript:;">
                         <img loading="lazy"  src="/media/{{ request.session.picture }}" id="profile-picture" class="rounded-circle shimmer" height="24" width="24" data-toggle="tooltip" data-placement="bottom" title="User Account">
@@ -539,6 +559,143 @@
             });
         });
     </script>
+    
+    <!-- Live Notifications JavaScript -->
+    <script>
+        let notificationCount = 0;
+        let lastNotificationCheck = 0;
+        
+        // Toggle notification dropdown
+        function toggleNotifications() {
+            const container = document.getElementById('notification-container');
+            if (container.style.display === 'none' || container.style.display === '') {
+                container.style.display = 'block';
+                fetchNotifications();
+                markNotificationsAsRead();
+            } else {
+                container.style.display = 'none';
+            }
+        }
+        
+        // Fetch notifications via AJAX
+        function fetchNotifications() {
+            fetch('/learning-and-development/notifications/', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.notifications && data.notifications.length > 0) {
+                    displayNotifications(data.notifications);
+                    updateNotificationBadge(data.count);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching notifications:', error);
+            });
+        }
+        
+        // Display notifications in dropdown
+        function displayNotifications(notifications) {
+            const notificationList = document.getElementById('notification-list');
+            notificationList.innerHTML = '';
+            
+            notifications.forEach(notification => {
+                const notificationItem = document.createElement('div');
+                notificationItem.className = 'alert alert-info alert-dismissible m-2';
+                notificationItem.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>${notification.title}</strong>
+                            <br>
+                            <small>${notification.message}</small>
+                            <br>
+                            <small class="text-muted">${notification.created_at}</small>
+                        </div>
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                `;
+                notificationList.appendChild(notificationItem);
+            });
+        }
+        
+        // Update notification badge
+        function updateNotificationBadge(count) {
+            const badge = document.getElementById('notification-badge');
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+            notificationCount = count;
+        }
+        
+        // Mark notifications as read
+        function markNotificationsAsRead() {
+            fetch('/learning-and-development/notifications/mark-read/', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateNotificationBadge(0);
+                }
+            })
+            .catch(error => {
+                console.error('Error marking notifications as read:', error);
+            });
+        }
+        
+        // Clear all notifications
+        function clearAllNotifications() {
+            const notificationList = document.getElementById('notification-list');
+            notificationList.innerHTML = '<div class="text-center p-3 text-muted">No notifications</div>';
+            updateNotificationBadge(0);
+            markNotificationsAsRead();
+        }
+        
+        // Auto-check for new notifications every 30 seconds
+        setInterval(function() {
+            if (document.getElementById('notification-container').style.display === 'none') {
+                fetch('/learning-and-development/notifications/', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.count > notificationCount) {
+                        updateNotificationBadge(data.count);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking notifications:', error);
+                });
+            }
+        }, 30000); // Check every 30 seconds
+        
+        // Close notifications when clicking outside
+        document.addEventListener('click', function(event) {
+            const container = document.getElementById('notification-container');
+            const bell = event.target.closest('a[onclick="toggleNotifications()"]');
+            
+            if (!container.contains(event.target) && !bell) {
+                container.style.display = 'none';
+            }
+        });
+    </script>
+    
     {% block script %}{% endblock %}
 </body>
 </html>

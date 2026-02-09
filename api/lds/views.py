@@ -198,24 +198,40 @@ class LdsApprovedTrainingsDashboardDataTableViews(generics.ListAPIView):
 
         column_map = {
             0: 'training__tt_name',
-            1: 'date_added',
+            1: 'date_approved',
         }
 
         order_col = int(request.query_params.get('order[0][column]', '1') or 1)
         order_dir = request.query_params.get('order[0][dir]', 'desc')
-        order_field = column_map.get(order_col, 'date_added')
+        order_field = column_map.get(order_col, 'date_approved')
         if order_dir == 'desc':
             order_field = '-' + order_field
         qs = qs.order_by(order_field)
 
-        qs = qs[start:start + length]
+        page_qs = qs[start:start + length]
 
-        serializer = self.get_serializer(qs, many=True)
+        serializer = self.get_serializer(page_qs, many=True)
+
+        page_ids = [item.get('id') for item in serializer.data if item.get('id') is not None]
+        date_added_map = {
+            row_id: date_added
+            for row_id, date_added in base_qs.filter(id__in=page_ids).values_list('id', 'date_added')
+        }
+
+        data = []
+        for item in serializer.data:
+            data_item = item.copy()
+            if not data_item.get('date_approved'):
+                date_added = date_added_map.get(data_item.get('id'))
+                if date_added:
+                    data_item['date_approved'] = date_added.strftime("%b %d, %Y")
+            data.append(data_item)
+
         return Response({
             'draw': draw,
             'recordsTotal': records_total,
             'recordsFiltered': records_filtered,
-            'data': serializer.data,
+            'data': data,
         })
 
 
@@ -229,6 +245,60 @@ class LdsParticipantsViews(generics.ListAPIView):
             rso_pk=self.request.query_params.get('rso_pk')
         ).order_by('emp__pi__user__last_name')
         return queryset
+
+
+class LdsParticipantsByRsoDataTableViews(generics.ListAPIView):
+    serializer_class = LdsParticipantsSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        rso_id = self.kwargs.get('rso_id')
+        return (
+            LdsParticipants.objects.select_related('emp', 'emp__pi', 'emp__pi__user')
+            .filter(rso_id=rso_id)
+        )
+
+    def list(self, request, *args, **kwargs):
+        draw = int(request.query_params.get('draw', '1') or 1)
+        start = int(request.query_params.get('start', '0') or 0)
+        length = int(request.query_params.get('length', '10') or 10)
+        search_value = (request.query_params.get('search[value]') or '').strip()
+
+        base_qs = self.get_queryset()
+        records_total = base_qs.count()
+
+        qs = base_qs
+        if search_value:
+            qs = qs.filter(
+                Q(participants_name__icontains=search_value)
+                | Q(emp__pi__user__first_name__icontains=search_value)
+                | Q(emp__pi__user__last_name__icontains=search_value)
+            )
+
+        records_filtered = qs.count()
+
+        column_map = {
+            0: 'emp__pi__user__last_name',
+            1: 'type',
+            2: 'emp__position__name',
+        }
+
+        order_col = int(request.query_params.get('order[0][column]', '0') or 0)
+        order_dir = request.query_params.get('order[0][dir]', 'asc')
+        order_field = column_map.get(order_col, 'emp__pi__user__last_name')
+        if order_dir == 'desc':
+            order_field = '-' + order_field
+        qs = qs.order_by(order_field)
+
+        qs = qs[start:start + length]
+
+        serializer = self.get_serializer(qs, many=True)
+        return Response({
+            'draw': draw,
+            'recordsTotal': records_total,
+            'recordsFiltered': records_filtered,
+            'data': serializer.data,
+        })
 
 
 class LdsFacilitatorsViews(generics.ListAPIView):

@@ -1,10 +1,27 @@
 import os
 from django.db import models
 from django.dispatch import receiver
+from django.conf import settings
 from django.utils import timezone
 
 from backend.models import Empprofile
 from frontend.models import Trainingtitle
+
+
+class LdsTrainingNotify(models.Model):
+    """Model to store training approval notifications"""
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_column='recipient')
+    training = models.ForeignKey('LdsRso', on_delete=models.CASCADE, db_column='training')
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        managed = False
+        db_table = 'lds_training_notification'
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(fields=['recipient', 'training'], name='uniq_training_notification_recipient_training')
+        ]
 
 
 class LdsCertificateType(models.Model):

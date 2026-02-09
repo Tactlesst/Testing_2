@@ -60,11 +60,11 @@ class TrainingtitleSerializer(serializers.ModelSerializer):
 
 class LdsApprovedTrainingsDashboardSerializer(serializers.ModelSerializer):
     training_title = serializers.CharField(source='training.tt_name', read_only=True)
-    date_added = serializers.DateTimeField(format="%b %d, %Y", read_only=True)
+    date_approved = serializers.DateTimeField(format="%b %d, %Y", read_only=True)
 
     class Meta:
         model = LdsRso
-        fields = ['id', 'training_title', 'date_added']
+        fields = ['id', 'training_title', 'date_approved']
 #nazef added
 
 class LdsTrainingTitleListSerializer(serializers.ModelSerializer):

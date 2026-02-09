@@ -17,7 +17,7 @@ from api.wiserv import send_notification
 from backend.models import Division, Designation, Empprofile, Section
 from frontend.lds.forms import UploadAttachmentFormLDS
 from frontend.lds.models import LdsRso, LdsParticipants, LdsFacilitator, LdsCertificateType, LdsIDP, LdsIDPType, \
-    LdsIDPContent
+    LdsIDPContent, LdsTrainingNotify
 from frontend.models import Trainingtitle, PortalConfiguration
 
 load_dotenv()
@@ -988,3 +988,40 @@ def ldi_plan_details_user(request, training_id):
         'training_id': training_id,
     }
     return render(request, 'frontend/lds/ldi_plan_details.html', context)
+
+
+@login_required
+def get_training_notifications(request):
+    """AJAX endpoint to fetch unread training notifications for the current user."""
+    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
+    notifications = (
+        LdsTrainingNotify.objects
+        .select_related('training', 'training__training')
+        .filter(recipient=request.user, is_read=False)
+        .order_by('-created_at')[:5]
+    )
+
+    notification_data = []
+    for notification in notifications:
+        notification_data.append({
+            'id': notification.id,
+            'title': 'Training Approved',
+            'message': 'A New Training has been Approved, check your Dashboard',
+            'created_at': notification.created_at.strftime('%b %d, %Y %I:%M %p'),
+            'training_id': notification.training.id,
+        })
+
+    return JsonResponse({'notifications': notification_data, 'count': len(notification_data)})
+
+
+@login_required
+@csrf_exempt
+def mark_notifications_read(request):
+    """AJAX endpoint to mark the current user's unread notifications as read."""
+    if request.method != 'POST' or request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+        return JsonResponse({'error': 'Invalid request'}, status=400)
+
+    LdsTrainingNotify.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+    return JsonResponse({'success': True})

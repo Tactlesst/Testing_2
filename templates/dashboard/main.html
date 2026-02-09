@@ -428,10 +428,37 @@
                         <thead>
                             <tr>
                                 <th width="70%">Title</th>
-                                <th width="30%" class="text-center">Date Added</th>
+                                <th width="30%" class="text-center">Date Approved</th>
                             </tr>
                         </thead>
                     </table>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="modal fade" id="training-participants-modal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-info text-white">
+                        <h5 class="modal-title" id="training-participants-modal-title">Participants</h5>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover table-sm mb-0" id="training-participants-table" width="100%" style="font-size: 14px;">
+                                <thead>
+                                    <tr>
+                                        <th width="55%">Name</th>
+                                        <th width="15%" class="text-center">Type</th>
+                                        <th width="30%">Position</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -728,8 +755,77 @@
                         return data;
                     }
                 },
-                { 'data': 'date_added', 'className': 'text-center' }
-            ]
+                { 'data': 'date_approved', 'className': 'text-center' }
+            ],
+            'createdRow': function(row, data, dataIndex) {
+                if (data && data.id) {
+                    $(row).attr('data-rso-id', data.id);
+                }
+                $(row).css('cursor', 'pointer');
+            }
+        });
+
+        var participantsTable = null;
+        var activeRsoId = null;
+
+        function openParticipantsModal(rsoId, trainingTitle) {
+            activeRsoId = rsoId;
+            $('#training-participants-modal-title').text((trainingTitle || 'Training') + ' - Participants');
+            $('#training-participants-modal').modal('show');
+
+            if (!participantsTable) {
+                participantsTable = $('#training-participants-table').DataTable({
+                    'serverSide': true,
+                    'processing': true,
+                    'deferRender': true,
+                    'lengthChange': false,
+                    'searching': true,
+                    'paging': true,
+                    'info': false,
+                    'pagingType': 'numbers',
+                    'pageLength': 10,
+                    'order': [[0, 'asc']],
+                    'ajax': {
+                        'url': '/api/learning-and-development/participants/rso/' + rsoId + '/',
+                        'type': 'GET'
+                    },
+                    'columns': [
+                        {
+                            'data': 'full_name',
+                            'render': function (data, type, row, meta) {
+                                if (type === 'display') {
+                                    var full = (data || row.participants_name || '');
+                                    var safe = $('<div/>').text(full).html();
+                                    return '<div title="' + safe + '" style="max-width: 360px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + safe + '</div>';
+                                }
+                                return data;
+                            }
+                        },
+                        { 'data': 'type', 'className': 'text-center' },
+                        {
+                            'data': 'position',
+                            'render': function (data, type, row, meta) {
+                                if (type === 'display') {
+                                    var full = (data || '');
+                                    var safe = $('<div/>').text(full).html();
+                                    return '<div title="' + safe + '" style="max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + safe + '</div>';
+                                }
+                                return data;
+                            }
+                        }
+                    ]
+                });
+            } else {
+                participantsTable.ajax.url('/api/learning-and-development/participants/rso/' + rsoId + '/').load();
+            }
+        }
+
+        $('#new-trainings-table tbody').on('click', 'tr', function() {
+            var rowData = trainingsTable.row(this).data();
+            if (!rowData || !rowData.id) {
+                return;
+            }
+            openParticipantsModal(rowData.id, rowData.training_title);
         });
 
         function setTrainingCardStyle(style) {
