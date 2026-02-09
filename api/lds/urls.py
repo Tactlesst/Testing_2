@@ -1,5 +1,6 @@
 from django.urls import path
 
+
 urlpatterns = [
     path('', LdsRsoViews.as_view(), name='api_lds_rso'),
     #nazef added
