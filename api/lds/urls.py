@@ -1,5 +1,6 @@
 from django.urls import path
 
+from api.lds.views import LdsRsoViews, LdsRsoViewsAdmin, LdsParticipantsViews, LdsFacilitatorsViews, LdsIDPViews, LdsTrainingTitlesDataTableViews, LdsLdiPlansByTrainingViews, LdsApprovedTrainingsDashboardDataTableViews, LdsTrainingNotificationView
 
 urlpatterns = [
     path('', LdsRsoViews.as_view(), name='api_lds_rso'),
