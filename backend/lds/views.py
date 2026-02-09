@@ -970,10 +970,6 @@ def generate_drn_for_rso(request):
 @permission_required('auth.ld_manager')
 def bypass_lds_rrso_approval(request, pk):
     LdsRso.objects.filter(id=pk).update(rrso_status=1)
-
-    rso = LdsRso.objects.filter(id=pk).only('id', 'rrso_status', 'rso_status', 'date_approved').first()
-    if rso and rso.rrso_status == 1 and rso.rso_status == 1 and not rso.date_approved:
-        LdsRso.objects.filter(id=pk).update(date_approved=timezone.now())
     return JsonResponse({'data': 'success', 'msg': 'You have successfully approved the Request for Issuance of Regional Special Order'})
 
 
@@ -982,10 +978,6 @@ def bypass_lds_rrso_approval(request, pk):
 @permission_required('auth.ld_manager')
 def bypass_lds_rso_approval(request, pk):
     LdsRso.objects.filter(id=pk).update(rso_status=1)
-
-    rso = LdsRso.objects.filter(id=pk).only('id', 'rrso_status', 'rso_status', 'date_approved').first()
-    if rso and rso.rrso_status == 1 and rso.rso_status == 1 and not rso.date_approved:
-        LdsRso.objects.filter(id=pk).update(date_approved=timezone.now())
     return JsonResponse({'data': 'success', 'msg': 'You have successfully approved the Regional Special Order'})
 
 

@@ -1,1867 +1,878 @@
 {% load static %}
-
 {% load tags %}
-
 {% load qr_code %}
-
 {% load frontend_tags %}
-
 <link href="{% static 'css/plugins/textSpinners/spinners.css' %}" rel="stylesheet">
-
 <style type="text/css" for="valentines">
-
     #card .heart {
-
         width: 260px;
-
         height: 260px;
-
         float: left;
-
     }
-
     #card .heart #circle {
-
         height: 130px;
-
         width: 130px;
-
         border-radius: 50%;
-
         background-color: #d32f2f;
-
     }
-
     #card .heart #rec,
-
     #card .heart #rec2 {
-
         margin-top: -60px;
-
         width: 130px;
-
         height: 130px;
-
         background-color: #d32f2f;
-
         border-radius: 35% 0 0 0;
-
     }
-
     #card .heart #half2 {
-
         -ms-transform: rotate(-90deg);
-
         /* IE 9 */
-
         -webkit-transform: rotate(-90deg);
-
         /* Chrome, Safari, Opera */
-
         transform: rotate(-90deg);
-
         margin-top: -330px;
-
         margin-left: -200px;
-
     }
-
     #card #heart2 {
-
         margin-top: -60px;
-
         margin-left: -130px;
-
     }
-
     #card #heart2 #circle,
-
     #card #heart2 #rec {
-
         background-color: #d75252;
-
     }
-
     #card #heart2 #half2 #rec {
-
         margin-top: -61px;
-
     }
-
     #card #message {
-
         float: left;
-
         width: 200px;
-
         height: 200px;
-
         margin-left: -130px;
-
         background-color: #333;
-
         border-radius: 35% 0 35% 0;
-
         text-align: center;
-
     }
-
     #card #message h2 {
-
         font-size: 16px;
-
         color: #fff;
-
         width: 160px;
-
         margin-top: 40px;
-
         margin-left: 16px;
-
     }
-
     #card #heart1 {
-
         -webkit-transform: rotate(180deg);
-
         -moz-transform: rotate(180deg);
-
         -ms-transform: rotate(180deg);
-
         transform: rotate(180deg);
-
         -webkit-animation: closeLeft 2s ease-in-out forwards;
-
         -moz-animation: closeLeft 2s ease-in-out forwards;
-
         -ms-animation: closeLeft 2s ease-in-out forwards;
-
         animation: closeLeft 2s ease-in-out forwards;
-
     }
-
     #card #heart2 {
-
         -webkit-animation: closeRight 2s ease-in-out forwards;
-
         -moz-animation: closeRight 2s ease-in-out forwards;
-
         -ms-animation: closeRight 2s ease-in-out forwards;
-
         animation: closeRight 2s ease-in-out forwards;
-
     }
-
-
 
     #card:hover #heart1 {
-
         -webkit-animation: openLeft 2s ease-in-out forwards;
-
         -moz-animation: openLeft 2s ease-in-out forwards;
-
         -ms-animation: openLeft 2 ease-in-out forwards;
-
         animation: openLeft 2s ease-in-out forwards;
-
     }
-
     #card:hover #heart2 {
-
         -webkit-animation: openRight 2s ease-in-out forwards;
-
         -moz-animation: openRight 2s ease-in-out forwards;
-
         -ms-animation: openRight 2 ease-in-out forwards;
-
     }
-
-
 
     @-webkit-keyframes closeLeft {
-
         from {
-
             -webkit-transform: rotateY(0deg);
-
         }
-
         to {
-
             -webkit-transform: rotateY(180deg);
-
         }
-
     }
-
     @-moz-keyframes closeLeft {
-
         from {
-
             -moz-transform: rotateY(0deg);
-
         }
-
         to {
-
             -moz-transform: rotateY(180deg);
-
         }
-
     }
-
     @-ms-keyframes closeLeft {
-
         from {
-
             -ms-transform: rotateY(0deg);
-
         }
-
         to {
-
             -ms-transform: rotateY(180deg);
-
         }
-
     }
-
     @keyframes closeLeft {
-
         from {
-
             transform: rotateY(0deg);
-
         }
-
         to {
-
             transform: rotateY(180deg);
-
         }
-
     }
-
     @-moz-keyframes openLeft {
-
         from {
-
             -moz-transform: rotateY(180deg);
-
         }
-
         to {
-
             -moz-transform: rotateY(0deg);
-
         }
-
     }
-
     @-webkit-keyframes openLeft {
-
         from {
-
             -webkit-transform: rotateY(180deg);
-
         }
-
         to {
-
             -webkit-transform: rotateY(0deg);
-
         }
-
     }
-
     @-ms-keyframes openLeft {
-
         from {
-
             -ms-transform: rotateY(180deg);
-
         }
-
         to {
-
             -ms-transform: rotateY(0deg);
-
         }
-
     }
-
     @keyframes openLeft {
-
         from {
-
             transform: rotateY(180deg);
-
         }
-
         to {
-
             transform: rotateY(0deg);
-
         }
-
     }
-
     @-moz-keyframes openRight {
-
         0% {
-
             -moz-transform: rotateX(180deg);
-
         }
-
         100% {
-
             -moz-transform: rotateX(0deg) rotateZ(180deg);
-
         }
-
     }
-
     @-webkit-keyframes openRight {
-
         0% {
-
             -webkit-transform: rotateX(180deg);
-
         }
-
         100% {
-
             -webkit-transform: rotateX(0deg) rotateZ(180deg);
-
         }
-
     }
-
     @-ms-keyframes openRight {
-
         0% {
-
             -ms-transform: rotateX(180deg);
-
         }
-
         100% {
-
             -ms-transform: rotateX(0deg) rotateZ(180deg);
-
         }
-
     }
-
     @keyframes openRight {
-
         0% {
-
             transform: rotateX(180deg);
-
         }
-
         100% {
-
             transform: rotateX(0deg) rotateZ(180deg);
-
         }
-
     }
-
     @-webkit-keyframes closeRight {
-
         from {
-
             -webkit-transform: rotateX(0deg) rotate(180deg);
-
         }
-
         to {
-
             -webkit-transform: rotateX(180deg);
-
         }
-
     }
-
     @-moz-keyframes closeRight {
-
         from {
-
             -moz-transform: rotateX(0deg) rotate(180deg);
-
         }
-
         to {
-
             -moz-transform: rotateX(180deg);
-
         }
-
     }
-
     @-ms-keyframes closeRight {
-
         from {
-
             -ms-transform: rotateX(0deg) rotate(180deg);
-
         }
-
         to {
-
             -ms-transform: rotateX(180deg);
-
         }
-
     }
-
     @keyframes closeRight {
-
         from {
-
             transform: rotateX(0deg) rotate(180deg);
-
         }
-
         to {
-
             transform: rotateX(180deg);
-
         }
-
     }
-
 </style>
-
 <!-- 
-
 {% if announcements %}
-
 <div class="card card-teal card-outline" style="height: 500px;">
-
     <div class="card-header border-0 pb-0">
-
         <div class="row">
-
             <div class="col-lg-12">
-
                 <h3 class="card-title font-weight-bold text-success">Announcement</h3>
-
                 <br>
-
             </div>
-
         </div>
-
     </div>
-
     <div class="card-header">
-
         <p>Here are some important announcements and memorandum from the different sections and divisions in the field office.</p>
-
     </div>
-
     <div class="card-body pt-0">
-
         <div class="your-class" >
-
             {% for ann in announcements %}
-
                 <div class="item" style="height:55vh;">
-
                     {% get_extension ann.attachment.url as extension %}
-
                     {% if extension.1 == '.pdf' %}
-
                         <div style="position: relative; width: 100%;  padding-top: 56.25%; overflow: hidden; border: 1px solid #CCC;">
-
                             <iframe 
-
                                 src="{{ ann.attachment.url }}" 
-
                                 style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" 
-
                                 frameborder="0" 
-
                                 allowfullscreen>
-
                             </iframe>
-
                         </div>
-
                         <div class="text-center mt-3">
-
                             <h3>{{ ann.title }}</h3>
-
                             <h4>({{ ann.uploaded_by.section.div.div_acronym }} - {{ ann.uploaded_by.section.sec_name }})</h4>
-
                             <p>{{ ann.caption }}</p>
-
                         </div>
-
                         
-
                     {% else %}
-
                         <a data-toggle="modal" data-target="#preview-announcement-modal" 
-
                         onclick='$("#preview-announcement").attr("src","{{ ann.attachment.url }}"); 
-
                         $("#preview-announcement-modal").find(".modal-title").html("{{ ann.title }}<br><br><small class=\"sub-title\"></small>"); 
-
                         $("#preview-announcement-modal").find(".sub-title").html("{{ ann.caption }}");'
 
-
-
                                    return false;' 
-
                            title="{{ ann.title }}">
-
                             <img 
-
                                 loading="lazy" 
-
                                 class="nooutline img-fluid" 
-
                                 src="{{ ann.attachment.url }}" 
-
                                 alt="{{ ann.title }}" 
-
                                 style="border: 1px solid #CCC;" />
-
                         </a>
 
-
-
                         <div class="text-center mt-3">
-
                             <h3>{{ ann.title }}</h3>
-
                             <h4>({{ ann.uploaded_by.section.div.div_acronym }} - {{ ann.uploaded_by.section.sec_name }})</h4>
-
                             <p>{{ ann.caption }}</p>
-
                         </div>
-
                     {% endif %}
-
                 </div>
-
             {% endfor %}
-
         </div>
-
     </div>
-
 </div>
-
 {% endif %} --> 
 
 
-
-
-
 <div class="row">
-
     <div class="col-lg-7">
-
         {% if check_password or update or eligibility %}
-
         <div class="row">
-
             <div class="col-md-12">
-
                 <div class="callout callout-danger">
-
                     <div class="card-header">
-
                         <h3 class="card-title font-weight-bold text-danger">Must Update</h3>
-
                     </div>
-
                     <div class="card-body">
-
                         <table class="table table-borderless">
-
                             {% if eligibility %}
-
                            
 
-
-
                             <div class="row">
-
                                 <div class="fas fa-certificate fa-4x text-info">
-
                                 </div>
-
                                 <div class="col-xl-10">
-
                                     <h4 class="bold">Specify Course on RA 1080</h4>
-
                                     <p><a href="{% url 'civil-service' %}" class="text-primary">Please click here to update.</a></p>
 
-
-
                                     
-
                                 </div>
-
                             </div>
-
                             <br>
-
                             
-
                             {% endif %}
-
                             {% if check_password %}
-
                 
-
                             <div class="row">
-
                                 <div class="fas fa-shield-alt fa-4x text-danger">
-
                                 </div>
-
                                 <div class="col-xl-10">
-
                                     <h4 class="font-weight-bold">Your password is currently set to the default. For security reasons, please update it immediately.</h4>
-
                                     <p class="mb-0 text-muted">Change your password now to secure your account. <a href="{% url 'my-profile' %}" class="text-primary ">Please click here to change your password.</a></p>
-
                                 </div>
-
                             </div>
-
                             {% endif %}
-
                             {% if update %}
-
                     
-
                     <br>
 
-
-
                             <div class="row">
-
                                 <div class="far fa-address-card fa-4x text-warning">
-
                                 </div>
-
                                 <div class="col-xl-10">
-
                                     <h4 class="bold">A basic information is required</h4>
-
                                     <p class="no-margins text-muted">You may consider updating your email, phone number and incase of emergency.</p>
-
                                     <a href="javascript:;" data-toggle="modal" data-target="#trigger-modal">Please click here to update.</a>
 
-
-
                                 </div>
-
                             </div>
 
-
-
                             {% endif %}
-
                         </table>
-
                     </div>
-
                 </div>
-
             </div>
-
         </div>
-
         {% endif %}
-
-
 
         {% if announcements %}
-
         <div class="card card-teal card-outline w-100">
-
             <div class="card-header border-0 pb-0">
-
                 <div class="row">
-
                     <div class="col-lg-12">
-
                         <h3 class="card-title font-weight-bold text-success">Announcement</h3>
-
                         <br>
-
                     </div>
-
                 </div>
-
             </div>
-
             <div class="card-header">
-
                 <p>Here are some important announcements and memorandum from the different sections and divisions in the field office.</p>
-
             </div>
-
         
-
             <div class="card-body pt-0 overflow-auto d-flex flex-column align-items-center" 
-
                  style="max-height: 800px; width: 100%;">
-
                 <div class="your-class" style="width: 100%;">
-
                     {% for ann in announcements %}
-
                         <div class="item" style="width: 100%;">
-
                             {% get_extension ann.attachment.url as extension %}
-
                             {% if extension.1 == '.pdf' %}
-
                                 <div class="embed-responsive embed-responsive-16by9 border w-100" 
-
                                      style="height: auto; max-height: 80vh;">
-
                                     <iframe class="embed-responsive-item" src="{{ ann.attachment.url }}" 
-
                                         allowfullscreen style="width: 100%; height: 100%;"></iframe>
-
                                 </div>
-
                             {% else %}
-
                                 <a data-toggle="modal" data-target="#preview-announcement-modal" 
-
                                     onclick='$("#preview-announcement").attr("src","{{ ann.attachment.url }}"); 
-
                                              $("#preview-announcement-modal").find(".modal-title").html("{{ ann.title }}<br><br><small class=\"sub-title\"></small>"); 
-
                                              $("#preview-announcement-modal").find(".sub-title").html("{{ ann.caption }}");' 
-
                                     title="{{ ann.title }}" style="display: block; width: 100%;">
-
                                     <img loading="lazy" class="img-fluid border d-block mx-auto" 
-
                                         src="{{ ann.attachment.url }}" 
-
                                         alt="{{ ann.title }}" 
-
                                         style="width: 100%; height: 80vh; max-height: 80vh; object-fit: contain;" />
-
                                 </a>
-
                             {% endif %}
-
         
-
                             <div class="text-center mt-3">
-
                                 <h3>{{ ann.title }}</h3>
-
                                 <h4 class="text-info">({{ ann.uploaded_by.section.div.div_acronym }} - {{ ann.uploaded_by.section.sec_name }})</h4>
-
                                 <p>{{ ann.caption }}</p>
-
                             </div>
-
                         </div>
-
                     {% endfor %}
-
                 </div>
-
             </div>
-
         </div>
-
         {% endif %}
-
                
-
        
-
         <div class="card card-success card-outline" id="training-notification-card">
-
             <div class="card-header border-0 pb-0">
-
                 <div class="row">
-
                     <div class="col-lg-12 mt-2">
-
-                        <h3 class="card-title font-weight-bold pull-left">New Trainings</h3>
-
+                        <h3 class="card-title font-weight-bold pull-left" id="training-card-title">New Trainings</h3>
                         <span class="pull-right">
-
                             <select class="form-control form-control-sm d-inline-block" id="new-trainings-filter" style="width: 160px;">
-
                                 <option value="current_month" selected>This Month</option>
-
                                 <option value="all">All</option>
-
                             </select>
-
-                            <a href="{% url 'lds_rrso' %}" class="text-info ml-2">See All</a>
-
+                            {% if user.is_superuser or user|check_permission:'superadmin' or user|check_permission:'ld_admin' %}
+                            <a href="{% url 'lds_rrso' %}" class="text-info ml-2" id="training-see-all-link">See All</a>
+                            {% endif %}
                         </span>
-
                     </div>
-
                 </div>
-
             </div>
-
             <div class="card-body pt-0">
-
                 <div id="training-notification-details" style="display: none;">
-
                     <div class="mt-3">
-
                         <h4 class="mb-1" id="training-notification-title"></h4>
-
                         <div style="font-size: 14px;" id="training-notification-dates"></div>
-
                         <div style="font-size: 14px;" id="training-notification-venue"></div>
-
                     </div>
-
-
 
                     <div class="alert mt-3 mb-0" id="training-notification-banner" style="display: none;"></div>
 
-
-
-                    <div class="mt-3" id="training-notification-progress" style="display: none;">
-
-                        <div class="progress" style="height: 20px;">
-
-                            <div class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="training-notification-progressbar"></div>
-
-                        </div>
-
-                        <div class="mt-2" style="font-size: 13px;" id="training-notification-progress-text"></div>
-
-                    </div>
-
                 </div>
-
-
 
                 <div class="table-responsive" id="new-trainings-table-container">
-
                     <table class="table table-bordered table-hover table-sm mb-0" id="new-trainings-table" width="100%" style="font-size: 14px;">
-
                         <thead>
-
                             <tr>
-
                                 <th width="70%">Title</th>
-
                                 <th width="30%" class="text-center">Date Added</th>
-
                             </tr>
-
                         </thead>
-
                     </table>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <div class="modal" id="dashboard_training_participants" role="dialog" aria-hidden="true" data-backdrop="static" data-keyboard="false">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content animated bounceInDown">
-                    <div class="modal-header bg-info">
-                        <h3 class="modal-title">TRAINING PARTICIPANTS</h3>
-                        <button type="button" class="close text-white" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <h6 class="font-weight-bold mb-3">Internal Participants</h6>
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-hover" id="dashboard-internal-participants-table" width="100%">
-                                    <thead class="table-info">
-                                        <tr>
-                                            <th width="50%">EMPLOYEE NAME</th>
-                                            <th width="50%">POSITION</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <hr style="margin-right:-15px; margin-left:-15px;">
-
-                        <div class="form-group" style="margin-bottom:0px;">
-                            <h6 class="font-weight-bold mb-3">External Participants</h6>
-                            <div class="table-responsive">
-                                <table class="table table-bordered table-hover" id="dashboard-external-participants-table" width="100%">
-                                    <thead class="table-info">
-                                        <tr>
-                                            <th width="100%">PARTICIPANT NAME</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    </div>
                 </div>
             </div>
         </div>
-
 
 
         <div class="card card-success card-outline">
-
             <div class="card-header border-0 pb-0">
-
                 <div class="row">
-
                     <div class="col-lg-12 mt-2">
-
                         <h3 class="card-title font-weight-bold pull-left">Vacancies</h3>
-
                         <span class="pull-right">
-
                             <a href="{% url 'vacancies' %}" target="_blank" class="text-info">See All</a>
-
                         </span>
-
                     </div>
-
                 </div>
-
             </div>
-
             {% if vacancy %}
-
                 <div class="application-on-process-content" style="margin-bottom: 10px !important;">
-
                     {% for row in vacancy %}
-
                         <div class="card-body">
-
                             <h3 class="text-success"><strong>{{ row.position.name }} - {{ row.empstatus.name }}</strong></h3>
-
                             <table class="table table-borderless table-sm" style="font-size: 15px;">
-
                                 <tr>
-
                                     <td>Salary rate: </td>
-
                                     <th>{{ row.salary_rate }} SG-{{ row.salary_grade.name }}</th>
-
                                     <td>Quantity needed: </td>
-
                                     <th>{{ row.quantity }}</th>
-
                                 </tr>
-
                                 <tr>
-
                                     <td>Total applicants applied: </td>
-
                                     <th>{{ row.get_total_app }}</th>
-
                                     <td>Deadline at: </td>
-
                                     <th>{{ row.deadline }}</th>
-
                                 </tr>
-
                             </table>
-
                         </div>
-
                     {% endfor %}
-
                 </div>
-
             {% else %}
-
                 <div class="card-body">
-
                     <p style="font-size: 15px;">There is no vacancy to show you right now.</p>
-
                     <br><br><br><br>
-
                     <img loading="lazy"  src="{% static 'image/no-results.png' %}" width="150px;" style="margin-top: -130px;" class="pull-right">
-
                 </div>
-
             {% endif %}
-
         </div>
-
         
-
         <div class="card card-success card-outline">
-
             <div class="card-header border-0">
-
                 <h3 class="card-title font-weight-bold pull-left mt-2">Birthday Celebrants for {{ month|date:"F Y" }}</h3>
-
                 <div class="pull-right">
-
                     <a href="{% url 'birthday_celebrants' %}" class="text-info">See All</a>
-
                 </div>
-
             </div>
-
             <div class="card-body">
-
                 {% for row in birthday_celebrants %}
-
                 <img loading="lazy"  alt="{{ row.pi.user.last_name|upper }}, {{ row.pi.user.first_name|upper }}"  class="img-circle" rel="tooltip" data-placement="top" data-html="true" title="{{ row.pi.user.last_name|upper }}, {{ row.pi.user.first_name|upper }}<br>{{ row.pi.dob|date:'F d' }}" src="{{ row.picture.url }}" style="width: 50px; height: 50px; object-fit: cover;">
-
                 {% endfor %}
-
             </div>
-
         </div>
-
     </div>
-
     <div class="col-lg-5">
-
         {% for msg in messages %}
-
             {% if 'portal_login' in msg.extra_tags %}
-
             <div class="alert alert-warning"><i class="fas fa-info-circle"></i> {{ msg|safe }}</div>
-
             {% endif %}
-
         {% endfor %}
-
         <div id="passwordExpiresAlert"></div>
-
         {% now "md" as curr_date %}
-
         {% if curr_date == '0214' or curr_date == '0215' %}
-
         <div class="card card-danger ">
-
             <div class="card-header border-0">
-
                 <h3 class="card-title font-weight-bold">Happy Valentine's Day!</h3>
-
             </div>
-
             <div class="card-body">
-
                 <p>
-
                     No matter how you’re celebrating Valentine’s Day 2025—perhaps with a romantic home-cooked meal or a fun car date idea—as long as it’s filled with lots of love and feel-good energy, then you’re doing February 14<sup>th</sup> right.
-
                 </p>
-
                 <div id="card">
-
                     <div class="heart" id="heart1">
-
                         <div id="half1">
-
                             <div id="circle"></div>
-
                             <div id="rec"></div>
-
                         </div>
-
                         <div id="half2">
-
                             <div id="circle"></div>
-
                             <div id="rec"></div>
-
                         </div>
-
                     </div>
-
                     <div id="message">
-
                         <h2>
-
                             Happy Valentine's Day, <strong>{{ request.user.first_name }}</strong>!
-
                             <br><br>
-
                             <font style="font-size:13px;">
-
                                 {{ vquotes }}
-
                             </font>
-
                         </h2>
-
                     </div>
-
                     <!-- <div class="heart" id="heart2">
-
                         <div id="half1">
-
                             <div id="circle"></div>
-
                             <div id="rec"></div>
-
                         </div>
-
                         <div id="half2">
-
                             <div id="circle"></div>
-
                             <div id="rec"></div>
-
                         </div>
-
                     </div> -->
-
                 </div>
-
             </div>
-
         </div>
-
         {% endif %}
-
         {% if my_bday %}
-
             <div class="card bg-gradient-light">
-
                 <div class="card-header border-0">
-
                     <h3 class="card-title font-weight-bold">Happy <span class="text-danger">Birthday!</span></h3>
-
                 </div>
-
                 <div class="card-body">
-
                     <p>Dear <span class="text-success bold">{% getemployeebyempid request.session.emp_id as employee %}{{ employee.pi.user.get_first_name_title }},</span></p>
-
                     <p align="justify">I hope all your <span class="text-success font-bold">birthday wishes and desires</span> come true. We wish you a year full of minutes of love, happiness and joy.</p>
-
                     <br>
-
                     <p>Sincerely,</p>
-
                     <p>The My PORTAL Team</p>
-
                     <br>
-
                     <img loading="lazy"  src="{% static 'image/birthday_bg.png' %}" class="img-responsive img-bot" width="200px;" style="position: absolute; margin-top: -140px; margin-left: 200px;">
-
                 </div>
-
             </div>
-
         {% endif %}
-
-
 
         <div>
-
             <div class="card card-info card-outline">
-
                 <div class="card-body">
-
                     <div class="row">
-
                         <div class="col-xl-3">
-
                             <img src="{% static 'icons8/new-96.png' %}" alt="headline" width="96" height="96" style="margin-left: -10px;">
-
                             <br>
-
                         </div>
-
                         <div class="col-xl-9">
-
                             <div class="pull-left">
-
                                 <h1 class="font-weight-bold">WHAT'S NEW?</h1>
-
                                 <h3 class="bold"><span class="text-info">{{ version_latest.title }} {{ version_latest.release_date|date:'Y' }}</span></h3>
-
                                 <br>
-
                             </div>
-
                             <div class="pull-right">
-
                                 <button type="button" class="btn btn-info" data-toggle="modal" data-target="#patch-note-modal">See more</button>
-
                             </div>
-
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
-
-
 
             <div class="card card-info card-outline">
-
                 <div class="card-header border-0 pb-0">
-
                     <div class="row">
-
                         <div class="col-lg-12 mt-2">
-
                             <h3 class="card-title font-weight-bold pull-left">Shortcuts</h3>
-
                         </div>
-
                     </div>
-
                 </div>
-
                 <div class="card-body pt-0">
-
                     <div class="row">
-
                         <div class="col-lg-4 shortcuts">
-
                             <br>
-
                             <center>
-
                                 <img src="{% static 'icons8/employee-assistance-new2.png' %}" width="120px" height="120px" style="object-fit: cover;"><br>
-
                                 <small><a href="javascript:;" class="stretched-link text-info" data-toggle="modal" data-target="#assistance_modal">Employee Assistance</a></small>
-
                             </center>
-
                             <br>
-
                         </div>
-
                         <div class="col-lg-4 shortcuts">
-
                             <br>
-
                             <center>
-
                                 <img src="{% static 'icons8/health-checklist-new.png' %}" width="120px" height="120px" style="object-fit: cover;"><br>
-
                                 <small><a href="javascript:;" class="stretched-link text-info" data-toggle="modal" data-target="#checklist">Health Checklist</a></small>
-
                             </center>
-
                             <br>
-
                         </div>
-
                         <div class="col-lg-4 shortcuts">
-
                             <br>
-
                             <center>
-
                                 <img src="{% static 'icons8/give-feedback-new.png' %}" width="120px" height="120px" style="object-fit: cover;"><br>
-
                                 <small><a href="javascript:;" class="stretched-link text-info" data-toggle="modal" data-target="#feedback-modal">Give Feedback</a></small>
-
                             </center>
-
                             <br>
-
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
-
-
 
         </div>
-
     </div>
-
 </div>
-
-
-
 
 
 <div class="modal fade" id="patch-note-modal" tabindex="-1" role="dialog" aria-hidden="true">
-
     <div class="modal-dialog modal-lg">
-
         <div class="modal-content animated bounceInDown">
-
             <div class="modal-header bg-info text-white">
-
                 <h3 class="modal-title">
-
                     DEVELOPER UPDATE <br>
-
                     <small>{{ version_latest.title }} {{ version_latest.release_date|date:'Y' }}</small>
-
                 </h3>
-
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-
                     <span aria-hidden="true">&times;</span>
-
                 </button>
-
             </div>
-
-
 
             <div class="modal-body p-4">
-
                 {% for row in version %}
-
                     <div class="mb-3">
-
                         <a href="#collapse-{{ row.id }}" class="text-dark" data-toggle="collapse">
-
                             <em class="text-info">
-
                                 <strong>{{ row.title }}</strong> - Release Date ({{ row.release_date|date:"F d, Y" }})
-
                             </em>
-
                         </a>
 
-
-
                         <div id="collapse-{{ row.id }}" class="collapse {% if forloop.first %}show{% endif %} mt-2">
-
                             <div class="ibox-content p-3 border rounded">
-
                                 {% if row.new_features %}
-
                                     <h4 class="text mt-3">New Features 🔥</h4>
-
                                     <div>{{ row.new_features|linebreaks }}</div>
-
                                 {% endif %}
-
                                 {% if row.bug_fixes %}
-
                                     <h4 class="text mt-3">Bug Fixes 🛠</h4>
-
                                     <div>{{ row.bug_fixes|linebreaks }}</div>
-
                                 {% endif %}
-
                                 {% if row.upcoming %}
-
                                     <h4 class="text mt-3">Upcoming 🚀</h4>
-
                                     <div>{{ row.upcoming|linebreaks }}</div>
-
                                 {% endif %}
-
                             </div>
-
                         </div>
-
                     </div>
-
                     {% if not forloop.last %}
-
                         <hr>
-
                     {% endif %}
-
                 {% endfor %}
 
-
-
                 <div class="mt-4">
-
                     <a href="{% url 'developer_update' %}" class="btn btn-outline-info">
-
                         See All Versions
-
                     </a>
-
                 </div>
-
             </div>
-
         </div>
-
     </div>
-
 </div>
 
-
-
 {% block script %}
-
 <script>
-
     $(document).ready(function(){
-
         $('.application-on-process-content').slick({
-
             infinite: true,
-
 			speed: 700,
-
 			autoplay: true,
-
             autoplaySpeed: 2500,
-
 			slidesToShow: 1,
-
 			adaptiveHeight: true
-
         });
-
-
-
 
 
         $('#links-table').DataTable({
-
             'lengthChange': false,
-
             'searching': false,
-
             'paging': true,
-
             'info': false,
-
             'pagingType': 'numbers',
-
             'pageLength': 5
-
         });
-
-
 
         var trainingsTable = $('#new-trainings-table').DataTable({
-
             'serverSide': true,
-
             'processing': true,
-
             'deferRender': true,
-
             'lengthChange': false,
-
             'searching': false,
-
             'paging': true,
-
             'info': false,
-
             'pagingType': 'numbers',
-
             'pageLength': 5,
-
             'order': [[1, 'desc']],
-
             'ajax': {
-
                 'url': '/api/learning-and-development/approved-trainings/?current_month=1',
-
                 'type': 'GET'
-
             },
-
             'columns': [
-
                 {
-
                     'data': 'training_title',
-
                     'render': function (data, type, row, meta) {
-
                         if (type === 'display') {
-
                             var full = (data || '');
-
                             var safe = $('<div/>').text(full).html();
-
                             return '<div title="' + safe + '" style="max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">' + safe + '</div>';
-
                         }
-
                         return data;
-
                     }
-
                 },
-
                 { 'data': 'date_added', 'className': 'text-center' }
-
             ]
-
         });
-
-        function escapeHtml(value) {
-            return $('<div/>').text(value || '').html();
-        }
-
-        function loadDashboardTrainingParticipants(rsoId) {
-            $('#dashboard-internal-participants-table tbody').html('<tr><td colspan="2" class="text-center">Loading...</td></tr>');
-            $('#dashboard-external-participants-table tbody').html('<tr><td class="text-center">Loading...</td></tr>');
-
-            $.ajax({
-                url: '/api/learning-and-development/participants-by-rso/' + rsoId + '/',
-                type: 'GET',
-                dataType: 'json',
-                success: function (data) {
-                    var internalRows = '';
-                    var externalRows = '';
-
-                    var internal = (data && data.internal) ? data.internal : [];
-                    var external = (data && data.external) ? data.external : [];
-
-                    if (internal.length) {
-                        internal.forEach(function (row) {
-                            internalRows += '<tr>' +
-                                '<td>' + escapeHtml(row.full_name) + '</td>' +
-                                '<td>' + escapeHtml(row.position) + '</td>' +
-                                '</tr>';
-                        });
-                    } else {
-                        internalRows = '<tr><td colspan="2" class="text-center">No internal participants</td></tr>';
-                    }
-
-                    if (external.length) {
-                        external.forEach(function (row) {
-                            externalRows += '<tr>' +
-                                '<td>' + escapeHtml(row.participants_name) + '</td>' +
-                                '</tr>';
-                        });
-                    } else {
-                        externalRows = '<tr><td class="text-center">No external participants</td></tr>';
-                    }
-
-                    $('#dashboard-internal-participants-table tbody').html(internalRows);
-                    $('#dashboard-external-participants-table tbody').html(externalRows);
-                },
-                error: function () {
-                    $('#dashboard-internal-participants-table tbody').html('<tr><td colspan="2" class="text-center">Error loading participants</td></tr>');
-                    $('#dashboard-external-participants-table tbody').html('<tr><td class="text-center">Error loading participants</td></tr>');
-                }
-            });
-        }
-
-        $('#new-trainings-table tbody').on('click', 'tr', function () {
-            var rowData = trainingsTable.row(this).data();
-            if (!rowData || !rowData.id) {
-                return;
-            }
-            $('#dashboard_training_participants').modal('show');
-            loadDashboardTrainingParticipants(rowData.id);
-        });
-
-
 
         function setTrainingCardStyle(style) {
-
             var card = $('#training-notification-card');
-
             card.removeClass('card-success card-warning card-danger card-info');
 
-
-
             if (style === 'warning') {
-
                 card.addClass('card-warning');
-
             } else if (style === 'danger') {
-
                 card.addClass('card-danger');
-
             } else if (style === 'info') {
-
                 card.addClass('card-info');
-
             } else {
-
                 card.addClass('card-success');
-
             }
-
         }
-
-
 
         function updateTrainingsTableUrl() {
-
             var filter = $('#new-trainings-filter').val();
-
             var url = '/api/learning-and-development/approved-trainings/';
-
             if (filter === 'current_month') {
-
                 url += '?current_month=1';
-
             }
-
             trainingsTable.ajax.url(url).load();
-
         }
-
-
 
         $('#new-trainings-filter').on('change', function(){
-
             updateTrainingsTableUrl();
-
         });
 
-
-
         function applyTrainingNotification() {
-
             $.ajax({
-
                 url: '/api/learning-and-development/training-notification/',
-
                 type: 'GET'
-
             }).done(function(response){
-
                 var hasTraining = response && response.has_training;
 
-
-
                 if (!hasTraining) {
-
                     $('#training-notification-details').hide();
-
                     $('#new-trainings-table-container').show();
-
                     setTrainingCardStyle('success');
-
                     updateTrainingsTableUrl();
-
                     return;
-
                 }
-
-
 
                 $('#new-trainings-table-container').hide();
-
                 $('#training-notification-details').show();
 
-
-
                 var tr = (response.training || {});
-
                 $('#training-notification-title').text(tr.title || '');
 
-
-
                 var dates = '';
-
                 if (tr.inclusive_dates) {
-
                     dates = 'Date: ' + tr.inclusive_dates;
-
                 } else if (tr.start_date || tr.end_date) {
-
                     dates = 'Date: ' + (tr.start_date || '') + (tr.end_date ? (' - ' + tr.end_date) : '');
-
                 }
-
                 $('#training-notification-dates').text(dates);
-
                 $('#training-notification-venue').text(tr.venue ? ('Venue: ' + tr.venue) : '');
 
-
-
                 var banner = $('#training-notification-banner');
-
                 banner.hide().removeClass('alert-warning alert-danger alert-info');
 
-
-
                 var progressWrap = $('#training-notification-progress');
-
                 progressWrap.hide();
 
-
-
                 if (response.state === 'near') {
-
                     setTrainingCardStyle('warning');
-
                     banner.addClass('alert-warning').text('Training Day is Near').show();
-
                 } else if (response.state === 'ongoing') {
-
                     setTrainingCardStyle('danger');
-
                     banner.addClass('alert-danger').text('Training is Ongoing').show();
 
-
-
                     var pg = (response.progress || {});
-
                     var percent = parseInt(pg.percent || 0);
-
                     if (percent < 0) percent = 0;
-
                     if (percent > 100) percent = 100;
 
-
-
                     $('#training-notification-progressbar')
-
                         .css('width', percent + '%')
-
                         .attr('aria-valuenow', percent)
-
                         .text(percent + '%');
 
-
-
                     $('#training-notification-progress-text').text(
-
                         'Day ' + (pg.elapsed_days || 0) + ' of ' + (pg.total_days || 0) +
-
                         (pg.remaining_days !== undefined ? (' | Remaining: ' + pg.remaining_days + ' day(s)') : '')
-
                     );
-
                     progressWrap.show();
-
                 } else {
-
                     setTrainingCardStyle('info');
-
                 }
-
             });
-
         }
-
-
 
         applyTrainingNotification();
 
-
-
         $.ajax({
-
             url: "{% url 'get_password_countdown' request.session.username %}",
-
             type: "GET"
-
         }).done(function(response){
-
             $('#passwordExpiresAlert').html(response.countdown_message);
-
         });
 
-
-
         $('#submitFeedbackForm').on('submit', function(e){
-
             $.ajax({
-
                 url: "{% url 'submit_feedback' %}",
-
                 data: new FormData(this),
-
                 type: "POST",
-
                 beforeSend: function () {
-
                     $('.btn').prop("disabled", true);
-
 					$('#btnFeedBack').html('<span class="loading open-circle"></span> Submitting');
-
                 	$('#preloader').css('display', '');
-
                 },
-
                 success: function (response) {
-
                     if(response.data){
-
                         $('#submitFeedbackForm').trigger('reset');
-
                         $('#feedback-modal').modal('toggle');
-
                         Swal.fire("Success!", "Thanks for taking the time to give us feedback. We do use feedback like yours to improve the CDO PORTAL experience for everyone.", "success");
-
                     }
-
                 },
-
                 complete: function() {
-
                     $('#btnFeedBack').text('Submit');
-
                 	$('.btn').prop("disabled", false);
 
-
-
                 	$('#preloader').css('display', 'none');
-
                 },
-
                 cache: false,
-
                 contentType: false,
-
                 processData: false
-
             });
-
 			e.preventDefault();
-
 		});
-
-
 
 		$('.your-class').slick({
-
 			dots: true,
-
 			infinite: true,
-
 			speed: 700,
-
 			autoplay: true,
-
             autoplaySpeed: 2500,
-
 			slidesToShow: 1,
-
 			adaptiveHeight: true
-
 		});
-
     });
-
 </script>
-
 {% endblock %}
-
