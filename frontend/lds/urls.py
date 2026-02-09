@@ -1,6 +1,6 @@
 from django.urls import path
 
-from backend.lds.views import print_rso
+from backend.lds.views import print_rso, print_tqrcode
 from frontend.lds.views import lds_rrso, training_details, print_rrso, add_training_participant, \
     add_training_facilitator, generate_certificate_participants, generate_certificate_facilitators, \
     tag_as_resource_person, remove_tag_as_resource_person, upload_ld_attachment, print_ld_attendance, \
@@ -20,6 +20,7 @@ urlpatterns = [
     path('attachment/uploading/<int:pk>', upload_ld_attachment, name='upload_ld_attachment'),
     path('rso/print/<int:pk>', print_rso, name='print_rso'),
     path('rrso/print/<int:pk>', print_rrso, name='print_rrso'),
+    path('tqrcode/print/<int:pk>', print_tqrcode, name='print_tqrcode'),
     path('participant/add/<int:pk>/<int:type>', add_training_participant, name='add_training_participant'),
     path('facilitator/add/<int:pk>/<int:type>', add_training_facilitator, name='add_training_facilitator'),
     path('attendance/print/<int:pk>', print_ld_attendance, name='print_ld_attendance'),
@@ -44,4 +45,5 @@ urlpatterns = [
          name='generate_certificate_participants'),
     path('certificates/facilitators/print/<int:pk>', generate_certificate_facilitators,
          name='generate_certificate_facilitators'),
+    path('details/<int:pk>/qr/', print_tqrcode, name='print_tqrcode'),
 ]

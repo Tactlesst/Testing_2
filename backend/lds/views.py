@@ -1014,3 +1014,70 @@ def reject_training(request, pk):
             return JsonResponse({'error': True, 'msg': str(e)}, status=500)
     
     return JsonResponse({'error': True, 'msg': 'Invalid request method.'}, status=400)
+
+
+@login_required
+def print_tqrcode(request, pk):
+    """Generate QR code PDF for training"""
+    rso = get_object_or_404(LdsRso, pk=pk)
+    
+    # Create a custom QR code for this specific training
+    import qrcode
+    from datetime import datetime
+    from django.templatetags.static import static
+    from django.contrib.staticfiles import finders
+    from PIL import Image
+    import base64
+    from io import BytesIO
+    
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=10,
+        border=4,
+    )
+    
+    current_date = datetime.now().strftime("%b %d, %Y %I:%M %p")
+    
+    # Add training-specific data to QR code
+    qr_data = {
+        "Training Title": rso.training.tt_name,
+        "Training ID": rso.id,
+        "Date": current_date,
+        "Venue": rso.venue,
+        "Start Date": rso.start_date.strftime("%b %d, %Y") if rso.start_date else "",
+        "End Date": rso.end_date.strftime("%b %d, %Y") if rso.end_date else "",
+    }
+    
+    qr.add_data(str(qr_data))
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill_color="black", back_color="white").convert('RGBA')
+    
+    # Add DSWD logo if available
+    logo_path = finders.find('image/dswd.png')
+    if logo_path:
+        try:
+            logo = Image.open(logo_path).convert('RGBA')
+            qr_w, qr_h = img.size
+            logo_size = int(min(qr_w, qr_h) * 0.22)
+            logo = logo.resize((logo_size, logo_size), Image.LANCZOS)
+            pos = ((qr_w - logo_size) // 2, (qr_h - logo_size) // 2)
+            img.alpha_composite(logo, dest=pos)
+        except Exception:
+            pass
+    
+    # Convert to base64 for embedding in template
+    out = img.convert('RGB')
+    buf = BytesIO()
+    out.save(buf, format='PNG')
+    buf.seek(0)
+    qr_image_data = base64.b64encode(buf.getvalue()).decode('utf-8')
+    
+    context = {
+        'training_title': rso.training.tt_name,
+        'rso': rso,
+        'qr_code_data': qr_image_data,
+    }
+    
+    return render(request, 'frontend/lds/print_qrCode.html', context)
