@@ -109,7 +109,10 @@
                         <div class="card shadow-sm mb-0" style="overflow: hidden;">
                             <div class="card-header bg-info text-white d-flex justify-content-between align-items-center" style="gap: 8px;">
                                 <strong class="text-truncate"><i class="fas fa-bell"></i> Notifications</strong>
-                                <button type="button" class="btn btn-sm btn-outline-light" onclick="clearAllNotifications()" style="white-space: nowrap;">Clear All</button>
+                                <div class="d-flex" style="gap: 6px;">
+                                    <button type="button" class="btn btn-sm btn-outline-light" onclick="markNotificationsAsRead()" style="white-space: nowrap;">Mark as Read</button>
+                                    <button type="button" class="btn btn-sm btn-outline-light" onclick="clearAllNotifications()" style="white-space: nowrap;">Clear All</button>
+                                </div>
                             </div>
                             <div class="card-body p-0" id="notification-list" style="max-height: calc(min(420px, 60vh) - 56px); overflow-y: auto;">
                                 <!-- Notifications will be inserted here -->
@@ -564,6 +567,7 @@
     <script>
         let notificationCount = 0;
         let lastNotificationCheck = 0;
+        let lastFetchedNotifications = [];
         
         // Toggle notification dropdown
         function toggleNotifications() {
@@ -571,9 +575,38 @@
             if (container.style.display === 'none' || container.style.display === '') {
                 container.style.display = 'block';
                 fetchNotifications();
-                markNotificationsAsRead();
             } else {
                 container.style.display = 'none';
+            }
+        }
+
+        function getSeenTrainingNotificationIds() {
+            try {
+                const raw = localStorage.getItem('lds_training_notifications_seen_ids');
+                const parsed = raw ? JSON.parse(raw) : [];
+                if (!Array.isArray(parsed)) {
+                    return [];
+                }
+                return parsed.map(String);
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function setSeenTrainingNotificationIds(ids) {
+            try {
+                const unique = Array.from(new Set((ids || []).map(String)));
+                localStorage.setItem('lds_training_notifications_seen_ids', JSON.stringify(unique));
+            } catch (e) {
+            }
+        }
+
+        function markTrainingNotificationSeen(id) {
+            const seen = getSeenTrainingNotificationIds();
+            const sid = String(id);
+            if (!seen.includes(sid)) {
+                seen.push(sid);
+                setSeenTrainingNotificationIds(seen);
             }
         }
         
@@ -588,10 +621,14 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.notifications && data.notifications.length > 0) {
-                    displayNotifications(data.notifications);
-                    updateNotificationBadge(data.count);
-                }
+                const notifications = (data && Array.isArray(data.notifications)) ? data.notifications : [];
+                lastFetchedNotifications = notifications;
+
+                const seenIds = new Set(getSeenTrainingNotificationIds());
+                const unseen = notifications.filter(n => !seenIds.has(String(n.id)));
+
+                displayNotifications(notifications);
+                updateNotificationBadge(unseen.length);
             })
             .catch(error => {
                 console.error('Error fetching notifications:', error);
@@ -602,26 +639,48 @@
         function displayNotifications(notifications) {
             const notificationList = document.getElementById('notification-list');
             notificationList.innerHTML = '';
+
+            const seenIds = new Set(getSeenTrainingNotificationIds());
             
             notifications.forEach(notification => {
+                const isSeen = seenIds.has(String(notification.id));
                 const notificationItem = document.createElement('div');
-                notificationItem.className = 'alert alert-info alert-dismissible m-2';
+                notificationItem.className = 'm-2';
+
+                const borderColor = isSeen ? '#cfd8dc' : '#28a745';
+                const iconBg = isSeen ? '#eceff1' : '#d4edda';
+                const iconColor = isSeen ? '#607d8b' : '#28a745';
+                const title = notification.title || 'Notification';
+                const message = notification.message || '';
+                const trainingTitle = notification.training_title || '';
+
                 notificationItem.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <strong>${notification.title}</strong>
-                            <br>
-                            <small>${notification.message}</small>
-                            <br>
-                            <small class="text-muted">${notification.created_at}</small>
+                    <div style="display:flex; align-items:flex-start; gap:12px; padding:12px; border:1px solid ${borderColor}; border-left:6px solid ${borderColor}; border-radius:10px; background:#ffffff;">
+                        <div style="flex:0 0 auto; width:40px; height:40px; border-radius:50%; background:${iconBg}; display:flex; align-items:center; justify-content:center;">
+                            <i class="fas fa-check" style="color:${iconColor};"></i>
                         </div>
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
+
+                        <div style="flex:1 1 auto; min-width:0;">
+                            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
+                                <div style="min-width:0;">
+                                    <div style="font-weight:700; line-height:1.2; color:#111827;">${title}</div>
+                                    ${trainingTitle ? `<div style="font-weight:600; margin-top:2px; color:#1f2937;">${trainingTitle}</div>` : ''}
+                                    ${message ? `<div style="margin-top:4px; color:#4b5563; font-size:12.5px;">${message}</div>` : ''}
+                                </div>
+
+                                <button type="button" class="close js-lds-notification-dismiss" data-notification-id="${String(notification.id)}" aria-label="Close" style="opacity:0.7;">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 `;
                 notificationList.appendChild(notificationItem);
             });
+
+            if (!notifications.length) {
+                notificationList.innerHTML = '<div class="text-center p-3 text-muted">No notifications</div>';
+            }
         }
         
         // Update notification badge
@@ -637,7 +696,12 @@
         }
         
         // Mark notifications as read
-        function markNotificationsAsRead() {
+        function markNotificationsAsRead(options) {
+            const opts = options || {};
+            const ids = (lastFetchedNotifications || []).map(n => String(n.id));
+            const seen = getSeenTrainingNotificationIds();
+            setSeenTrainingNotificationIds(seen.concat(ids));
+
             fetch('/learning-and-development/notifications/mark-read/', {
                 method: 'POST',
                 headers: {
@@ -648,6 +712,9 @@
             .then(data => {
                 if (data.success) {
                     updateNotificationBadge(0);
+                    if (!opts.skipRender) {
+                        displayNotifications(lastFetchedNotifications);
+                    }
                 }
             })
             .catch(error => {
@@ -660,7 +727,8 @@
             const notificationList = document.getElementById('notification-list');
             notificationList.innerHTML = '<div class="text-center p-3 text-muted">No notifications</div>';
             updateNotificationBadge(0);
-            markNotificationsAsRead();
+            lastFetchedNotifications = [];
+            markNotificationsAsRead({ skipRender: true });
         }
         
         // Auto-check for new notifications every 30 seconds
@@ -675,9 +743,13 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    if (data.count > notificationCount) {
-                        updateNotificationBadge(data.count);
-                    }
+                    const notifications = (data && Array.isArray(data.notifications)) ? data.notifications : [];
+                    lastFetchedNotifications = notifications;
+
+                    const seenIds = new Set(getSeenTrainingNotificationIds());
+                    const unseen = notifications.filter(n => !seenIds.has(String(n.id)));
+
+                    updateNotificationBadge(unseen.length);
                 })
                 .catch(error => {
                     console.error('Error checking notifications:', error);
@@ -693,6 +765,28 @@
             if (!container.contains(event.target) && !bell) {
                 container.style.display = 'none';
             }
+        });
+
+        // Dismiss a single notification (mark as seen client-side)
+        document.addEventListener('click', function(event) {
+            const btn = event.target.closest('.js-lds-notification-dismiss');
+            if (!btn) {
+                return;
+            }
+
+            const id = btn.getAttribute('data-notification-id');
+            if (id) {
+                markTrainingNotificationSeen(id);
+            }
+
+            const wrapper = btn.closest('.m-2');
+            if (wrapper) {
+                wrapper.remove();
+            }
+
+            const seenIds = new Set(getSeenTrainingNotificationIds());
+            const unseen = (lastFetchedNotifications || []).filter(n => !seenIds.has(String(n.id)));
+            updateNotificationBadge(unseen.length);
         });
     </script>
     

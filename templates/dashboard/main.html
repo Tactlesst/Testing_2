@@ -856,71 +856,10 @@
             updateTrainingsTableUrl();
         });
 
-        function applyTrainingNotification() {
-            $.ajax({
-                url: '/api/learning-and-development/training-notification/',
-                type: 'GET'
-            }).done(function(response){
-                var hasTraining = response && response.has_training;
-
-                if (!hasTraining) {
-                    $('#training-notification-details').hide();
-                    $('#new-trainings-table-container').show();
-                    setTrainingCardStyle('success');
-                    updateTrainingsTableUrl();
-                    return;
-                }
-
-                $('#new-trainings-table-container').hide();
-                $('#training-notification-details').show();
-
-                var tr = (response.training || {});
-                $('#training-notification-title').text(tr.title || '');
-
-                var dates = '';
-                if (tr.inclusive_dates) {
-                    dates = 'Date: ' + tr.inclusive_dates;
-                } else if (tr.start_date || tr.end_date) {
-                    dates = 'Date: ' + (tr.start_date || '') + (tr.end_date ? (' - ' + tr.end_date) : '');
-                }
-                $('#training-notification-dates').text(dates);
-                $('#training-notification-venue').text(tr.venue ? ('Venue: ' + tr.venue) : '');
-
-                var banner = $('#training-notification-banner');
-                banner.hide().removeClass('alert-warning alert-danger alert-info');
-
-                var progressWrap = $('#training-notification-progress');
-                progressWrap.hide();
-
-                if (response.state === 'near') {
-                    setTrainingCardStyle('warning');
-                    banner.addClass('alert-warning').text('Training Day is Near').show();
-                } else if (response.state === 'ongoing') {
-                    setTrainingCardStyle('danger');
-                    banner.addClass('alert-danger').text('Training is Ongoing').show();
-
-                    var pg = (response.progress || {});
-                    var percent = parseInt(pg.percent || 0);
-                    if (percent < 0) percent = 0;
-                    if (percent > 100) percent = 100;
-
-                    $('#training-notification-progressbar')
-                        .css('width', percent + '%')
-                        .attr('aria-valuenow', percent)
-                        .text(percent + '%');
-
-                    $('#training-notification-progress-text').text(
-                        'Day ' + (pg.elapsed_days || 0) + ' of ' + (pg.total_days || 0) +
-                        (pg.remaining_days !== undefined ? (' | Remaining: ' + pg.remaining_days + ' day(s)') : '')
-                    );
-                    progressWrap.show();
-                } else {
-                    setTrainingCardStyle('info');
-                }
-            });
-        }
-
-        applyTrainingNotification();
+        $('#training-notification-details').hide();
+        $('#new-trainings-table-container').show();
+        setTrainingCardStyle('success');
+        updateTrainingsTableUrl();
 
         $.ajax({
             url: "{% url 'get_password_countdown' request.session.username %}",

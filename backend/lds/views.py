@@ -12,13 +12,13 @@ from django.db.models import OuterRef, Subquery
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
-from django.contrib.auth import get_user_model
 
 from backend.documents.models import DtsDocument, DtsDrn, DtsTransaction, DtsDivisionCc
 from backend.models import Designation, Empprofile, DRNTracker
 from backend.lds.models import LdsLdiPlan, LdsCategory
 from backend.views import generate_serial_string
-from frontend.lds.models import LdsFacilitator, LdsParticipants, LdsRso, LdsTrainingNotify
+from frontend.lds.models import LdsFacilitator, LdsParticipants, LdsRso, LdsTrainingApprovalNotify
+# LdsTrainingNotify
 from frontend.models import PortalConfiguration, Trainingtitle
 from frontend.templatetags.tags import generateDRN, gamify
 
@@ -965,7 +965,7 @@ def generate_drn_for_rso(request):
         )
 @csrf_exempt
 @permission_required('auth.ld_manager')
-def bypass_lds_rrso_approval(request, pk):
+def bypass_lds_rrso_approval(request, pk): 
     rso = get_object_or_404(LdsRso, pk=pk)
     rso.rrso_status = 1
     if rso.rso_status == 1 and not rso.date_approved:
@@ -973,12 +973,9 @@ def bypass_lds_rrso_approval(request, pk):
     rso.save()
 
     if rso.rrso_status == 1 and rso.rso_status == 1:
-        User = get_user_model()
-        recipients = User.objects.filter(is_active=True).only('id')
-
-        LdsTrainingNotify.objects.bulk_create(
-            [LdsTrainingNotify(recipient=u, training=rso) for u in recipients],
-            ignore_conflicts=True,
+        LdsTrainingApprovalNotify.objects.create(
+            tt_title_id=rso.training_id,
+            approved_by_id=request.session.get('emp_id'),
         )
     
     return JsonResponse({'data': 'success', 'msg': 'You have successfully approved the Request for Issuance of Regional Special Order'})
@@ -994,12 +991,9 @@ def bypass_lds_rso_approval(request, pk):
     rso.save()
 
     if rso.rrso_status == 1 and rso.rso_status == 1:
-        User = get_user_model()
-        recipients = User.objects.filter(is_active=True).only('id')
-
-        LdsTrainingNotify.objects.bulk_create(
-            [LdsTrainingNotify(recipient=u, training=rso) for u in recipients],
-            ignore_conflicts=True,
+        LdsTrainingApprovalNotify.objects.create(
+            tt_title_id=rso.training_id,
+            approved_by_id=request.session.get('emp_id'),
         )
     
     return JsonResponse({'data': 'success', 'msg': 'You have successfully approved the Regional Special Order'})
