@@ -8,6 +8,8 @@ from datetime import timedelta, datetime
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db import transaction
 from django.http import JsonResponse, Http404
+from django.core.cache import cache
+import json
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django_mysql.models.functions import SHA1
@@ -997,6 +999,13 @@ def get_training_notifications(request):
     if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
         return JsonResponse({'error': 'Invalid request'}, status=400)
 
+    cache_key = f"lds_training_notifications_seen_ids:{request.user.id}"
+    seen_ids = cache.get(cache_key) or []
+    try:
+        seen_ids_set = set(str(x) for x in seen_ids)
+    except Exception:
+        seen_ids_set = set()
+
     rows = (
         LdsTrainingApprovalNotify.objects
         .select_related('tt_title', 'approved_by')
@@ -1005,6 +1014,8 @@ def get_training_notifications(request):
 
     notification_data = []
     for row in rows:
+        if str(row.id) in seen_ids_set:
+            continue
         notification_data.append({
             'id': row.id,
             'title': 'Training Approved',
@@ -1018,8 +1029,47 @@ def get_training_notifications(request):
 @login_required
 @csrf_exempt
 def mark_notifications_read(request):
-    """AJAX endpoint kept for compatibility; 'seen' is tracked client-side."""
+    """AJAX endpoint to mark notifications as seen for the current user (server cache)."""
     if request.method != 'POST' or request.headers.get('X-Requested-With') != 'XMLHttpRequest':
         return JsonResponse({'error': 'Invalid request'}, status=400)
+
+    cache_key = f"lds_training_notifications_seen_ids:{request.user.id}"
+    seen_ids = cache.get(cache_key) or []
+    try:
+        seen_ids_list = [str(x) for x in seen_ids]
+    except Exception:
+        seen_ids_list = []
+
+    ids = []
+    try:
+        if request.body:
+            payload = json.loads(request.body.decode('utf-8') or '{}')
+            ids = payload.get('ids') or []
+    except Exception:
+        ids = []
+
+    if ids:
+        for _id in ids:
+            seen_ids_list.append(str(_id))
+    else:
+        latest_ids = list(
+            LdsTrainingApprovalNotify.objects.order_by('-id').values_list('id', flat=True)[:10]
+        )
+        for _id in latest_ids:
+            seen_ids_list.append(str(_id))
+
+    # Dedupe while preserving recency (keep the newest IDs), and cap to avoid unbounded cache growth.
+    seen_ids_deduped = []
+    seen_set = set()
+    for _id in reversed(seen_ids_list):
+        if _id in seen_set:
+            continue
+        seen_set.add(_id)
+        seen_ids_deduped.append(_id)
+        if len(seen_ids_deduped) >= 500:
+            break
+    seen_ids_deduped.reverse()
+
+    cache.set(cache_key, seen_ids_deduped, timeout=60 * 60 * 24 * 7)
 
     return JsonResponse({'success': True})

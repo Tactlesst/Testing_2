@@ -64,7 +64,7 @@
                 </div>
             </a>
             <!-- Sidebar -->
-            <div class="sidebar" style="">
+            <div class="sidebar">
                 <!-- Sidebar Menu -->
                 {% include 'sidebar.html' %}
                 <!-- /.sidebar-menu -->
@@ -111,7 +111,6 @@
                                 <strong class="text-truncate"><i class="fas fa-bell"></i> Notifications</strong>
                                 <div class="d-flex" style="gap: 6px;">
                                     <button type="button" class="btn btn-sm btn-outline-light" onclick="markNotificationsAsRead()" style="white-space: nowrap;">Mark as Read</button>
-                                    <button type="button" class="btn btn-sm btn-outline-light" onclick="clearAllNotifications()" style="white-space: nowrap;">Clear All</button>
                                 </div>
                             </div>
                             <div class="card-body p-0" id="notification-list" style="max-height: calc(min(420px, 60vh) - 56px); overflow-y: auto;">
@@ -579,36 +578,6 @@
                 container.style.display = 'none';
             }
         }
-
-        function getSeenTrainingNotificationIds() {
-            try {
-                const raw = localStorage.getItem('lds_training_notifications_seen_ids');
-                const parsed = raw ? JSON.parse(raw) : [];
-                if (!Array.isArray(parsed)) {
-                    return [];
-                }
-                return parsed.map(String);
-            } catch (e) {
-                return [];
-            }
-        }
-
-        function setSeenTrainingNotificationIds(ids) {
-            try {
-                const unique = Array.from(new Set((ids || []).map(String)));
-                localStorage.setItem('lds_training_notifications_seen_ids', JSON.stringify(unique));
-            } catch (e) {
-            }
-        }
-
-        function markTrainingNotificationSeen(id) {
-            const seen = getSeenTrainingNotificationIds();
-            const sid = String(id);
-            if (!seen.includes(sid)) {
-                seen.push(sid);
-                setSeenTrainingNotificationIds(seen);
-            }
-        }
         
         // Fetch notifications via AJAX
         function fetchNotifications() {
@@ -623,12 +592,8 @@
             .then(data => {
                 const notifications = (data && Array.isArray(data.notifications)) ? data.notifications : [];
                 lastFetchedNotifications = notifications;
-
-                const seenIds = new Set(getSeenTrainingNotificationIds());
-                const unseen = notifications.filter(n => !seenIds.has(String(n.id)));
-
                 displayNotifications(notifications);
-                updateNotificationBadge(unseen.length);
+                updateNotificationBadge(data && typeof data.count === 'number' ? data.count : notifications.length);
             })
             .catch(error => {
                 console.error('Error fetching notifications:', error);
@@ -639,17 +604,14 @@
         function displayNotifications(notifications) {
             const notificationList = document.getElementById('notification-list');
             notificationList.innerHTML = '';
-
-            const seenIds = new Set(getSeenTrainingNotificationIds());
             
             notifications.forEach(notification => {
-                const isSeen = seenIds.has(String(notification.id));
                 const notificationItem = document.createElement('div');
                 notificationItem.className = 'm-2';
 
-                const borderColor = isSeen ? '#cfd8dc' : '#28a745';
-                const iconBg = isSeen ? '#eceff1' : '#d4edda';
-                const iconColor = isSeen ? '#607d8b' : '#28a745';
+                const borderColor = '#28a745';
+                const iconBg = '#d4edda';
+                const iconColor = '#28a745';
                 const title = notification.title || 'Notification';
                 const message = notification.message || '';
                 const trainingTitle = notification.training_title || '';
@@ -698,37 +660,37 @@
         // Mark notifications as read
         function markNotificationsAsRead(options) {
             const opts = options || {};
-            const ids = (lastFetchedNotifications || []).map(n => String(n.id));
-            const seen = getSeenTrainingNotificationIds();
-            setSeenTrainingNotificationIds(seen.concat(ids));
+            const ids = Array.isArray(opts.ids) ? opts.ids : (lastFetchedNotifications || []).map(n => String(n.id));
+
+            // Default behavior when clicking "Mark as Read": refresh after marking.
+            const refreshAfter = (typeof opts.refreshAfter === 'boolean') ? opts.refreshAfter : true;
 
             fetch('/learning-and-development/notifications/mark-read/', {
                 method: 'POST',
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ids: ids })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Clear UI only after the server confirms the cache has been updated
+                    lastFetchedNotifications = [];
                     updateNotificationBadge(0);
                     if (!opts.skipRender) {
-                        displayNotifications(lastFetchedNotifications);
+                        displayNotifications([]);
+                    }
+
+                    if (refreshAfter) {
+                        fetchNotifications();
                     }
                 }
             })
             .catch(error => {
                 console.error('Error marking notifications as read:', error);
             });
-        }
-        
-        // Clear all notifications
-        function clearAllNotifications() {
-            const notificationList = document.getElementById('notification-list');
-            notificationList.innerHTML = '<div class="text-center p-3 text-muted">No notifications</div>';
-            updateNotificationBadge(0);
-            lastFetchedNotifications = [];
-            markNotificationsAsRead({ skipRender: true });
         }
         
         // Auto-check for new notifications every 30 seconds
@@ -746,10 +708,7 @@
                     const notifications = (data && Array.isArray(data.notifications)) ? data.notifications : [];
                     lastFetchedNotifications = notifications;
 
-                    const seenIds = new Set(getSeenTrainingNotificationIds());
-                    const unseen = notifications.filter(n => !seenIds.has(String(n.id)));
-
-                    updateNotificationBadge(unseen.length);
+                    updateNotificationBadge(data && typeof data.count === 'number' ? data.count : notifications.length);
                 })
                 .catch(error => {
                     console.error('Error checking notifications:', error);
@@ -775,18 +734,18 @@
             }
 
             const id = btn.getAttribute('data-notification-id');
-            if (id) {
-                markTrainingNotificationSeen(id);
-            }
-
             const wrapper = btn.closest('.m-2');
             if (wrapper) {
                 wrapper.remove();
             }
 
-            const seenIds = new Set(getSeenTrainingNotificationIds());
-            const unseen = (lastFetchedNotifications || []).filter(n => !seenIds.has(String(n.id)));
-            updateNotificationBadge(unseen.length);
+            const remaining = (lastFetchedNotifications || []).filter(n => String(n.id) !== String(id));
+            lastFetchedNotifications = remaining;
+            updateNotificationBadge(remaining.length);
+
+            if (id) {
+                markNotificationsAsRead({ ids: [String(id)], skipRender: true, refreshAfter: true });
+            }
         });
     </script>
     
