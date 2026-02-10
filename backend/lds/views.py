@@ -1,6 +1,6 @@
 import math
 import json
-from datetime import datetime
+from datetime import datetime, time
 from decimal import Decimal, InvalidOperation
 
 from django.contrib.auth.decorators import login_required, permission_required
@@ -21,7 +21,7 @@ from backend.views import generate_serial_string
 from frontend.lds.models import LdsFacilitator, LdsParticipants, LdsRso, LdsTrainingNotify
 from frontend.models import PortalConfiguration, Trainingtitle
 from frontend.templatetags.tags import generateDRN, gamify
-
+from api.wiserv import send_notification
 
 @login_required
 def ld_admin(request):
@@ -35,7 +35,6 @@ def ld_admin(request):
     }
     return render(request, 'backend/lds/rso.html', context)
 
-
 @login_required
 def ldi_prototype(request):
     context = {
@@ -46,7 +45,6 @@ def ldi_prototype(request):
     }
     return render(request, 'backend/lds/ldi_prototype.html', context)
 
-
 @login_required
 def ldi_approved_prototype(request):
     context = {
@@ -56,7 +54,6 @@ def ldi_approved_prototype(request):
         'sub_title': 'ldi_approved_prototype',
     }
     return render(request, 'backend/lds/ldi_approved_prototype.html', context)
-
 
 # nazef working in this code start
 @login_required
@@ -74,7 +71,6 @@ def lds_training_list(request):
         # nazef working in this code end
     }
     return render(request, 'backend/lds/training_list.html', context)
-
 
 @login_required
 def lds_training_list_search(request):
@@ -94,7 +90,6 @@ def lds_training_list_search(request):
         })
 
     return JsonResponse({'results': results})
-
 
 @login_required
 def lds_training_list_ajax(request):
@@ -160,7 +155,6 @@ def lds_training_list_ajax(request):
 
     return JsonResponse({'data': data})
 
-
 @login_required
 def lds_training_list_details(request, training_id):
     training = Trainingtitle.objects.filter(id=training_id).first()
@@ -172,7 +166,6 @@ def lds_training_list_details(request, training_id):
         'training': training,
         'rows': qs,
     })
-
 
 @login_required
 def lds_training_list_participants(request, rso_id):
@@ -199,7 +192,6 @@ def lds_training_list_participants(request, rso_id):
         'external_participants': external_participants,
     })
 
-
 @login_required
 def lds_training_list_details_ajax(request, training_id):
     qs = LdsRso.objects.select_related('created_by__pi__user').filter(training_id=training_id).annotate(
@@ -221,7 +213,6 @@ def lds_training_list_details_ajax(request, training_id):
         })
 
     return JsonResponse({'data': data})
-
 
 @login_required
 def lds_training_list_create(request):
@@ -247,7 +238,6 @@ def lds_training_list_create(request):
         'text': obj.tt_name,
     })
 
-
 @login_required
 def lds_training_title_update(request, training_id):
     if request.method != 'POST':
@@ -262,7 +252,6 @@ def lds_training_title_update(request, training_id):
         return JsonResponse({'error': True, 'msg': 'Training title not found.'}, status=404)
 
     return JsonResponse({'data': 'success', 'msg': 'Training title updated.'})
-
 
 @login_required
 def lds_training_title_delete(request, training_id):
@@ -285,7 +274,6 @@ def lds_training_title_delete(request, training_id):
     obj.delete()
     return JsonResponse({'data': 'success', 'msg': 'Training title deleted.'})
 # nazef working in this code end
-
 
 import os
 from django.shortcuts import render, redirect
@@ -420,6 +408,10 @@ def ldi_plan_get(request, pk):
         'platform',
         'proposed_ldi_activity',
         'proposed_date',
+        'start_date',
+        'end_date',
+        'start_time',
+        'end_time',
         'target_participants',
         'budgetary_requirements',
         'target_competencies',
@@ -432,6 +424,10 @@ def ldi_plan_get(request, pk):
 
     row['budgetary_requirements'] = str(row['budgetary_requirements']) if row.get('budgetary_requirements') is not None else ''
     row['proposed_date'] = str(row['proposed_date']) if row.get('proposed_date') else ''
+    row['start_date'] = str(row['start_date']) if row.get('start_date') else ''
+    row['end_date'] = str(row['end_date']) if row.get('end_date') else ''
+    row['start_time'] = row.get('start_time').strftime('%H:%M') if row.get('start_time') else ''
+    row['end_time'] = row.get('end_time').strftime('%H:%M') if row.get('end_time') else ''
     row['training_category'] = row.get('category__category_name') or ''
     row['training_title'] = row.get('training__tt_name') or ''
     row['proposed_ldi_activity'] = row.get('proposed_ldi_activity') or ''
@@ -454,6 +450,10 @@ def ldi_plan_get_by_training(request, training_id):
             'platform',
             'proposed_ldi_activity',
             'proposed_date',
+            'start_date',
+            'end_date',
+            'start_time',
+            'end_time',
             'target_participants',
             'budgetary_requirements',
             'target_competencies',
@@ -468,6 +468,10 @@ def ldi_plan_get_by_training(request, training_id):
 
     row['budgetary_requirements'] = str(row['budgetary_requirements']) if row.get('budgetary_requirements') is not None else ''
     row['proposed_date'] = str(row['proposed_date']) if row.get('proposed_date') else ''
+    row['start_date'] = str(row['start_date']) if row.get('start_date') else ''
+    row['end_date'] = str(row['end_date']) if row.get('end_date') else ''
+    row['start_time'] = row.get('start_time').strftime('%H:%M') if row.get('start_time') else ''
+    row['end_time'] = row.get('end_time').strftime('%H:%M') if row.get('end_time') else ''
     row['training_category'] = row.get('category__category_name') or ''
     row['training_title'] = row.get('training__tt_name') or ''
     row['proposed_ldi_activity'] = row.get('proposed_ldi_activity') or ''
@@ -538,10 +542,23 @@ def ldi_plan_save(request):
     training_category = (request.POST.get('training_category') or '').strip()
 
     quarter = (request.POST.get('quarter') or '').strip()
+    multi_quarter = (request.POST.get('multi_quarter') or '').strip()
+    selected_quarters = request.POST.getlist('quarters')
     platform = (request.POST.get('platform') or '').strip()
     proposed_ldi_activity = (request.POST.get('proposed_ldi_activity') or '').strip()
     proposed_date = (request.POST.get('proposed_date') or '').strip()
+    start_date = (request.POST.get('start_date') or '').strip()
+    end_date = (request.POST.get('end_date') or '').strip()
+    start_time_str = (request.POST.get('start_time') or '').strip()
+    end_time_str = (request.POST.get('end_time') or '').strip()
     target_participants = (request.POST.get('target_participants') or '').strip()
+
+    if multi_quarter:
+        selected_quarters = [q for q in selected_quarters if q in ['Q1', 'Q2', 'Q3', 'Q4']]
+        if not selected_quarters:
+            selected_quarters = [quarter]
+    else:
+        selected_quarters = [quarter]
 
     proposed_date_value = None
     if proposed_date:
@@ -549,6 +566,42 @@ def ldi_plan_save(request):
             proposed_date_value = datetime.strptime(proposed_date, '%Y-%m-%d').date()
         except ValueError:
             return JsonResponse({'error': True, 'msg': 'Invalid proposed date.'}, status=400)
+
+    def parse_date_field(val, field_label):
+        if not val:
+            return None
+        try:
+            return datetime.strptime(val, '%Y-%m-%d').date()
+        except ValueError:
+            raise ValueError('Invalid ' + field_label + '.')
+
+    start_date_value = None
+    if start_date:
+        try:
+            start_date_value = datetime.strptime(start_date, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({'error': True, 'msg': 'Invalid start date.'}, status=400)
+
+    end_date_value = None
+    if end_date:
+        try:
+            end_date_value = datetime.strptime(end_date, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({'error': True, 'msg': 'Invalid end date.'}, status=400)
+
+    start_time_value = None
+    if start_time_str:
+        try:
+            start_time_value = time.fromisoformat(start_time_str)
+        except ValueError:
+            return JsonResponse({'error': True, 'msg': 'Invalid start time.'}, status=400)
+
+    end_time_value = None
+    if end_time_str:
+        try:
+            end_time_value = time.fromisoformat(end_time_str)
+        except ValueError:
+            return JsonResponse({'error': True, 'msg': 'Invalid end time.'}, status=400)
 
     if not training_id and not training_title:
         return JsonResponse({'error': True, 'msg': 'Training title is required.'}, status=400)
@@ -584,13 +637,16 @@ def ldi_plan_save(request):
                 pi_id=request.session.get('pi_id'),
             )
 
-    defaults = {
+    base_defaults = {
         'category_id': category_obj.id if category_obj else None,
-        'quarter': quarter,
         'platform': platform,
         'training_id': training_obj.id,
         'proposed_ldi_activity': proposed_ldi_activity,
         'proposed_date': proposed_date_value,
+        'start_date': start_date_value,
+        'end_date': end_date_value,
+        'start_time': start_time_value,
+        'end_time': end_time_value,
         'target_participants': target_participants,
         'budgetary_requirements': request.POST.get('budgetary_requirements'),
         'target_competencies': request.POST.get('target_competencies'),
@@ -598,20 +654,57 @@ def ldi_plan_save(request):
         'status': 1,
     }
 
-    if pk:
-        defaults['date_updated'] = timezone.now()
-        LdsLdiPlan.objects.filter(id=pk).update(**defaults)
-        return JsonResponse({'data': 'success', 'msg': 'LDI plan updated.'})
-
-    defaults['date_created'] = timezone.now()
     emp_id = request.session.get('emp_id')
+    created_by_id = None
     if emp_id and Empprofile.objects.filter(id=emp_id).exists():
-        defaults['created_by_id'] = emp_id
-    else:
-        defaults['created_by_id'] = None
-    defaults['date_approved'] = timezone.now()
-    obj = LdsLdiPlan.objects.create(**defaults)
-    return JsonResponse({'data': 'success', 'msg': 'LDI plan created.', 'id': obj.id})
+        created_by_id = emp_id
+
+    created_ids = []
+    updated_ids = []
+
+    try:
+        with transaction.atomic():
+            for q in selected_quarters:
+                loop_defaults = dict(base_defaults)
+                loop_defaults['quarter'] = q
+
+                if multi_quarter:
+                    q_start = (request.POST.get('start_date_' + q) or '').strip()
+                    q_end = (request.POST.get('end_date_' + q) or '').strip()
+                    try:
+                        loop_defaults['start_date'] = parse_date_field(q_start, 'start date')
+                        loop_defaults['end_date'] = parse_date_field(q_end, 'end date')
+                    except ValueError as ve:
+                        return JsonResponse({'error': True, 'msg': str(ve)}, status=400)
+
+                if pk and q == quarter:
+                    loop_defaults['date_updated'] = timezone.now()
+                    LdsLdiPlan.objects.filter(id=pk).update(**loop_defaults)
+                    updated_ids.append(pk)
+                    continue
+
+                existing = LdsLdiPlan.objects.filter(training_id=training_obj.id, quarter=q).order_by('-id').first()
+                if existing:
+                    loop_defaults['date_updated'] = timezone.now()
+                    LdsLdiPlan.objects.filter(id=existing.id).update(**loop_defaults)
+                    updated_ids.append(existing.id)
+                else:
+                    loop_defaults['date_created'] = timezone.now()
+                    loop_defaults['created_by_id'] = created_by_id
+                    loop_defaults['date_approved'] = timezone.now()
+                    obj = LdsLdiPlan.objects.create(**loop_defaults)
+                    created_ids.append(obj.id)
+    except IntegrityError:
+        return JsonResponse({'error': True, 'msg': 'Unable to save LDI plan due to a database constraint.'}, status=400)
+
+    if pk:
+        if multi_quarter and len(selected_quarters) > 1:
+            return JsonResponse({'data': 'success', 'msg': 'LDI plan saved for multiple quarters.', 'created_ids': created_ids, 'updated_ids': updated_ids})
+        return JsonResponse({'data': 'success', 'msg': 'LDI plan updated.', 'created_ids': created_ids, 'updated_ids': updated_ids})
+
+    if multi_quarter and len(selected_quarters) > 1:
+        return JsonResponse({'data': 'success', 'msg': 'LDI plans created for selected quarters.', 'created_ids': created_ids, 'updated_ids': updated_ids})
+    return JsonResponse({'data': 'success', 'msg': 'LDI plan created.', 'created_ids': created_ids, 'updated_ids': updated_ids})
 
 @login_required
 def ldi_plan_delete(request, pk):
@@ -671,6 +764,8 @@ def ldi_plan(request, plan_id):
             'year': timezone.now().year,
             'category': categories[0] if categories else '',
             'activities': [],
+            'start_time': '08:00',
+            'end_time': '17:00',
             'participants': '',
             'budget': '',
             'competencies': '',
@@ -686,6 +781,17 @@ def ldi_plan(request, plan_id):
         activities = (request.POST.get('activities') or '').split('\n')
         quarter = request.POST.get('quarter')
         year = request.POST.get('year')
+        start_time = (request.POST.get('start_time') or '').strip()
+        end_time = (request.POST.get('end_time') or '').strip()
+
+        multi_quarter = (request.POST.get('multi_quarter') or '').strip()
+        selected_quarters = request.POST.getlist('quarters')
+        if multi_quarter:
+            selected_quarters = [q for q in selected_quarters if q in ['Q1', 'Q2', 'Q3', 'Q4']]
+            if not selected_quarters:
+                selected_quarters = [quarter]
+        else:
+            selected_quarters = [quarter]
 
         # Handle new category
         if category == "_new" and new_category:
@@ -717,13 +823,13 @@ def ldi_plan(request, plan_id):
             if not new_id or new_id.lower() == 'new':
                 new_id = f"LDI-{year}-{str(next_number).zfill(4)}"
 
-            new_plan = {
-                "id": new_id,
+            base_plan = {
                 "training_title": training_title,
-                "quarter": quarter,
                 "year": year,
                 "category": category,
                 "activities": [a.strip() for a in activities if a.strip()],
+                "start_time": start_time or "08:00",
+                "end_time": end_time or "17:00",
                 "participants": request.POST.get('participants'),
                 "budget": request.POST.get('budget'),
                 "competencies": request.POST.get('competencies'),
@@ -732,14 +838,58 @@ def ldi_plan(request, plan_id):
                 "status": "Pending Approval"
             }
 
-            if existing_index is not None:
-                plans[existing_index] = new_plan
-            else:
-                plans.append(new_plan)
-            save_plans(plans)
-            message = "LDI Plan saved successfully."
+            created_or_updated = 0
+            first_saved_plan = None
 
-            plan = new_plan
+            for q in selected_quarters:
+                target_id = None
+                target_existing_index = None
+
+                if str(plan_id).lower() != 'new' and existing_index is not None:
+                    existing_plan = plans[existing_index]
+                    if str(existing_plan.get('quarter')) == str(q):
+                        target_id = new_id
+                        target_existing_index = existing_index
+
+                if target_id is None:
+                    try:
+                        match_index = next(
+                            i for i, p in enumerate(plans)
+                            if str(p.get('training_title', '')).strip().lower() == training_title.strip().lower()
+                            and str(p.get('year')) == str(year)
+                            and str(p.get('quarter')) == str(q)
+                        )
+                        target_existing_index = match_index
+                        target_id = str(plans[match_index].get('id'))
+                    except StopIteration:
+                        target_existing_index = None
+                        target_id = f"LDI-{year}-{str(next_number).zfill(4)}"
+                        next_number += 1
+
+                new_plan = {
+                    "id": target_id,
+                    "quarter": q,
+                    **base_plan,
+                }
+
+                if target_existing_index is not None:
+                    plans[target_existing_index] = new_plan
+                else:
+                    plans.append(new_plan)
+
+                created_or_updated += 1
+                if first_saved_plan is None:
+                    first_saved_plan = new_plan
+
+            save_plans(plans)
+
+            if multi_quarter and len(selected_quarters) > 1:
+                message = f"LDI Plan saved successfully for {len(selected_quarters)} quarters."
+            else:
+                message = "LDI Plan saved successfully."
+
+            if first_saved_plan is not None:
+                plan = first_saved_plan
 
     return render(request, 'backend/lds/ldi_plan.html', {
         'categories': categories,
@@ -898,7 +1048,6 @@ def print_rso(request, pk):
         'rd': Designation.objects.filter(id=1).first(),
     }
     return render(request, 'backend/lds/print_rso.html', context)
-
 
 @login_required
 def generate_drn_for_rso(request):

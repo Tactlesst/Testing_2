@@ -10,6 +10,7 @@ from backend.calendar.models import CalendarType
 from backend.documents.models import Docs201Type, DocsIssuancesType
 from backend.pas.clearance.models import ClearanceContent
 from backend.libraries.leave.models import LeaveType, LeaveSubtype, LeaveSpent, LeavePermissions
+from backend.lds.models import LdsCategory
 from frontend.models import Bloodtype, Civilstatus, Hobbies, DownloadableformsClass, DownloadableformsSopClass, Honors,\
     Degree, Educationlevel, Eligibility, School, Brgy, City, Province, Countries, Organization, Nonacad, Trainingtitle,\
     Trainingtype, Claims, Mot
@@ -26,6 +27,13 @@ from backend.libraries.leave.forms import LeavetypeForm, LeavesubtypeForm, Leave
 
 from landing.models import AppStatus
 from landing.forms import AppStatusForm
+
+
+@admin.register(LdsCategory)
+class LdsCategoryAdmin(admin.ModelAdmin):
+    list_display = ["category_name", "approve"]
+    search_fields = ["category_name"]
+    ordering = ["category_name"]
 
 
 @admin.register(Awards)

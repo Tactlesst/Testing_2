@@ -10,7 +10,7 @@ from django.core.mail import EmailMultiAlternatives
 from suds.client import Client
 from django.template.loader import get_template
 
-# from backend.models import SMSLogs, Empprofile
+from backend.models import SMSLogs, Empprofile
 
 
 def send_sms_notification(message, contact_number, emp_id, receiver_id=None):
@@ -20,15 +20,15 @@ def send_sms_notification(message, contact_number, emp_id, receiver_id=None):
         result = client.service.sendMessage(UserName='crgwiservuser', PassWord='#w153rvcr9!', WSID='0',
                                            MobileNo=contact_number, Message=message)
 
-        # if result:
-        #     SMSLogs.objects.create(
-        #         message=message,
-        #         contact_number=contact_number,
-        #         emp_id=emp_id,
-        #         receiver_id=receiver_id if receiver_id else None
-        #     )
-        #
-        #     return result
+        if result:
+            SMSLogs.objects.create(
+                message=message,
+                contact_number=contact_number,
+                emp_id=emp_id,
+                receiver_id=receiver_id if receiver_id else None
+            )
+
+            return result
     except Exception:
         pass
 
