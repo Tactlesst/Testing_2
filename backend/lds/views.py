@@ -566,6 +566,14 @@ def ldi_plan_save(request):
         except ValueError:
             return JsonResponse({'error': True, 'msg': 'Invalid proposed date.'}, status=400)
 
+    def parse_date_field(val, field_label):
+        if not val:
+            return None
+        try:
+            return datetime.strptime(val, '%Y-%m-%d').date()
+        except ValueError:
+            raise ValueError('Invalid ' + field_label + '.')
+
     start_date_value = None
     if start_date:
         try:
@@ -658,6 +666,15 @@ def ldi_plan_save(request):
             for q in selected_quarters:
                 loop_defaults = dict(base_defaults)
                 loop_defaults['quarter'] = q
+
+                if multi_quarter:
+                    q_start = (request.POST.get('start_date_' + q) or '').strip()
+                    q_end = (request.POST.get('end_date_' + q) or '').strip()
+                    try:
+                        loop_defaults['start_date'] = parse_date_field(q_start, 'start date')
+                        loop_defaults['end_date'] = parse_date_field(q_end, 'end date')
+                    except ValueError as ve:
+                        return JsonResponse({'error': True, 'msg': str(ve)}, status=400)
 
                 if pk and q == quarter:
                     loop_defaults['date_updated'] = timezone.now()

@@ -518,6 +518,10 @@
             var endpointUrl = '/api/learning-and-development/latest-approved-training/';
             var storageKey = 'latest_approved_training_id_seen';
             var autoCloseTimer = null;
+            var pollTimer = null;
+            var pollDelayMs = 5000;
+            var pollDelayMinMs = 5000;
+            var pollDelayMaxMs = 60000;
 
             function showApprovedTrainingAlert() {
                 $('#global-training-approved-alert-container').stop(true, true).fadeIn(150);
@@ -539,18 +543,45 @@
                 hideApprovedTrainingAlert();
             });
 
+            function clearPollTimer() {
+                if (pollTimer) {
+                    clearTimeout(pollTimer);
+                    pollTimer = null;
+                }
+            }
+
+            function scheduleNextPoll(delayMs) {
+                clearPollTimer();
+                pollTimer = setTimeout(function () {
+                    pollLatestApprovedTraining();
+                }, delayMs);
+            }
+
+            function isPageVisible() {
+                return document.visibilityState === 'visible';
+            }
+
             function pollLatestApprovedTraining() {
+                if (!isPageVisible()) {
+                    scheduleNextPoll(pollDelayMaxMs);
+                    return;
+                }
                 $.ajax({
                     url: endpointUrl,
                     type: 'GET',
                     dataType: 'json',
                     success: function (data) {
+                        var foundNew = false;
                         if (!data || !data.has_latest) {
+                            pollDelayMs = Math.min(pollDelayMaxMs, pollDelayMs * 2);
+                            scheduleNextPoll(pollDelayMs);
                             return;
                         }
 
                         var latestId = data.id;
                         if (!latestId) {
+                            pollDelayMs = Math.min(pollDelayMaxMs, pollDelayMs * 2);
+                            scheduleNextPoll(pollDelayMs);
                             return;
                         }
 
@@ -562,6 +593,8 @@
                         }
 
                         if (seenId && String(seenId) === String(latestId)) {
+                            pollDelayMs = Math.min(pollDelayMaxMs, pollDelayMs * 2);
+                            scheduleNextPoll(pollDelayMs);
                             return;
                         }
 
@@ -570,13 +603,29 @@
                         } catch (e) {}
 
                         showApprovedTrainingAlert();
+                        foundNew = true;
+
+                        if (foundNew) {
+                            pollDelayMs = pollDelayMinMs;
+                        }
+                        scheduleNextPoll(pollDelayMs);
                     }
+                }).fail(function () {
+                    pollDelayMs = Math.min(pollDelayMaxMs, pollDelayMs * 2);
+                    scheduleNextPoll(pollDelayMs);
                 });
             }
 
             $(document).ready(function () {
+                pollDelayMs = pollDelayMinMs;
                 pollLatestApprovedTraining();
-                setInterval(pollLatestApprovedTraining, 5000);
+
+                document.addEventListener('visibilitychange', function () {
+                    if (isPageVisible()) {
+                        pollDelayMs = pollDelayMinMs;
+                        pollLatestApprovedTraining();
+                    }
+                });
             });
         })();
     </script>

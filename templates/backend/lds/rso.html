@@ -294,6 +294,33 @@
             $('#ldi-multi-quarter').prop('checked', false);
             $('#ldi-quarters-container').addClass('d-none');
             $('#ldi-quarters-container input[name="quarters"]').prop('checked', false);
+            $('#ldi-quarter-single-wrap').removeClass('d-none');
+            $('#ldi-start-date-single-wrap').removeClass('d-none');
+            $('#ldi-end-date-single-wrap').removeClass('d-none');
+            $('#ldi-quarter-date-ranges').addClass('d-none');
+            $('#ldi-quarter-date-ranges [data-quarter-range]').addClass('d-none');
+            $('#ldi-quarter-date-ranges input[type="date"]').val('');
+        }
+
+        function syncQuarterDateRangesVisibility() {
+            if (!$('#ldi-multi-quarter').is(':checked')) {
+                return;
+            }
+
+            var selected = [];
+            $('#ldi-quarters-container input[name="quarters"]:checked').each(function () {
+                selected.push($(this).val());
+            });
+
+            $('#ldi-quarter-date-ranges [data-quarter-range]').each(function () {
+                var q = $(this).data('quarter-range');
+                if (selected.indexOf(q) !== -1) {
+                    $(this).removeClass('d-none');
+                } else {
+                    $(this).addClass('d-none');
+                    $(this).find('input[type="date"]').val('');
+                }
+            });
         }
 
         function syncMultiQuarterDefaults() {
@@ -311,10 +338,19 @@
         $(document).on('change', '#ldi-multi-quarter', function () {
             if ($(this).is(':checked')) {
                 $('#ldi-quarters-container').removeClass('d-none');
+                $('#ldi-quarter-single-wrap').addClass('d-none');
+                $('#ldi-start-date-single-wrap').addClass('d-none');
+                $('#ldi-end-date-single-wrap').addClass('d-none');
+                $('#ldi-quarter-date-ranges').removeClass('d-none');
                 syncMultiQuarterDefaults();
+                syncQuarterDateRangesVisibility();
             } else {
                 resetMultiQuarterUi();
             }
+        });
+
+        $(document).on('change', '#ldi-quarters-container input[name="quarters"]', function () {
+            syncQuarterDateRangesVisibility();
         });
 
         $(document).on('change', '#ldi-quarter', function () {

@@ -225,7 +225,7 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="form-group col-md-3">
+                        <div class="form-group col-md-3" id="ldi-quarter-single-wrap">
                             <label>Quarter <span class="text-danger">*</span></label>
                             <select class="form-control" name="quarter" id="ldi-quarter">
                                 <option value="Q1">1st Quarter</option>
@@ -269,6 +269,72 @@
                         </div>
                     </div>
 
+                    <div class="form-row d-none" id="ldi-quarter-date-ranges">
+                        <div class="form-group col-12 mb-1">
+                            <label class="mb-1">Quarter date ranges</label>
+                        </div>
+                        <div class="form-group col-12" data-quarter-range="Q1">
+                            <div class="border rounded p-2">
+                                <div class="font-weight-bold mb-2">Q1</div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6 mb-0">
+                                        <label>Start Date</label>
+                                        <input type="date" name="start_date_Q1" class="form-control">
+                                    </div>
+                                    <div class="form-group col-md-6 mb-0">
+                                        <label>End Date</label>
+                                        <input type="date" name="end_date_Q1" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group col-12" data-quarter-range="Q2">
+                            <div class="border rounded p-2">
+                                <div class="font-weight-bold mb-2">Q2</div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6 mb-0">
+                                        <label>Start Date</label>
+                                        <input type="date" name="start_date_Q2" class="form-control">
+                                    </div>
+                                    <div class="form-group col-md-6 mb-0">
+                                        <label>End Date</label>
+                                        <input type="date" name="end_date_Q2" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group col-12" data-quarter-range="Q3">
+                            <div class="border rounded p-2">
+                                <div class="font-weight-bold mb-2">Q3</div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6 mb-0">
+                                        <label>Start Date</label>
+                                        <input type="date" name="start_date_Q3" class="form-control">
+                                    </div>
+                                    <div class="form-group col-md-6 mb-0">
+                                        <label>End Date</label>
+                                        <input type="date" name="end_date_Q3" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group col-12" data-quarter-range="Q4">
+                            <div class="border rounded p-2">
+                                <div class="font-weight-bold mb-2">Q4</div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6 mb-0">
+                                        <label>Start Date</label>
+                                        <input type="date" name="start_date_Q4" class="form-control">
+                                    </div>
+                                    <div class="form-group col-md-6 mb-0">
+                                        <label>End Date</label>
+                                        <input type="date" name="end_date_Q4" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label>Proposed LDI / Activities <span class="text-danger">*</span></label>
                         <textarea class="form-control" name="proposed_ldi_activity" id="ldi-proposed-ldi-activity" rows="3"></textarea>
@@ -279,11 +345,11 @@
                             <label>Proposed Date <span class="text-danger">*</span></label>
                             <input type="date" name="proposed_date" id="ldi-proposed-date" class="form-control">
                         </div>
-                        <div class="form-group col-md-4">
+                        <div class="form-group col-md-4" id="ldi-start-date-single-wrap">
                             <label>Start Date</label>
                             <input type="date" name="start_date" id="ldi-start-date" class="form-control">
                         </div>
-                        <div class="form-group col-md-4">
+                        <div class="form-group col-md-4" id="ldi-end-date-single-wrap">
                             <label>End Date</label>
                             <input type="date" name="end_date" id="ldi-end-date" class="form-control">
                         </div>
