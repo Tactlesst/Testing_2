@@ -121,7 +121,7 @@ class LdsRso(models.Model):
     start_date = models.DateTimeField(blank=True, null=True)
 
     end_date = models.DateTimeField(blank=True, null=True)
-
+    quarter = models.CharField(max_length=2, blank=True, null=True)
     rrso_status = models.IntegerField(blank=True, null=True)
 
     rso_status = models.IntegerField(blank=True, null=True)
@@ -313,7 +313,18 @@ class LdsRso(models.Model):
         db_table = 'lds_rso'
 
 
+class LdsRsoBudgetBaseline(models.Model):
+    rso = models.ForeignKey('LdsRso', models.DO_NOTHING, db_column='rso_id')
+    training = models.ForeignKey(Trainingtitle, models.DO_NOTHING, db_column='training_id')
+    planned_participants = models.IntegerField(blank=True, null=True)
+    planned_budget = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    requested_participants = models.IntegerField(blank=True, null=True)
+    requested_budget = models.DecimalField(max_digits=15, decimal_places=2, blank=True, null=True)
+    date_created = models.DateTimeField(default=timezone.now)
 
+    class Meta:
+        managed = False
+        db_table = 'lds_rso_budget_baseline'
 
 
 @receiver(models.signals.pre_save, sender=LdsRso)

@@ -297,6 +297,73 @@
             return true;
         }
 
+        function resetMultiQuarterUi() {
+            $('#ldi-multi-quarter').prop('checked', false);
+            $('#ldi-quarters-container').addClass('d-none');
+            $('#ldi-quarters-container input[name="quarters"]').prop('checked', false);
+            $('#ldi-quarter-single-wrap').removeClass('d-none');
+            $('#ldi-start-date-single-wrap').removeClass('d-none');
+            $('#ldi-end-date-single-wrap').removeClass('d-none');
+            $('#ldi-quarter-date-ranges').addClass('d-none');
+            $('#ldi-quarter-date-ranges [data-quarter-range]').addClass('d-none');
+            $('#ldi-quarter-date-ranges input[type="date"]').val('');
+        }
+
+        function syncQuarterDateRangesVisibility() {
+            if (!$('#ldi-multi-quarter').is(':checked')) {
+                return;
+            }
+
+            var selected = [];
+            $('#ldi-quarters-container input[name="quarters"]:checked').each(function () {
+                selected.push($(this).val());
+            });
+
+            $('#ldi-quarter-date-ranges [data-quarter-range]').each(function () {
+                var q = $(this).data('quarter-range');
+                if (selected.indexOf(q) !== -1) {
+                    $(this).removeClass('d-none');
+                } else {
+                    $(this).addClass('d-none');
+                    $(this).find('input[type="date"]').val('');
+                }
+            });
+        }
+
+        function syncMultiQuarterDefaults() {
+            if (!$('#ldi-multi-quarter').is(':checked')) {
+                return;
+            }
+
+            var selected = $('#ldi-quarter').val() || 'Q1';
+            var $checks = $('#ldi-quarters-container input[name="quarters"]');
+            if ($checks.filter(':checked').length === 0) {
+                $checks.filter('[value="' + selected + '"]').prop('checked', true);
+            }
+        }
+
+        $(document).on('change', '#ldi-multi-quarter', function () {
+            if ($(this).is(':checked')) {
+                $('#ldi-quarters-container').removeClass('d-none');
+                $('#ldi-quarter-single-wrap').addClass('d-none');
+                $('#ldi-start-date-single-wrap').addClass('d-none');
+                $('#ldi-end-date-single-wrap').addClass('d-none');
+                $('#ldi-quarter-date-ranges').removeClass('d-none');
+                syncMultiQuarterDefaults();
+                syncQuarterDateRangesVisibility();
+            } else {
+                resetMultiQuarterUi();
+            }
+        });
+
+        $(document).on('change', '#ldi-quarters-container input[name="quarters"]', function () {
+            syncQuarterDateRangesVisibility();
+        });
+
+        $(document).on('change', '#ldi-quarter', function () {
+            syncMultiQuarterDefaults();
+        });
+
         $('#ldi-budgetary-requirements').on('input', function () {
             validateBudget();
         });
@@ -305,48 +372,29 @@
             validateParticipants();
         });
 
-        $('#create-btn').on('click', function () {
+        $(document).on('click', '#create-btn', function () {
             $('#ldi-id').val('');
             $('#ldi-form').trigger('reset');
             clearFieldError($('#ldi-target-participants'), 'participants-error');
             clearFieldError($('#ldi-budgetary-requirements'), 'budget-error');
+            resetMultiQuarterUi();
             $('#ldi-proposed-date').val(new Date().toISOString().slice(0, 10));
+            $('#ldi-start-date').val('');
+            $('#ldi-end-date').val('');
+            $('#ldi-start-time').val('08:00');
+            $('#ldi-end-time').val('17:00');
             $('#ldi-category-id').val('');
             $('#ldi-quarter').val('Q1');
             $('#ldi-platform').val('Face-to-Face');
             ldiModal.modal('show');
         });
 
-        function escapeHtml(value) {
-            return String(value || '').replace(/[&<>'"]/g, function (c) {
-                return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' }[c]);
-            });
-        }
-
-        function formatDateYmdToMonDYear(value) {
-            if (!value) {
-                return '';
-            }
-            var parts = String(value).split('-');
-            if (parts.length !== 3) {
-                return value;
-            }
-            var yyyy = parseInt(parts[0], 10);
-            var mm = parseInt(parts[1], 10) - 1;
-            var dd = parseInt(parts[2], 10);
-            var d = new Date(yyyy, mm, dd);
-            if (isNaN(d.getTime())) {
-                return value;
-            }
-            return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
-        }
-
         function loadLdiPlanDetails(trainingId, trainingTitle) {
             var container = $('#ldi-plan-details-content');
             container.html('<div class="text-center p-3">Loading...</div>');
 
             container.load(
-                '{% url "lds_training_list_details" 0 %}'.replace('/0/', '/' + trainingId + '/'),
+                '{% url "ldi_plan_details" 0 %}'.replace('/0/', '/' + trainingId + '/'),
                 function (response, status) {
                     if (status === 'error') {
                         container.html('<div class="text-center text-danger p-3">Unable to load requests.</div>');
@@ -366,9 +414,14 @@
                     $('#ldi-training-title').val(resp.row.training_title || trainingTitle || '');
                     $('#ldi-category-id').val(resp.row.category_id || '');
                     $('#ldi-quarter').val(resp.row.quarter || 'Q1');
+                    resetMultiQuarterUi();
                     $('#ldi-platform').val(resp.row.platform || 'Face-to-Face');
                     $('#ldi-proposed-ldi-activity').val(resp.row.proposed_ldi_activity || '');
                     $('#ldi-proposed-date').val(resp.row.proposed_date || new Date().toISOString().slice(0, 10));
+                    $('#ldi-start-date').val(resp.row.start_date || '');
+                    $('#ldi-end-date').val(resp.row.end_date || '');
+                    $('#ldi-start-time').val(resp.row.start_time || '08:00');
+                    $('#ldi-end-time').val(resp.row.end_time || '17:00');
                     $('#ldi-target-participants').val(resp.row.target_participants || '');
                     $('#ldi-budgetary-requirements').val(resp.row.budgetary_requirements || '');
                     clearFieldError($('#ldi-target-participants'), 'participants-error');
@@ -382,7 +435,12 @@
                 $('#ldi-form').trigger('reset');
                 $('#ldi-training-id').val(trainingId);
                 $('#ldi-training-title').val(trainingTitle || '');
+                resetMultiQuarterUi();
                 $('#ldi-proposed-date').val(new Date().toISOString().slice(0, 10));
+                $('#ldi-start-date').val('');
+                $('#ldi-end-date').val('');
+                $('#ldi-start-time').val('08:00');
+                $('#ldi-end-time').val('17:00');
                 $('#ldi-category-id').val('');
                 $('#ldi-quarter').val('Q1');
                 $('#ldi-platform').val('Face-to-Face');
@@ -607,8 +665,48 @@
             openLdiModalForTraining(trainingId, trainingTitle);
         });
 
+        $(document).on('click', 'a.ldi-plan-edit-by-id', function () {
+            var planId = $(this).data('plan-id');
+            if (!planId) {
+                return;
+            }
+
+            $.ajax({
+                url: '{% url "ldi_plan_get" 0 %}'.replace('/0/', '/' + planId + '/'),
+                type: 'GET',
+            }).done(function (resp) {
+                if (resp && resp.data === 'success' && resp.row) {
+                    $('#ldi-id').val(resp.row.id);
+                    $('#ldi-training-id').val(resp.row.training_id || '');
+                    $('#ldi-training-title').val(resp.row.training_title || '');
+                    $('#ldi-category-id').val(resp.row.category_id || '');
+                    $('#ldi-quarter').val(resp.row.quarter || 'Q1');
+                    resetMultiQuarterUi();
+                    $('#ldi-platform').val(resp.row.platform || 'Face-to-Face');
+                    $('#ldi-proposed-ldi-activity').val(resp.row.proposed_ldi_activity || '');
+                    $('#ldi-proposed-date').val(resp.row.proposed_date || new Date().toISOString().slice(0, 10));
+                    $('#ldi-start-date').val(resp.row.start_date || '');
+                    $('#ldi-end-date').val(resp.row.end_date || '');
+                    $('#ldi-start-time').val(resp.row.start_time || '08:00');
+                    $('#ldi-end-time').val(resp.row.end_time || '17:00');
+                    $('#ldi-target-participants').val(resp.row.target_participants || '');
+                    $('#ldi-budgetary-requirements').val(resp.row.budgetary_requirements || '');
+                    clearFieldError($('#ldi-target-participants'), 'participants-error');
+                    clearFieldError($('#ldi-budgetary-requirements'), 'budget-error');
+                    $('#ldi-target-competencies').val(resp.row.target_competencies || '');
+                    $('#ldi-venue').val(resp.row.venue || '');
+
+                    $('#ldi_plan_details').modal('hide');
+                    ldiModal.modal('show');
+                }
+            });
+        });
+
         $(document).on('click', 'a[data-role=ldi-row-delete]', function () {
             var id = $(this).data('id');
+            if (!id) {
+                return;
+            }
 
             Swal.fire({
                 title: 'Are you sure?',

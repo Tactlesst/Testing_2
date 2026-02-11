@@ -10,22 +10,30 @@
         <thead>
             <tr>
                 <th width="12%" class="text-center">Quarter</th>
-                <th width="15%" class="text-center">Platform</th>
                 <th width="12%" class="text-center">Proposed Date</th>
-                <th width="25%">Target Participants</th>
-                <th width="15%">Budget</th>
-                <th width="21%">Category</th>
+                <th width="20%" class="text-center">Start - End</th>
+                <th width="15%" class="text-center">Platform</th>
+                <th width="21%">Participants</th>
+                <th width="20%">Budget</th>
             </tr>
         </thead>
         <tbody>
             {% for row in rows %}
             <tr>
                 <td class="text-center">{{ row.quarter|default_if_none:'' }}</td>
-                <td class="text-center">{{ row.platform|default_if_none:'' }}</td>
                 <td class="text-center">{{ row.proposed_date|date:"M d, Y" }}</td>
+                <td class="text-center">
+                    {% if row.start_date and row.end_date %}
+                        {{ row.start_date|date:"Y-m-d" }} - {{ row.end_date|date:"Y-m-d" }}
+                    {% elif row.start_date %}
+                        {{ row.start_date|date:"Y-m-d" }}
+                    {% else %}
+                        
+                    {% endif %}
+                </td>
+                <td class="text-center">{{ row.platform|default_if_none:'' }}</td>
                 <td style="word-break: break-word;">{{ row.target_participants|default_if_none:'' }}</td>
                 <td style="word-break: break-word;">{{ row.budgetary_requirements|default_if_none:'' }}</td>
-                <td style="word-break: break-word;">{{ row.category.category_name|default_if_none:'' }}</td>
             </tr>
             {% empty %}
             <tr>

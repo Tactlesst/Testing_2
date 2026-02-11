@@ -5,6 +5,8 @@ import re
 import threading
 from datetime import timedelta, datetime
 
+from decimal import Decimal, InvalidOperation
+
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db import transaction
 from django.http import JsonResponse, Http404
@@ -17,10 +19,10 @@ from dotenv import load_dotenv
 
 from api.wiserv import send_notification
 from backend.models import Division, Designation, Empprofile, Section
+from backend.lds.models import LdsLdiPlan
 from frontend.lds.forms import UploadAttachmentFormLDS
 from frontend.lds.models import LdsRso, LdsParticipants, LdsFacilitator, LdsCertificateType, LdsIDP, LdsIDPType, \
-    LdsIDPContent, LdsTrainingApprovalNotify
-    # LdsTrainingNotify
+    LdsIDPContent, LdsRsoBudgetBaseline
 from frontend.models import Trainingtitle, PortalConfiguration
 
 load_dotenv()
@@ -44,6 +46,52 @@ def lds_rrso(request):
             time_start = (request.POST.get('time_start') or '').strip()
             time_end = (request.POST.get('time_end') or '').strip()
 
+            quarter = (request.POST.get('quarter') or '').strip()
+            if quarter not in ['Q1', 'Q2', 'Q3', 'Q4']:
+                return JsonResponse({'error': True, 'msg': 'Quarter is required.'}, status=400)
+
+            requested_participants = (request.POST.get('participant_amount') or '').strip()
+            requested_budget = (request.POST.get('budget_amount') or '').strip()
+
+            requested_participants_value = None
+            if requested_participants:
+                try:
+                    requested_participants_value = int(requested_participants)
+                except Exception:
+                    return JsonResponse({'error': True, 'msg': 'Amount of Participants must be a whole number only.'}, status=400)
+
+            requested_budget_value = None
+            if requested_budget:
+                try:
+                    requested_budget_value = Decimal(str(requested_budget))
+                except (InvalidOperation, ValueError):
+                    return JsonResponse({'error': True, 'msg': 'Budget Amount must be a valid number (e.g. 100 or 100.50).'}, status=400)
+
+            latest_ldi = (
+                LdsLdiPlan.objects
+                .filter(training_id=training_id, quarter=quarter)
+                .order_by('-date_created', '-id')
+                .values('target_participants', 'budgetary_requirements')
+                .first()
+            )
+
+            planned_participants_value = None
+            planned_budget_value = None
+            if latest_ldi:
+                tp_raw = (latest_ldi.get('target_participants') or '').strip() if isinstance(latest_ldi.get('target_participants'), str) else latest_ldi.get('target_participants')
+                if tp_raw is not None and str(tp_raw).strip() != '':
+                    try:
+                        planned_participants_value = int(str(tp_raw).strip())
+                    except Exception:
+                        planned_participants_value = None
+
+                budget_raw = latest_ldi.get('budgetary_requirements')
+                if budget_raw is not None and str(budget_raw).strip() != '':
+                    try:
+                        planned_budget_value = Decimal(str(budget_raw).strip())
+                    except (InvalidOperation, ValueError):
+                        planned_budget_value = None
+
             start_dt = f"{start_date} {time_start or '08:00'}" if start_date else None
             end_dt = f"{end_date} {time_end or '17:00'}" if end_date else None
 
@@ -53,16 +101,29 @@ def lds_rrso(request):
                     venue=request.POST.get('venue'),
                     start_date=start_dt,
                     end_date=end_dt,
+                    quarter=quarter,
                     is_online_platform=1 if request.POST.get('is_online_platform') else 0
                 )
 
+                rso_obj = check.first()
+                if rso_obj:
+                    LdsRsoBudgetBaseline.objects.create(
+                        rso_id=rso_obj.id,
+                        training_id=training_id,
+                        planned_participants=planned_participants_value,
+                        planned_budget=planned_budget_value,
+                        requested_participants=requested_participants_value,
+                        requested_budget=requested_budget_value,
+                    )
+
                 return JsonResponse({'data': 'success', 'msg': 'You have successfully updated the training'})
             else:
-                LdsRso.objects.create(
+                rso_obj = LdsRso.objects.create(
                     training_id=training_id,
                     venue=request.POST.get('venue'),
                     start_date=start_dt,
                     end_date=end_dt,
+                    quarter=quarter,
                     rrso_status=0,
                     rso_status=0,
                     date_approved=None,
@@ -70,6 +131,16 @@ def lds_rrso(request):
                     created_by_id=request.session['emp_id'],
                     is_online_platform=1 if request.POST.get('is_online_platform') else 0
                 )
+
+                if rso_obj:
+                    LdsRsoBudgetBaseline.objects.create(
+                        rso_id=rso_obj.id,
+                        training_id=training_id,
+                        planned_participants=planned_participants_value,
+                        planned_budget=planned_budget_value,
+                        requested_participants=requested_participants_value,
+                        requested_budget=requested_budget_value,
+                    )
 
                 return JsonResponse({'data': 'success', 'msg': 'You have successfully created an training'})
         return JsonResponse({'error': True, 'msg': 'Unauthorized transaction'})
@@ -80,6 +151,70 @@ def lds_rrso(request):
         'sub_title': 'lds_rrso'
     }
     return render(request, 'frontend/lds/rrso.html', context)
+
+
+@permission_required('auth.training_requester')
+def lds_training_baseline(request, training_id):
+    if not Trainingtitle.objects.filter(id=training_id).exists():
+        return JsonResponse({'error': True, 'msg': 'Selected training title does not exist.'}, status=404)
+
+    quarter = (request.GET.get('quarter') or '').strip()
+    if quarter and quarter not in ['Q1', 'Q2', 'Q3', 'Q4']:
+        return JsonResponse({'error': True, 'msg': 'Invalid quarter.'}, status=400)
+
+    qs = LdsLdiPlan.objects.filter(training_id=training_id)
+    if quarter:
+        qs = qs.filter(quarter=quarter)
+
+    latest_ldi = (
+        qs.order_by('-date_created', '-id')
+        .values('target_participants', 'budgetary_requirements')
+        .first()
+    )
+
+    planned_participants = None
+    planned_budget = None
+    if latest_ldi:
+        tp_raw = latest_ldi.get('target_participants')
+        if tp_raw is not None and str(tp_raw).strip() != '':
+            try:
+                planned_participants = int(str(tp_raw).strip())
+            except Exception:
+                planned_participants = None
+
+        budget_raw = latest_ldi.get('budgetary_requirements')
+        if budget_raw is not None and str(budget_raw).strip() != '':
+            try:
+                planned_budget = str(Decimal(str(budget_raw).strip()))
+            except (InvalidOperation, ValueError):
+                planned_budget = None
+
+    return JsonResponse({
+        'data': 'success',
+        'training_id': int(training_id),
+        'planned_participants': planned_participants,
+        'planned_budget': planned_budget,
+    })
+
+
+@permission_required('auth.training_requester')
+def lds_training_quarters(request, training_id):
+    if not Trainingtitle.objects.filter(id=training_id).exists():
+        return JsonResponse({'error': True, 'msg': 'Selected training title does not exist.'}, status=404)
+
+    quarters = list(
+        LdsLdiPlan.objects.filter(training_id=training_id)
+        .exclude(quarter__isnull=True)
+        .exclude(quarter='')
+        .values_list('quarter', flat=True)
+        .distinct()
+    )
+
+    allowed = ['Q1', 'Q2', 'Q3', 'Q4']
+    quarters = [q for q in quarters if q in allowed]
+    quarters.sort(key=lambda q: allowed.index(q))
+
+    return JsonResponse({'data': 'success', 'training_id': int(training_id), 'quarters': quarters})
 
 
 @permission_required('auth.training_requester')
@@ -977,7 +1112,14 @@ def ldi_plan_details_user(request, training_id):
     from frontend.models import Trainingtitle
     
     training = Trainingtitle.objects.filter(id=training_id).first()
-    rows = LdsLdiPlan.objects.select_related('category', 'training').filter(training_id=training_id).order_by('-id')
+    quarter = (request.GET.get('quarter') or '').strip()
+    if quarter and quarter not in ['Q1', 'Q2', 'Q3', 'Q4']:
+        quarter = ''
+
+    rows = LdsLdiPlan.objects.select_related('category', 'training').filter(training_id=training_id)
+    if quarter:
+        rows = rows.filter(quarter=quarter)
+    rows = rows.order_by('-id')
 
     activities_text = ''
     first = rows.first()
