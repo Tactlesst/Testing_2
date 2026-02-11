@@ -184,7 +184,14 @@
 
         $(document).on('click', 'a[data-role=details]', function () {
             var id = $(this).data('id');
-            $('#training_details').modal('show').find('#details-content').load('/backend/learning-and-development/details/' + id);
+            var url = '{% url "training_details_admin" 0 %}'.replace('0', id);
+            var $container = $('#training_details').modal('show').find('#details-content');
+            $container.html('<div class="modal-body"><div class="text-center p-3">Loading...</div></div>');
+            $container.load(url, function (response, status) {
+                if (status === 'error') {
+                    $container.html('<div class="modal-body"><div class="text-center text-danger p-3">Unable to load training details.</div></div>');
+                }
+            });
         });
 
         var openRsoDetailsRow = null;

@@ -1,18 +1,11 @@
 {% load tags %}
 {% load frontend_tags %}
 {% load crispy_forms_tags %}
-<style>
-    .input-group > .select2-container {
-        flex: 1 1 auto;
-        width: 1% !important;
-    }
+{% load static %}
 
-    .select2-selection__rendered .ldi-plan-info-toggle {
-        display: inline-block;
-        margin-right: 6px;
-        vertical-align: middle;
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/training_detailsCSS.css' %}">
+
+
 <div class="modal-body">
 
     <div class="tabs-container">
@@ -31,11 +24,11 @@
                             <div class="form-group">
                                 <label>Title<span class="asteriskField">*</span></label>
                                 <div class="pull-right"><input type="checkbox" name="is_online_platform" {% if training.is_online_platform %}checked{% endif %}> Is online platform?</div>
-                                {# nazef working in this code start #}
+                                <!-- {# nazef working in this code start #} -->
                                 <select class="form-control" name="training_id" id="training-id-update" style="width: 100%;" required>
                                     <option value="{{ training.training_id }}" selected>{{ training.training.tt_name }}</option>
                                 </select>
-                                {# nazef working in this code end #}
+                                <!-- {# nazef working in this code end #} -->
                             </div>
 
                             <div class="form-group">
@@ -50,12 +43,12 @@
                             <div class="row">
                                 <div class="col-lg-5">
                                     <label>Start Date<span class="asteriskField">*</span></label>
-                                    <input type="date" class="form-control" name="start_date" value="{{ training.start_date|date:'Y-m-d' }}" required min="{{ date.today|date:'Y-m-d' }}">
+                                    <input type="date" class="form-control" name="start_date" value="{{ training.start_date|date:'Y-m-d' }}" required min="{% now 'Y-m-d' %}">
                                 </div>
                                 <div class="col-lg-7">
                                     <label>End Date<span class="asteriskField">*</span></label>
                                     <div class="input-group">
-                                        <input type="date" class="form-control" name="end_date" value="{{ training.end_date|date:'Y-m-d' }}" required min="{{ date.today|date:'Y-m-d' }}">
+                                        <input type="date" class="form-control" name="end_date" value="{{ training.end_date|date:'Y-m-d' }}" required min="{% now 'Y-m-d' %}">
                                         <div class="input-group-append">
                                             <button type="submit" class="btn btn-info">Update</button>
                                         </div>
@@ -139,6 +132,18 @@
             <div id="participants" class="tab-pane">
                 <div class="border p-3">
                     <div class="tabs-container">
+                        
+                        <div class="d-flex justify-content-end mb-3">
+                            <button
+                                type="button"
+                                id="generate-training-qr"
+                                class="btn btn-light border border-primary d-flex align-items-center gap-2 shadow"
+                            >
+                                <img src="{% static 'svg/qr-code.svg' %}" alt="QR">
+                                <span class="generate-training-qr">Generate QR</span>
+                            </button>
+                        </div>
+
                         <div class="form-group">
                             {% if user|check_permission:'ld_manager' or user|check_permission:'superadmin' or training.rrso_status == 0 or training.created_by_id == request.session.emp_id %}
                             <form id="addInternalParticipantForm">
@@ -150,6 +155,7 @@
                                     </div>
                                 </div>
                             </form>
+
                             <br>
                             {% endif %}
                             <div class="table-responsive">
@@ -266,7 +272,12 @@
 {% block script %}
 <script>
     $(document).ready(function(){
-        {# nazef working in this code start #}
+        $('#generate-training-qr').on('click', function () {
+            var url = '{% url "print_tqrcode" training.id %}';
+            window.open(url, '_blank');
+        });
+
+        // {# nazef working in this code start #}
         $('#training-id-update').select2({
             width: '100%',
             allowClear: true,
@@ -296,7 +307,7 @@
                 cache: true
             }
         });
-        {# nazef working in this code end #}
+        // {# nazef working in this code end #}
 
         $(document).on('mousedown', '.select2-container .ldi-plan-info-toggle', function(e){
             e.preventDefault();

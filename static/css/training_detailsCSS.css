@@ -1,0 +1,22 @@
+/* training_detailsCSS.css */
+
+
+#generate-training-qr:hover {
+    background-color: #008BFF;
+    border-color: #00F7FF;
+}
+
+#generate-training-qr:hover span {
+    color: #fff;
+}
+
+.input-group>.select2-container {
+    flex: 1 1 auto;
+    width: 1% !important;
+}
+
+.select2-selection__rendered .ldi-plan-info-toggle {
+    display: inline-block;
+    margin-right: 6px;
+    vertical-align: middle;
+}

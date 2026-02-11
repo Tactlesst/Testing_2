@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+{% load static %}
+{% load tags %}
+<html>
+<head>
+	<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>DSWD My PORTAL | Training QR Code</title>
+	<link rel="shortcut icon" type="image/png" href="{% static 'image/logo.ico' %}"/>
+	<link href="{% static 'font-awesome/css/all.css' %}" rel="stylesheet">
+    <link href="{% static 'css/adminlte.min.css' %}" rel="stylesheet">
+	<link rel="stylesheet" type="text/css" href="{% static 'css/adjustments.css' %}">
+	<link href="{% static 'css/print.css' %}" rel="stylesheet">
+    <style>
+        @media print {
+			page {
+				margin: 0px;
+				padding: 20px !important;
+				border: 0.5px solid transparent;
+				height: 297mm !important;
+				width: 210mm !important;
+				size: portrait !important;
+			}
+		  	::-webkit-input-placeholder { /* WebKit browsers */
+		      	color: transparent;
+		  	}
+		  	:-moz-placeholder { /* Mozilla Firefox 4 to 18 */
+		      	color: transparent;
+		  	}
+		  	::-moz-placeholder { /* Mozilla Firefox 19+ */
+		      	color: transparent;
+		  	}
+		  	:-ms-input-placeholder { /* Internet Explorer 10+ */
+		      	color: transparent;
+		  	}
+		}
+
+		@page {
+			size: portrait;
+			margin: 20mm;
+		}
+
+		.qr-container {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			min-height: 70vh;
+			padding: 40px;
+		}
+
+		.training-title {
+			font-size: 24px;
+			font-weight: bold;
+			text-align: center;
+			margin-bottom: 20px;
+			text-transform: uppercase;
+		}
+
+		.current-date {
+			font-size: 18px;
+			text-align: center;
+			margin-bottom: 40px;
+		}
+
+		.qr-code {
+			text-align: center;
+			margin: 20px 0;
+		}
+
+		.qr-code img {
+			max-width: 300px;
+			height: auto;
+			border: 2px solid #333;
+			padding: 10px;
+		}
+
+		.qr-description {
+			font-size: 16px;
+			text-align: center;
+			margin-top: 20px;
+			color: #666;
+		}
+
+		.print-button {
+			position: fixed;
+			top: 20px;
+			right: 20px;
+			z-index: 1000;
+		}
+
+		.download-button {
+			position: fixed;
+			top: 20px;
+			right: 150px;
+			z-index: 1000;
+		}
+    </style>
+</head>
+<body>
+	<button class="btn btn-info download-button" onclick="downloadPDF()">
+		<i class="fas fa-download"></i> Download PDF
+	</button>
+	<button class="btn btn-info print-button" onclick="window.print()">
+		<i class="fas fa-print"></i> Print
+	</button>
+
+	<page size="A4" class="page" style="padding: 40px; color: black;">
+		<div class="qr-container">
+			<div class="training-title">
+				{{ training_title|default:"Training Name" }}
+			</div>
+			
+			<div class="current-date">
+				{% now "F d, Y" %}
+			</div>
+			
+			<div class="qr-code">
+				{% if qr_code_data %}
+					<img src="data:image/png;base64,{{ qr_code_data }}" alt="Training QR Code" />
+				{% else %}
+					<img src="{% static 'image/qr.png' %}" alt="Training QR Code" />
+				{% endif %}
+			</div>
+			
+			<div class="qr-description">
+				Scan this QR code to access the training details
+			</div>
+		</div>
+    </page>
+
+	<script src="{% static 'js/jquery-3.1.1.min.js' %}"></script>
+	<script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'js/adminlte.min.js' %}"></script>
+	<script>
+		function downloadPDF() {
+			window.print();
+			
+			// Alternative: Create a downloadable link
+			// This would require server-side PDF generation or jsPDF library
+			setTimeout(function() {
+				alert('Use your browser\'s print dialog to save as PDF');
+			}, 100);
+		}
+
+		$(document).ready(function(){
+			// Hide buttons when printing
+			window.addEventListener('beforeprint', function() {
+				$('.print-button, .download-button').hide();
+			});
+			
+			window.addEventListener('afterprint', function() {
+				$('.print-button, .download-button').show();
+			});
+		});
+	</script>
+</body>
+</html>

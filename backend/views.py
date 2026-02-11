@@ -9,6 +9,7 @@ import math
 import ldap3
 import qrcode
 import requests
+from django.contrib.staticfiles import finders
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.core.exceptions import EmptyResultSet
@@ -59,6 +60,8 @@ from frontend.templatetags.tags import gamify
 from portal import settings, global_variables
 from portal.active_directory import searchSamAccountName
 from django.utils.timezone import now
+
+from PIL import Image
 
 
 load_dotenv()
@@ -1445,6 +1448,53 @@ def export_qr(request):
             img = qr.make_image(fill_color="black")
             img.save("qrcode/{}.png".format(row.id_number))
     return HttpResponse(request, "Success")
+
+
+@login_required
+def generate_training_qr(request):
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=10,
+        border=4,
+    )
+    current_date = datetime.now().strftime("%b %d, %Y %I:%M %p")
+
+
+    qr.add_data({
+        "Employee ID": "10-3456789",
+        "date": current_date,
+        "Location": "Jollibee",
+    })
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white").convert('RGBA')
+
+    logo_path = finders.find('image/dswd.png')
+    if logo_path:
+        try:
+            logo = Image.open(logo_path).convert('RGBA')
+
+            qr_w, qr_h = img.size
+            logo_size = int(min(qr_w, qr_h) * 0.22)
+            logo = logo.resize((logo_size, logo_size), Image.LANCZOS)
+
+            pos = ((qr_w - logo_size) // 2, (qr_h - logo_size) // 2)
+            img.alpha_composite(logo, dest=pos)
+        except Exception:
+            pass
+
+    out = img.convert('RGB')
+    from io import BytesIO
+    buf = BytesIO()
+    out.save(buf, format='PNG')
+    buf.seek(0)
+    return HttpResponse(buf.getvalue(), content_type='image/png')
+
+
+# New Function
+def generate_training_qr_stub():
+    pass
 
 
 def generate_bulk_import_template(request):

@@ -14,37 +14,6 @@ from backend.lds.models import LdsLdiPlan
 from backend.models import Empprofile
 from frontend.models import Trainingtitle
 
-
-class LdsLatestApprovedTrainingView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, *args, **kwargs):
-        latest = (
-            LdsRso.objects
-            .filter(rrso_status=1, rso_status=1)
-            .exclude(date_approved__isnull=True)
-            .order_by('-date_approved', '-id')
-            .select_related('training')
-            .first()
-        )
-
-        if not latest:
-            return Response({'has_latest': False})
-
-        approved_at = latest.date_approved
-        try:
-            approved_at_iso = approved_at.isoformat() if approved_at else None
-        except Exception:
-            approved_at_iso = None
-
-        return Response({
-            'has_latest': True,
-            'id': latest.id,
-            'training_title': getattr(latest.training, 'tt_name', '') if latest.training_id else '',
-            'date_approved': approved_at_iso,
-        })
-
-
 class LdsRsoViews(generics.ListAPIView):
     serializer_class = LdsRsoSerializer
     permission_classes = [IsAuthenticated]
@@ -52,115 +21,6 @@ class LdsRsoViews(generics.ListAPIView):
     def get_queryset(self):
         queryset = LdsRso.objects.annotate(hash=SHA1('created_by_id')).filter(hash=self.request.query_params.get('pk')).order_by('-date_added')
         return queryset
-
-
-class LdsTrainingNotificationView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, *args, **kwargs):
-        emp = Empprofile.objects.filter(pi__user_id=request.user.id).first()
-        if not emp:
-            return Response({'state': 'none', 'has_training': False, 'message': ''})
-
-        try:
-            today = timezone.now().date()
-        except Exception:
-            today = datetime.now().date()
-
-        participants_qs = (
-            LdsParticipants.objects.select_related('rso', 'rso__training')
-            .filter(
-                emp_id=emp.id,
-                rso__rrso_status=1,
-                rso__rso_status=1,
-            )
-        )
-
-        rso_qs = LdsRso.objects.filter(id__in=participants_qs.values('rso_id'))
-
-        def _safe_date(dt):
-            try:
-                return dt.date() if dt else None
-            except Exception:
-                return None
-
-        ongoing = []
-        upcoming = []
-        for rso in rso_qs.select_related('training'):
-            start = _safe_date(rso.start_date)
-            end = _safe_date(rso.end_date)
-            if not start or not end:
-                continue
-
-            if start <= today <= end:
-                ongoing.append((rso, start, end))
-            elif today < start:
-                upcoming.append((rso, start, end))
-
-        chosen = None
-        state = 'none'
-        message = ''
-
-        if ongoing:
-            ongoing.sort(key=lambda x: (x[1], x[0].id))
-            chosen = ongoing[0]
-            state = 'ongoing'
-            message = 'Training is Ongoing'
-        elif upcoming:
-            upcoming.sort(key=lambda x: (x[1], x[0].id))
-            chosen = upcoming[0]
-            rso, start, end = chosen
-            days_to_start = (start - today).days
-            if 1 <= days_to_start <= 2:
-                state = 'near'
-                message = 'Training Day is Near'
-            else:
-                state = 'upcoming'
-                message = ''
-
-        if not chosen:
-            return Response({'state': 'none', 'has_training': False, 'message': ''})
-
-        rso, start, end = chosen
-        total_days = (end - start).days + 1
-        elapsed_days = 0
-        remaining_days = 0
-        progress_percent = 0
-        if total_days > 0:
-            if today < start:
-                elapsed_days = 0
-                remaining_days = total_days
-            elif today > end:
-                elapsed_days = total_days
-                remaining_days = 0
-            else:
-                elapsed_days = (today - start).days + 1
-                remaining_days = (end - today).days
-
-            try:
-                progress_percent = int(round((elapsed_days / float(total_days)) * 100))
-            except Exception:
-                progress_percent = 0
-
-        return Response({
-            'state': state,
-            'has_training': True,
-            'message': message,
-            'training': {
-                'rso_id': rso.id,
-                'title': getattr(rso.training, 'tt_name', '') if rso.training_id else '',
-                'start_date': start.strftime('%b %d, %Y') if start else '',
-                'end_date': end.strftime('%b %d, %Y') if end else '',
-                'inclusive_dates': getattr(rso, 'get_inclusive_dates_v2', '') or getattr(rso, 'get_inclusive_dates', ''),
-                'venue': rso.venue or '',
-            },
-            'progress': {
-                'total_days': total_days,
-                'elapsed_days': elapsed_days,
-                'remaining_days': remaining_days,
-                'percent': progress_percent,
-            }
-        })
 
 
 class LdsManagerPermissions(permissions.BasePermission):
@@ -234,25 +94,35 @@ class LdsApprovedTrainingsDashboardDataTableViews(generics.ListAPIView):
 
         order_col = int(request.query_params.get('order[0][column]', '1') or 1)
         order_dir = request.query_params.get('order[0][dir]', 'desc')
-        order_field = column_map.get(order_col, 'date_added')
-        if order_field == 'date_approved':
-            if order_dir == 'desc':
-                qs = qs.order_by('-date_approved', '-date_added')
-            else:
-                qs = qs.order_by('date_approved', 'date_added')
-        else:
-            if order_dir == 'desc':
-                order_field = '-' + order_field
-            qs = qs.order_by(order_field)
+        order_field = column_map.get(order_col, 'date_approved')
+        if order_dir == 'desc':
+            order_field = '-' + order_field
+        qs = qs.order_by(order_field)
 
-        qs = qs[start:start + length]
+        page_qs = qs[start:start + length]
 
-        serializer = self.get_serializer(qs, many=True)
+        serializer = self.get_serializer(page_qs, many=True)
+
+        page_ids = [item.get('id') for item in serializer.data if item.get('id') is not None]
+        date_added_map = {
+            row_id: date_added
+            for row_id, date_added in base_qs.filter(id__in=page_ids).values_list('id', 'date_added')
+        }
+
+        data = []
+        for item in serializer.data:
+            data_item = item.copy()
+            if not data_item.get('date_approved'):
+                date_added = date_added_map.get(data_item.get('id'))
+                if date_added:
+                    data_item['date_approved'] = date_added.strftime("%b %d, %Y")
+            data.append(data_item)
+
         return Response({
             'draw': draw,
             'recordsTotal': records_total,
             'recordsFiltered': records_filtered,
-            'data': serializer.data,
+            'data': data,
         })
 
 
@@ -266,6 +136,60 @@ class LdsParticipantsViews(generics.ListAPIView):
             rso_pk=self.request.query_params.get('rso_pk')
         ).order_by('emp__pi__user__last_name')
         return queryset
+
+
+class LdsParticipantsByRsoDataTableViews(generics.ListAPIView):
+    serializer_class = LdsParticipantsSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        rso_id = self.kwargs.get('rso_id')
+        return (
+            LdsParticipants.objects.select_related('emp', 'emp__pi', 'emp__pi__user')
+            .filter(rso_id=rso_id)
+        )
+
+    def list(self, request, *args, **kwargs):
+        draw = int(request.query_params.get('draw', '1') or 1)
+        start = int(request.query_params.get('start', '0') or 0)
+        length = int(request.query_params.get('length', '10') or 10)
+        search_value = (request.query_params.get('search[value]') or '').strip()
+
+        base_qs = self.get_queryset()
+        records_total = base_qs.count()
+
+        qs = base_qs
+        if search_value:
+            qs = qs.filter(
+                Q(participants_name__icontains=search_value)
+                | Q(emp__pi__user__first_name__icontains=search_value)
+                | Q(emp__pi__user__last_name__icontains=search_value)
+            )
+
+        records_filtered = qs.count()
+
+        column_map = {
+            0: 'emp__pi__user__last_name',
+            1: 'type',
+            2: 'emp__position__name',
+        }
+
+        order_col = int(request.query_params.get('order[0][column]', '0') or 0)
+        order_dir = request.query_params.get('order[0][dir]', 'asc')
+        order_field = column_map.get(order_col, 'emp__pi__user__last_name')
+        if order_dir == 'desc':
+            order_field = '-' + order_field
+        qs = qs.order_by(order_field)
+
+        qs = qs[start:start + length]
+
+        serializer = self.get_serializer(qs, many=True)
+        return Response({
+            'draw': draw,
+            'recordsTotal': records_total,
+            'recordsFiltered': records_filtered,
+            'data': serializer.data,
+        })
 
 
 class LdsFacilitatorsViews(generics.ListAPIView):

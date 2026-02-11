@@ -17,7 +17,8 @@ from backend.documents.models import DtsDocument, DtsDrn, DtsTransaction, DtsDiv
 from backend.models import Designation, Empprofile, DRNTracker
 from backend.lds.models import LdsLdiPlan, LdsCategory
 from backend.views import generate_serial_string
-from frontend.lds.models import LdsFacilitator, LdsParticipants, LdsRso
+from frontend.lds.models import LdsFacilitator, LdsParticipants, LdsRso, LdsTrainingApprovalNotify
+# LdsTrainingNotify
 from frontend.models import PortalConfiguration, Trainingtitle
 from frontend.templatetags.tags import generateDRN, gamify
 from api.wiserv import send_notification
@@ -1111,60 +1112,39 @@ def generate_drn_for_rso(request):
         LdsRso.objects.filter(id=request.POST.get('training_id')).update(
             rrso_status=1
         )
-        return JsonResponse({'data': 'success', 'drn': generated_drn})
-
-@login_required
 @csrf_exempt
 @permission_required('auth.ld_manager')
-def bypass_lds_rrso_approval(request, pk):
-    obj = LdsRso.objects.select_related('created_by__pi__user', 'training').filter(id=pk).first()
-    if not obj:
-        return JsonResponse({'error': True, 'msg': 'Training request not found.'}, status=404)
+def bypass_lds_rrso_approval(request, pk): 
+    rso = get_object_or_404(LdsRso, pk=pk)
+    rso.rrso_status = 1
+    if rso.rso_status == 1 and not rso.date_approved:
+        rso.date_approved = timezone.now()
+    rso.save()
 
-    LdsRso.objects.filter(id=pk).update(rrso_status=1)
-
-    contact_number = ''
-    try:
-        contact_number = obj.created_by.pi.mobile_no if obj.created_by_id and obj.created_by and obj.created_by.pi_id else ''
-    except Exception:
-        contact_number = ''
-
-    if contact_number:
-        title = obj.training.tt_name if obj.training_id and obj.training else ''
-        send_notification(
-            f"Your training request '{title}' has been approved.",
-            contact_number,
-            request.session.get('emp_id'),
-            receiver_id=obj.created_by_id,
+    if rso.rrso_status == 1 and rso.rso_status == 1:
+        LdsTrainingApprovalNotify.objects.create(
+            tt_title_id=rso.training_id,
+            approved_by_id=request.session.get('emp_id'),
         )
-
+    
     return JsonResponse({'data': 'success', 'msg': 'You have successfully approved the Request for Issuance of Regional Special Order'})
 
 @login_required
 @csrf_exempt
 @permission_required('auth.ld_manager')
 def bypass_lds_rso_approval(request, pk):
-    obj = LdsRso.objects.select_related('created_by__pi__user', 'training').filter(id=pk).first()
-    if not obj:
-        return JsonResponse({'error': True, 'msg': 'Training request not found.'}, status=404)
+    rso = get_object_or_404(LdsRso, pk=pk)
+    rso.rso_status = 1
+    if rso.rrso_status == 1 and not rso.date_approved:
+        rso.date_approved = timezone.now()
+    rso.save()
 
-    LdsRso.objects.filter(id=pk).update(rso_status=1)
-
-    contact_number = ''
-    try:
-        contact_number = obj.created_by.pi.mobile_no if obj.created_by_id and obj.created_by and obj.created_by.pi_id else ''
-    except Exception:
-        contact_number = ''
-
-    if contact_number:
-        title = obj.training.tt_name if obj.training_id and obj.training else ''
-        send_notification(
-            f"RSO for training '{title}' has been approved.",
-            contact_number,
-            request.session.get('emp_id'),
-            receiver_id=obj.created_by_id,
+    if rso.rrso_status == 1 and rso.rso_status == 1:
+        LdsTrainingApprovalNotify.objects.create(
+            tt_title_id=rso.training_id,
+            approved_by_id=request.session.get('emp_id'),
         )
-
+    
     return JsonResponse({'data': 'success', 'msg': 'You have successfully approved the Regional Special Order'})
 
 @login_required
@@ -1200,3 +1180,70 @@ def reject_training(request, pk):
             return JsonResponse({'error': True, 'msg': str(e)}, status=500)
     
     return JsonResponse({'error': True, 'msg': 'Invalid request method.'}, status=400)
+
+
+@login_required
+def print_tqrcode(request, pk):
+    """Generate QR code PDF for training"""
+    rso = get_object_or_404(LdsRso, pk=pk)
+    
+    # Create a custom QR code for this specific training
+    import qrcode
+    from datetime import datetime
+    from django.templatetags.static import static
+    from django.contrib.staticfiles import finders
+    from PIL import Image
+    import base64
+    from io import BytesIO
+    
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=10,
+        border=4,
+    )
+    
+    current_date = datetime.now().strftime("%b %d, %Y %I:%M %p")
+    
+    # Add training-specific data to QR code
+    qr_data = {
+        "Training Title": rso.training.tt_name,
+        "Training ID": rso.id,
+        "Date": current_date,
+        "Venue": rso.venue,
+        "Start Date": rso.start_date.strftime("%b %d, %Y") if rso.start_date else "",
+        "End Date": rso.end_date.strftime("%b %d, %Y") if rso.end_date else "",
+    }
+    
+    qr.add_data(str(qr_data))
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill_color="black", back_color="white").convert('RGBA')
+    
+    # Add DSWD logo if available
+    logo_path = finders.find('image/dswd.png')
+    if logo_path:
+        try:
+            logo = Image.open(logo_path).convert('RGBA')
+            qr_w, qr_h = img.size
+            logo_size = int(min(qr_w, qr_h) * 0.22)
+            logo = logo.resize((logo_size, logo_size), Image.LANCZOS)
+            pos = ((qr_w - logo_size) // 2, (qr_h - logo_size) // 2)
+            img.alpha_composite(logo, dest=pos)
+        except Exception:
+            pass
+    
+    # Convert to base64 for embedding in template
+    out = img.convert('RGB')
+    buf = BytesIO()
+    out.save(buf, format='PNG')
+    buf.seek(0)
+    qr_image_data = base64.b64encode(buf.getvalue()).decode('utf-8')
+    
+    context = {
+        'training_title': rso.training.tt_name,
+        'rso': rso,
+        'qr_code_data': qr_image_data,
+    }
+    
+    return render(request, 'frontend/lds/print_qrCode.html', context)

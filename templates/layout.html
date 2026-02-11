@@ -64,7 +64,7 @@
                 </div>
             </a>
             <!-- Sidebar -->
-            <div class="sidebar" style="">
+            <div class="sidebar">
                 <!-- Sidebar Menu -->
                 {% include 'sidebar.html' %}
                 <!-- /.sidebar-menu -->
@@ -98,6 +98,28 @@
             </ul>
             <!-- Right navbar links -->
             <ul class="navbar-nav ml-auto mr-4">
+                <!-- Notifications Bell -->
+                <li class="nav-item dropdown position-relative">
+                    <a class="nav-link position-relative" href="javascript:;" onclick="toggleNotifications()">
+                        <i class="fas fa-bell"></i>
+                        <span id="notification-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none; font-size: 0.6rem;">0</span>
+                    </a>
+
+                    <div id="notification-container" class="position-absolute" style="top: calc(100% + 8px); right: 0; width: min(360px, calc(100vw - 2rem)); max-height: min(420px, 60vh); overflow: hidden; z-index: 1050; display: none;">
+                        <div class="card shadow-sm mb-0" style="overflow: hidden;">
+                            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center" style="gap: 8px;">
+                                <strong class="text-truncate"><i class="fas fa-bell"></i> Notifications</strong>
+                                <div class="d-flex" style="gap: 6px;">
+                                    <button type="button" class="btn btn-sm btn-outline-light" onclick="markNotificationsAsRead()" style="white-space: nowrap;">Mark as Read</button>
+                                </div>
+                            </div>
+                            <div class="card-body p-0" id="notification-list" style="max-height: calc(min(420px, 60vh) - 56px); overflow-y: auto;">
+                                <!-- Notifications will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="javascript:;">
                         <img loading="lazy"  src="/media/{{ request.session.picture }}" id="profile-picture" class="rounded-circle shimmer" height="24" width="24" data-toggle="tooltip" data-placement="bottom" title="User Account">
@@ -119,15 +141,6 @@
             </ul>
         </nav>
         <!-- /.navbar -->
-
-        <div class="px-3 pt-2" id="global-training-approved-alert-container" style="display: none;">
-            <div class="alert alert-success alert-dismissible fade show mb-0" role="alert" id="global-training-approved-alert">
-                A new training has been approved, check your Dashboard
-                <button type="button" class="close" aria-label="Close" id="global-training-approved-alert-close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        </div>
 
         <!-- Content Wrapper. Contains page content -->
         <div class="content-wrapper">
@@ -513,121 +526,6 @@
                 }
             });
         });
-
-        (function () {
-            var endpointUrl = '/api/learning-and-development/latest-approved-training/';
-            var storageKey = 'latest_approved_training_id_seen';
-            var autoCloseTimer = null;
-            var pollTimer = null;
-            var pollDelayMs = 5000;
-            var pollDelayMinMs = 5000;
-            var pollDelayMaxMs = 60000;
-
-            function showApprovedTrainingAlert() {
-                $('#global-training-approved-alert-container').stop(true, true).fadeIn(150);
-
-                if (autoCloseTimer) {
-                    clearTimeout(autoCloseTimer);
-                    autoCloseTimer = null;
-                }
-                autoCloseTimer = setTimeout(function () {
-                    hideApprovedTrainingAlert();
-                }, 10000);
-            }
-
-            function hideApprovedTrainingAlert() {
-                $('#global-training-approved-alert-container').stop(true, true).fadeOut(150);
-            }
-
-            $(document).on('click', '#global-training-approved-alert-close', function () {
-                hideApprovedTrainingAlert();
-            });
-
-            function clearPollTimer() {
-                if (pollTimer) {
-                    clearTimeout(pollTimer);
-                    pollTimer = null;
-                }
-            }
-
-            function scheduleNextPoll(delayMs) {
-                clearPollTimer();
-                pollTimer = setTimeout(function () {
-                    pollLatestApprovedTraining();
-                }, delayMs);
-            }
-
-            function isPageVisible() {
-                return document.visibilityState === 'visible';
-            }
-
-            function pollLatestApprovedTraining() {
-                if (!isPageVisible()) {
-                    scheduleNextPoll(pollDelayMaxMs);
-                    return;
-                }
-                $.ajax({
-                    url: endpointUrl,
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function (data) {
-                        var foundNew = false;
-                        if (!data || !data.has_latest) {
-                            pollDelayMs = Math.min(pollDelayMaxMs, pollDelayMs * 2);
-                            scheduleNextPoll(pollDelayMs);
-                            return;
-                        }
-
-                        var latestId = data.id;
-                        if (!latestId) {
-                            pollDelayMs = Math.min(pollDelayMaxMs, pollDelayMs * 2);
-                            scheduleNextPoll(pollDelayMs);
-                            return;
-                        }
-
-                        var seenId = null;
-                        try {
-                            seenId = localStorage.getItem(storageKey);
-                        } catch (e) {
-                            seenId = null;
-                        }
-
-                        if (seenId && String(seenId) === String(latestId)) {
-                            pollDelayMs = Math.min(pollDelayMaxMs, pollDelayMs * 2);
-                            scheduleNextPoll(pollDelayMs);
-                            return;
-                        }
-
-                        try {
-                            localStorage.setItem(storageKey, String(latestId));
-                        } catch (e) {}
-
-                        showApprovedTrainingAlert();
-                        foundNew = true;
-
-                        if (foundNew) {
-                            pollDelayMs = pollDelayMinMs;
-                        }
-                        scheduleNextPoll(pollDelayMs);
-                    }
-                }).fail(function () {
-                    pollDelayMs = Math.min(pollDelayMaxMs, pollDelayMs * 2);
-                    scheduleNextPoll(pollDelayMs);
-                });
-            }
-
-            $(document).ready(function () {
-                pollDelayMs = pollDelayMinMs;
-                pollLatestApprovedTraining();
-
-                document.addEventListener('visibilitychange', function () {
-                    if (isPageVisible()) {
-                        pollDelayMs = pollDelayMinMs;
-                        pollLatestApprovedTraining();
-                    }
-                });
-            });
-        })();
     </script>
     <script type="text/javascript" for="contact-tracing">
 	    $('#contacts-search').on('submit', function(e){
@@ -663,6 +561,194 @@
             });
         });
     </script>
+    
+    <!-- Live Notifications JavaScript -->
+    <script>
+        let notificationCount = 0;
+        let lastNotificationCheck = 0;
+        let lastFetchedNotifications = [];
+        
+        // Toggle notification dropdown
+        function toggleNotifications() {
+            const container = document.getElementById('notification-container');
+            if (container.style.display === 'none' || container.style.display === '') {
+                container.style.display = 'block';
+                fetchNotifications();
+            } else {
+                container.style.display = 'none';
+            }
+        }
+        
+        // Fetch notifications via AJAX
+        function fetchNotifications() {
+            fetch('/learning-and-development/notifications/', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const notifications = (data && Array.isArray(data.notifications)) ? data.notifications : [];
+                lastFetchedNotifications = notifications;
+                displayNotifications(notifications);
+                updateNotificationBadge(data && typeof data.count === 'number' ? data.count : notifications.length);
+            })
+            .catch(error => {
+                console.error('Error fetching notifications:', error);
+            });
+        }
+        
+        // Display notifications in dropdown
+        function displayNotifications(notifications) {
+            const notificationList = document.getElementById('notification-list');
+            notificationList.innerHTML = '';
+            
+            notifications.forEach(notification => {
+                const notificationItem = document.createElement('div');
+                notificationItem.className = 'm-2';
+
+                const borderColor = '#28a745';
+                const iconBg = '#d4edda';
+                const iconColor = '#28a745';
+                const title = notification.title || 'Notification';
+                const message = notification.message || '';
+                const trainingTitle = notification.training_title || '';
+
+                notificationItem.innerHTML = `
+                    <div style="display:flex; align-items:flex-start; gap:12px; padding:12px; border:1px solid ${borderColor}; border-left:6px solid ${borderColor}; border-radius:10px; background:#ffffff;">
+                        <div style="flex:0 0 auto; width:40px; height:40px; border-radius:50%; background:${iconBg}; display:flex; align-items:center; justify-content:center;">
+                            <i class="fas fa-check" style="color:${iconColor};"></i>
+                        </div>
+
+                        <div style="flex:1 1 auto; min-width:0;">
+                            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
+                                <div style="min-width:0;">
+                                    <div style="font-weight:700; line-height:1.2; color:#111827;">${title}</div>
+                                    ${trainingTitle ? `<div style="font-weight:600; margin-top:2px; color:#1f2937;">${trainingTitle}</div>` : ''}
+                                    ${message ? `<div style="margin-top:4px; color:#4b5563; font-size:12.5px;">${message}</div>` : ''}
+                                </div>
+
+                                <button type="button" class="close js-lds-notification-dismiss" data-notification-id="${String(notification.id)}" aria-label="Close" style="opacity:0.7;">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                notificationList.appendChild(notificationItem);
+            });
+
+            if (!notifications.length) {
+                notificationList.innerHTML = '<div class="text-center p-3 text-muted">No notifications</div>';
+            }
+        }
+        
+        // Update notification badge
+        function updateNotificationBadge(count) {
+            const badge = document.getElementById('notification-badge');
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+            notificationCount = count;
+        }
+        
+        // Mark notifications as read
+        function markNotificationsAsRead(options) {
+            const opts = options || {};
+            const ids = Array.isArray(opts.ids) ? opts.ids : (lastFetchedNotifications || []).map(n => String(n.id));
+
+            // Default behavior when clicking "Mark as Read": refresh after marking.
+            const refreshAfter = (typeof opts.refreshAfter === 'boolean') ? opts.refreshAfter : true;
+
+            fetch('/learning-and-development/notifications/mark-read/', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ids: ids })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Clear UI only after the server confirms the cache has been updated
+                    lastFetchedNotifications = [];
+                    updateNotificationBadge(0);
+                    if (!opts.skipRender) {
+                        displayNotifications([]);
+                    }
+
+                    if (refreshAfter) {
+                        fetchNotifications();
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error marking notifications as read:', error);
+            });
+        }
+        
+        // Auto-check for new notifications every 30 seconds
+        setInterval(function() {
+            if (document.getElementById('notification-container').style.display === 'none') {
+                fetch('/learning-and-development/notifications/', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const notifications = (data && Array.isArray(data.notifications)) ? data.notifications : [];
+                    lastFetchedNotifications = notifications;
+
+                    updateNotificationBadge(data && typeof data.count === 'number' ? data.count : notifications.length);
+                })
+                .catch(error => {
+                    console.error('Error checking notifications:', error);
+                });
+            }
+        }, 30000); // Check every 30 seconds
+        
+        // Close notifications when clicking outside
+        document.addEventListener('click', function(event) {
+            const container = document.getElementById('notification-container');
+            const bell = event.target.closest('a[onclick="toggleNotifications()"]');
+            
+            if (!container.contains(event.target) && !bell) {
+                container.style.display = 'none';
+            }
+        });
+
+        // Dismiss a single notification (mark as seen client-side)
+        document.addEventListener('click', function(event) {
+            const btn = event.target.closest('.js-lds-notification-dismiss');
+            if (!btn) {
+                return;
+            }
+
+            const id = btn.getAttribute('data-notification-id');
+            const wrapper = btn.closest('.m-2');
+            if (wrapper) {
+                wrapper.remove();
+            }
+
+            const remaining = (lastFetchedNotifications || []).filter(n => String(n.id) !== String(id));
+            lastFetchedNotifications = remaining;
+            updateNotificationBadge(remaining.length);
+
+            if (id) {
+                markNotificationsAsRead({ ids: [String(id)], skipRender: true, refreshAfter: true });
+            }
+        });
+    </script>
+    
     {% block script %}{% endblock %}
 </body>
 </html>

@@ -67,7 +67,7 @@
         <div class="modal-content animated bounceInDown">
             <div class="modal-header bg-info">
                 <h3 class="modal-title">
-                    NEW TRAINING
+                    NEW Training
                 </h3>
                 <button type="button" class="close text-white" data-dismiss="modal"><span
                         aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
@@ -569,20 +569,27 @@
             $('#lds-rso-table').DataTable().ajax.reload();
         });
 
-        $(document).on('click', 'a[data-role=details]', function () {
-            var id = $(this).data('id');
-            $('#training_details').modal('show').find('#details-content').load('/learning-and-development/details/' + id, function () {
-                // Set min date for date inputs in the loaded content
-                var today = new Date().toISOString().split('T')[0];
-                var currentStartDate = $('#training_details input[name="start_date"]').val();
+    $(document).on('click', 'a[data-role=details]', function () {
+        var id = $(this).data('id');
+        $('#training_details').modal('show').find('#details-content').load('{% url "training_details" 0 %}'.replace('0', id), function () {
+            // Set min date for date inputs in the loaded content
+            var today = new Date().toISOString().split('T')[0];
+            var currentStartDate = $('#training_details input[name="start_date"]').val();
 
-                // Check if current start date is in the past
-                var isStartDateInPast = currentStartDate < today;
+            // Check if current start date is in the past
+            var isStartDateInPast = currentStartDate < today;
 
-                if (isStartDateInPast) {
-                    // Disable start date input if it's in the past
-                    $('#training_details input[name="start_date"]').prop('readonly', true);
-                    // Set end date min to current start date (can't go before it)
+            if (isStartDateInPast) {
+                // Disable start date input if it's in the past
+                $('#training_details input[name="start_date"]').prop('readonly', true);
+                // Set end date min to current start date (can't go before it)
+                $('#training_details input[name="end_date"]').attr('min', currentStartDate);
+            } else {
+                // Enable start date input and set min to today
+                $('#training_details input[name="start_date"]').prop('readonly', false);
+                $('#training_details input[type="date"]').attr('min', today);
+                // Set end date min to current start date
+                if (currentStartDate) {
                     $('#training_details input[name="end_date"]').attr('min', currentStartDate);
                 } else {
                     // Enable start date input and set min to today

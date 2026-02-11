@@ -1,12 +1,13 @@
 from django.urls import path
 
-from backend.lds.views import print_rso
+from backend.lds.views import print_rso, print_tqrcode
 from frontend.lds.views import lds_rrso, training_details, print_rrso, add_training_participant, \
     add_training_facilitator, generate_certificate_participants, generate_certificate_facilitators, \
     tag_as_resource_person, remove_tag_as_resource_person, upload_ld_attachment, print_ld_attendance, \
     certificate_authenticity, delete_participants, delete_facilitator, generate_certificate_of_appearance, tag_as_group, \
     remove_tag_as_group, idp, update_idp_contents, remove_idp, view_idp_contents, duplicate_idp_contents, print_idp, \
-    update_idp_details, lds_trainingtitle_search, ldi_plan_details_user, lds_training_baseline, lds_training_quarters
+    update_idp_details, lds_trainingtitle_search, ldi_plan_details_user, lds_training_baseline, lds_training_quarters, \
+    get_training_notifications, mark_notifications_read
 
 urlpatterns = [
     path('requests/', lds_rrso, name='lds_rrso'),
@@ -22,6 +23,7 @@ urlpatterns = [
     path('attachment/uploading/<int:pk>', upload_ld_attachment, name='upload_ld_attachment'),
     path('rso/print/<int:pk>', print_rso, name='print_rso'),
     path('rrso/print/<int:pk>', print_rrso, name='print_rrso'),
+    path('tqrcode/print/<int:pk>', print_tqrcode, name='print_tqrcode'),
     path('participant/add/<int:pk>/<int:type>', add_training_participant, name='add_training_participant'),
     path('facilitator/add/<int:pk>/<int:type>', add_training_facilitator, name='add_training_facilitator'),
     path('attendance/print/<int:pk>', print_ld_attendance, name='print_ld_attendance'),
@@ -46,4 +48,7 @@ urlpatterns = [
          name='generate_certificate_participants'),
     path('certificates/facilitators/print/<int:pk>', generate_certificate_facilitators,
          name='generate_certificate_facilitators'),
+    path('details/<int:pk>/qr/', print_tqrcode, name='print_tqrcode'),
+    path('notifications/', get_training_notifications, name='get_training_notifications'),
+    path('notifications/mark-read/', mark_notifications_read, name='mark_notifications_read'),
 ]
