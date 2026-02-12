@@ -12,15 +12,27 @@ from django.db.models import OuterRef, Subquery
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
+from django.urls import reverse
 
 from backend.documents.models import DtsDocument, DtsDrn, DtsTransaction, DtsDivisionCc
 from backend.models import Designation, Empprofile, DRNTracker
 from backend.lds.models import LdsLdiPlan, LdsCategory
 from backend.views import generate_serial_string
-from frontend.lds.models import LdsFacilitator, LdsParticipants, LdsRso
+from frontend.lds.models import LdsFacilitator, LdsParticipants, LdsRso, LdsTrainingNotifications
 from frontend.models import PortalConfiguration, Trainingtitle
 from frontend.templatetags.tags import generateDRN, gamify
 from api.wiserv import send_notification
+from api.lds.sse import lds_notifications_broker
+
+try:
+    from asgiref.sync import async_to_sync
+except Exception:
+    async_to_sync = None
+
+try:
+    from channels.layers import get_channel_layer
+except Exception:
+    get_channel_layer = None
 
 @login_required
 def ld_admin(request):
@@ -1132,7 +1144,7 @@ def bypass_lds_rrso_approval(request, pk):
     if contact_number:
         title = obj.training.tt_name if obj.training_id and obj.training else ''
         send_notification(
-            f"Your training request '{title}' has been approved.",
+            f"Your request for issuance of Regional Special Order for training '{title}' has been approved.",
             contact_number,
             request.session.get('emp_id'),
             receiver_id=obj.created_by_id,
@@ -1148,7 +1160,44 @@ def bypass_lds_rso_approval(request, pk):
     if not obj:
         return JsonResponse({'error': True, 'msg': 'Training request not found.'}, status=404)
 
+    if obj.rrso_status != 1:
+        return JsonResponse({'error': True, 'msg': 'RRSO must be approved before approving the Regional Special Order.'}, status=400)
+
     LdsRso.objects.filter(id=pk).update(rso_status=1)
+
+    approver_emp = None
+    try:
+        approver_emp = Empprofile.objects.filter(id=request.session.get('emp_id')).first()
+    except Exception:
+        approver_emp = None
+
+    if approver_emp:
+        try:
+            LdsTrainingNotifications.objects.create(training_id=obj.id, approvedBy_id=approver_emp.id)
+        except Exception:
+            pass
+
+        try:
+            lds_notifications_broker.publish('training_approved', {
+                'training_id': obj.id,
+                'training_title': obj.training.tt_name if obj.training_id and obj.training else '',
+            })
+        except Exception:
+            pass
+
+        try:
+            channel_layer = get_channel_layer()
+            if channel_layer:
+                async_to_sync(channel_layer.group_send)('lds_notifications', {
+                    'type': 'training_approved',
+                    'data': {
+                        'event': 'training_approved',
+                        'training_id': obj.id,
+                        'training_title': obj.training.tt_name if obj.training_id and obj.training else '',
+                    }
+                })
+        except Exception:
+            pass
 
     contact_number = ''
     try:

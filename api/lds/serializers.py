@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from frontend.lds.models import LdsRso, LdsParticipants, LdsFacilitator, LdsIDP
+from frontend.lds.models import LdsRso, LdsParticipants, LdsFacilitator, LdsIDP, LdsTrainingNotifications
 from backend.lds.models import LdsLdiPlan, LdsCategory
 from frontend.models import Trainingtitle
 
@@ -65,7 +65,9 @@ class LdsApprovedTrainingsDashboardSerializer(serializers.ModelSerializer):
     class Meta:
         model = LdsRso
         fields = ['id', 'training_title', 'date_added']
-#nazef added
+
+
+# nazef added
 
 class LdsTrainingTitleListSerializer(serializers.ModelSerializer):
     added_by = serializers.SerializerMethodField()
@@ -123,7 +125,8 @@ class LdsTrainingTitleListSerializer(serializers.ModelSerializer):
         if not platform:
             platform = getattr(obj, 'latest_ldi_platform', None) or ''
         return platform
-#nazef end
+# nazef end
+
 
 class LdsLdiPlanSerializer(serializers.ModelSerializer):
     training_title = serializers.CharField(source='training.tt_name', read_only=True)
@@ -157,3 +160,13 @@ class LdsLdiPlanSerializer(serializers.ModelSerializer):
             'date_updated',
             'date_approved',
         ]
+
+
+class LdsTrainingNotificationsSerializer(serializers.ModelSerializer):
+    training_title = serializers.CharField(source='training.training.tt_name', read_only=True)
+    approved_by = serializers.CharField(source='approvedBy.pi.user.get_fullname', read_only=True)
+    date_approved = serializers.DateTimeField(source='training.date_approved', format="%b %d, %Y %H:%M:%S %p", read_only=True)
+
+    class Meta:
+        model = LdsTrainingNotifications
+        fields = ['id', 'training_id', 'training_title', 'approved_by', 'date_approved']

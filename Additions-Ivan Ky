@@ -13,3 +13,11 @@ Added QR Code for Training (Part 1)
 
 Modify and Update Notifications to use Websockets (Part 2)
 
+- Added Notifications now. Used SSE for Server to Client interaction.
+
+- Here are the following Files added into their designated locations:
+    - Added the following files into "api/lds/": sse.py
+    - Added the following files into "portal/": asgi.py, routing.py
+    - Added "consumers.py" into "frontend/lds/"
+
+- Fires Notifications if "rrso" and "rso" are approved
