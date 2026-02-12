@@ -1,6 +1,15 @@
-Added QR Code for Training
+February 12, 2026
+Added QR Code for Training (Part 1)
 
 - Added 2 SVGs (QR Code and Bell)
 - Re-Implemented the QR Code and to find the function search "genrQRTraining" in "backend/views.py"
 
 - Added a notifcation bell in the "layout.html"and placde it on the right side
+
+** Another Addition **
+- Implemented QR into the Admin as well
+
+
+
+Modify and Update Notifications to use Websockets (Part 2)
+

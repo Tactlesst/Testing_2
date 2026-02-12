@@ -1,6 +1,7 @@
 {% load tags %}
 {% load frontend_tags %}
 {% load crispy_forms_tags %}
+{% load static %}
 <style>
     .input-group > .select2-container {
         flex: 1 1 auto;
@@ -78,6 +79,14 @@
             <li class="nav-item"><a class="nav-link text-dark" data-toggle="tab" href="#ldi-plan">LDI Plan</a></li>
             <li class="nav-item"><a class="nav-link text-dark" data-toggle="tab" href="#participants">Participants</a></li>
             <li class="nav-item"><a class="nav-link text-dark" data-toggle="tab" href="#facilitators">Facilitators</a></li>
+            <li class="nav-item ml-auto">
+                <div class="d-flex justify-content-end mb-2">
+                    <a class="btn btn-outline-primary d-flex align-items-end gap-2" target="_blank" href="{% url 'print_qrtraining' training.id %}">
+                        <img src="{% static 'svg/qr-code.svg' %}">
+                        Generate QR
+                    </a>
+                </div>
+            </li>
         </ul>
         <div class="tab-content" style="border: 0px !important;">
             <!-- Details Tab -->
