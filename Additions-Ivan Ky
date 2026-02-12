@@ -11,7 +11,7 @@ Added QR Code for Training (Part 1)
 
 
 
-Modify and Update Notifications to use Websockets (Part 2)
+Modify and Update Notifications to use ~~Websockets~~ SSE (Part 2)
 
 - Added Notifications now. Used SSE for Server to Client interaction.
 
