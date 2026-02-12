@@ -1,6 +1,7 @@
 {% load tags %}
 {% load frontend_tags %}
 {% load crispy_forms_tags %}
+{% load static %}
 <style>
     .input-group > .select2-container {
         flex: 1 1 auto;
@@ -31,11 +32,11 @@
                             <div class="form-group">
                                 <label>Title<span class="asteriskField">*</span></label>
                                 <div class="pull-right"><input type="checkbox" name="is_online_platform" {% if training.is_online_platform %}checked{% endif %}> Is online platform?</div>
-                                {# nazef working in this code start #}
+                                <!-- {# nazef working in this code start #} -->
                                 <select class="form-control" name="training_id" id="training-id-update" style="width: 100%;" required>
                                     <option value="{{ training.training_id }}" selected>{{ training.training.tt_name }}</option>
                                 </select>
-                                {# nazef working in this code end #}
+                                <!-- {# nazef working in this code end #} -->
                             </div>
 
                             <div class="form-group">
@@ -143,6 +144,14 @@
                             {% if user|check_permission:'ld_manager' or user|check_permission:'superadmin' or training.rrso_status == 0 or training.created_by_id == request.session.emp_id %}
                             <form id="addInternalParticipantForm">
                                 {% csrf_token %}
+
+                                <div class="d-flex justify-content-end mb-2">
+                                    <a class="btn btn-outline-primary d-flex align-items-end gap-2" target="_blank" href="{% url 'print_qrtraining' training.id %}">
+                                        <img src="{% static 'svg/qr-code.svg' %}">
+                                        Generate QR
+                                    </a>
+                                </div>
+
                                 <div class="input-group">
                                     <input type="text" class="form-control filter_employee b-r-sm" name="employee" required autocomplete="off" placeholder="e.g. [16-12345] FIRST NAME MIDDLE INITIAL LAST NAME">
                                     <div class="input-group-append">
@@ -266,7 +275,7 @@
 {% block script %}
 <script>
     $(document).ready(function(){
-        {# nazef working in this code start #}
+        // {# nazef working in this code start #}
         $('#training-id-update').select2({
             width: '100%',
             allowClear: true,
@@ -296,7 +305,7 @@
                 cache: true
             }
         });
-        {# nazef working in this code end #}
+        // {# nazef working in this code end #}
 
         $(document).on('mousedown', '.select2-container .ldi-plan-info-toggle', function(e){
             e.preventDefault();

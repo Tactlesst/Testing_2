@@ -9,6 +9,8 @@ import math
 import ldap3
 import qrcode
 import requests
+from PIL import Image
+from django.contrib.staticfiles import finders
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.core.exceptions import EmptyResultSet
@@ -58,8 +60,53 @@ from frontend.templatetags.tags import gamify
 
 from portal import settings, global_variables
 from portal.active_directory import searchSamAccountName
-from django.utils.timezone import now
 
+
+@login_required
+def genrQRTraining(request, pk):
+    obj = get_object_or_404(LdsRso, id=pk)
+
+    current_date_str = datetime.now().strftime('%B %d, %Y')
+    training_title = getattr(obj.training, 'tt_name', str(obj.training))
+
+    start_date_str = obj.start_date.strftime('%B %d, %Y') if obj.start_date else ''
+    end_date_str = obj.end_date.strftime('%B %d, %Y') if obj.end_date else ''
+
+    payload = (
+        f"Current Date: {current_date_str}\n"
+        f"Training Title: {training_title}\n"
+        f"Training Start Date: {start_date_str}\n"
+        f"Training End Date: {end_date_str}"
+    )
+
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(payload)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white").convert('RGBA')
+
+    logo_path = finders.find('image/dswd.png')
+    if logo_path:
+        logo = Image.open(logo_path).convert('RGBA')
+
+        qr_width, qr_height = img.size
+        logo_target_width = int(qr_width * 0.22)
+        logo_target_height = int(qr_height * 0.22)
+        logo.thumbnail((logo_target_width, logo_target_height), Image.LANCZOS)
+
+        x = (qr_width - logo.size[0]) // 2
+        y = (qr_height - logo.size[1]) // 2
+
+        img.alpha_composite(logo, (x, y))
+
+    response = HttpResponse(content_type='image/png')
+    img.convert('RGB').save(response, format='PNG')
+    return response
 
 load_dotenv()
 
@@ -1403,7 +1450,7 @@ def export_healthchecklist(request):
             response = HttpResponse(content=save_virtual_workbook(workbook), content_type='application/ms-excel')
             response['Content-Disposition'] = 'attachment; filename=Health Checklist.xlsx'
             return response
-
+        
 
 def export_qr(request):
     employee = Empprofile.objects.filter(id_number__in=[

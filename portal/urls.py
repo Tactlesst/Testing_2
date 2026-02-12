@@ -8,7 +8,8 @@ from backend.views import login, logout, dashboard, birthday_celebrants, dtr_log
     portal_updater, view_help_desk, assigned_employee, main_dashboard, statistics_dashboard, \
     issuances_dashboard, issuances_dashboard_view, add_additional_info, delete_additional_info, load_ticket_message, \
     get_help_desk_total, birthday_celebrants_view, leaderboards_dashboard, export_qr, print_drf, \
-    delete_ticket_request, vacancies, reset_portal_account, test_user_login, update_request, generate_bulk_import_template
+    delete_ticket_request, vacancies, reset_portal_account, test_user_login, update_request, generate_bulk_import_template, \
+    genrQRTraining
 from frontend.lds.views import email_confirmation_participants
 from frontend.views import wfh_attendance, wfh_dtr, load_employees, \
     getemployeebyempid, profiles, get_attendance_status_for_today, forgot_password, forgot_password_code, \
@@ -82,6 +83,7 @@ urlpatterns = [
     path('api/rest-auth/', include('dj_rest_auth.urls')),
     path('oidc/', include('mozilla_django_oidc.urls')),
     path('export-qr/', export_qr, name='export_qr'),
+    path('learning-and-development/qr/training/<int:pk>/', genrQRTraining, name='genr_qr_training'),
     path('portal/updates/', portal_updater, name='portal_updater'),
     path('help-desk/delete/', delete_ticket_request, name='delete_ticket_request'),
     path('help-desk/view/<int:pk>', view_help_desk, name='view_help_desk'),

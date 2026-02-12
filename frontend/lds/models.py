@@ -7,6 +7,14 @@ from backend.models import Empprofile
 from frontend.models import Trainingtitle
 
 
+class LdsTrainingNotifications(models.Model):
+    training = models.ForeignKey('LdsRso', on_delete=models.CASCADE, db_column='training_rso')
+    approvedBy = models.ForeignKey(Empprofile, models.DO_NOTHING, db_column='approved_by')
+
+    class Meta:
+        db_table = 'lds_training_notifications'
+
+
 class LdsCertificateType(models.Model):
     keyword = models.CharField(max_length=255, blank=True, null=True)
     adjective = models.CharField(max_length=255, blank=True, null=True)

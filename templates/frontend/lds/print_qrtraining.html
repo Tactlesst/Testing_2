@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+{% load static %}
+{% load frontend_tags %}
+{% load tags %}
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRPEARS | QR Training</title>
+    <link rel="shortcut icon" type="image/png" href="{% static 'image/hrpearlogo_192.png' %}" />
+    <link href="{% static 'font-awesome/css/all.css' %}" rel="stylesheet">
+    <link href="{% static 'css/adminlte.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/plugins/sweetalert/sweetalert2.min.css' %}" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/adjustments.css' %}">
+    <link href="{% static 'css/print.css' %}" rel="stylesheet">
+    <style>
+        @media print {
+            page {
+                margin: 0 !important;
+                padding: 20px 30px 30px 30px !important;
+                border: 0.5px solid transparent;
+                height: 205mm !important;
+            }
+            ::-webkit-input-placeholder { /* WebKit browsers */
+                color: transparent;
+            }
+            :-moz-placeholder { /* Mozilla Firefox 4 to 18 */
+                color: transparent;
+            }
+            ::-moz-placeholder { /* Mozilla Firefox 19+ */
+                color: transparent;
+            }
+            :-ms-input-placeholder { /* Internet Explorer 10+ */
+                color: transparent;
+            }
+        }
+
+        @page {
+            size: auto;
+        }
+
+        td{
+            padding: 5px !important;
+        }
+
+        .qr-center-wrap {
+            width: 100%;
+            margin-top: 18px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .qr-center-box {
+            width: 260px;
+            height: 260px;
+            border: 3px solid #000;
+            box-sizing: border-box;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .qr-center-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<nav class="main-header navbar navbar-expand navbar-light navbar-white m-0">
+    <div class="container">
+        <a class="navbar-brand" href="javascript:;"><strong>QR Training&emsp;<small><em>Note: Set margin to None</em></small></strong></a>
+        <ul class="navbar-nav ml-auto">
+            <li><button type="button" class="btn btn-info print-button" id="floatprint"><i class="fas fa-print"></i> Print</button></li>
+        </ul>
+    </div>
+</nav>
+<body>
+    {% getemployeebyempid training.created_by_id as office_unit %}
+    <page size="A4" layout="landscape" class="page" style="padding: 30px; color: black;">
+        <div class="containerX" style="page-break-after: always !important;">
+            <img loading="lazy" src="{% static 'image/dswd_logo_3.png' %}" width="10%">&emsp;
+            <img loading="lazy" src="{% static 'image/bagong_pilipinas.png' %}" width="4%" style="margin-top: -10px;">
+            <br>
+            <span style="margin-top: -50px; display: block; width: 100%; text-align: center;" class="text-center">
+                <span style="font-family: Times New Roman; font-size: 10.7px;"><strong>
+                    {% if office_unit %}
+                    <strong>{{ office_unit.section.div|upper }}</strong>
+                    {% else %}
+                    {% endif %}
+                </strong></span><br>
+                <span style="font-family: Times New Roman; font-size: 10.7px;"><strong>FIELD OFFICE 10</strong>
+                </span>
+            </span><br>
+            </span>
+            <hr>
+            <div style="margin-top: -10px">
+                <div style="display: flex; align-items: flex-start; width: 100%;">
+                    <div style="width: 80px; height: 80px;"></div>
+                    <div style="flex: 1; text-align: center;">
+                        <p class="text-center mb-1" style="font-size: 10.7px;">
+                            <strong>QR TRAINING SHEET</strong>
+                        </p>
+                        <p class="text-center m-0" style="font-size: 9.3px;">
+                            <strong>{{ training.training.tt_name|upper }}</strong><br>
+                            <strong>{{ training.start_date|date:"F d, Y" }} - {{ training.end_date|date:"F d, Y" }}</strong><br>
+                            <strong>{{ training.venue }}</strong>
+                        </p>
+                    </div>
+                    <div style="width: 80px; height: 80px;"></div>
+                </div>
+            </div>
+
+            <div class="qr-center-wrap">
+                <div class="qr-center-box">
+                    <img loading="lazy" src="{% url 'genr_qr_training' training.id %}" alt="QR Code">
+                </div>
+            </div>
+
+            <p style="font-size: 9.3px; margin-top: 15px;" class="text-center">
+                Scan the QR code for training details.
+            </p>
+            <div>
+                <hr width="50%">
+                <p style="font-size: 9.3px; margin-top: -15px; font-family: Times New Roman;" class="text-center">
+                    DSWD Field Office X, Masterson Ave, Upper Carmen, 9000 Cagayan de Oro City, Philippines<br>
+                    Website: www.fo10.dswd.gov.ph&emsp;&emsp;Telefax (63)(88)858-6333
+                </p>
+            </div>
+        </div>
+    </page>
+    <script src="{% static 'js/jquery-3.1.1.min.js' %}"></script>
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'js/adminlte.min.js' %}"></script>
+    <script src="{% static 'js/plugins/sweetalert/sweetalert2.all.min.js' %}"></script>
+    <script src="{% static 'js/functions.js' %}"></script>
+</body>
+</html>

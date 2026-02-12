@@ -1,6 +1,9 @@
 from django.urls import path
 
-from api.lds.views import LdsRsoViews, LdsRsoViewsAdmin, LdsParticipantsViews, LdsFacilitatorsViews, LdsIDPViews, LdsTrainingTitlesDataTableViews, LdsLdiPlansByTrainingViews, LdsApprovedTrainingsDashboardDataTableViews, LdsTrainingNotificationView, LdsLatestApprovedTrainingView
+from api.lds.views import LdsRsoViews, LdsRsoViewsAdmin, LdsParticipantsViews, LdsFacilitatorsViews, \
+LdsIDPViews, LdsTrainingTitlesDataTableViews, LdsLdiPlansByTrainingViews, \
+LdsApprovedTrainingsDashboardDataTableViews, LdsTrainingNotificationView, \
+LdsLatestApprovedTrainingView
 
 urlpatterns = [
     path('', LdsRsoViews.as_view(), name='api_lds_rso'),
@@ -16,5 +19,5 @@ urlpatterns = [
     path('participants/', LdsParticipantsViews.as_view(), name='api_lds_participants'),
     path('facilitators/', LdsFacilitatorsViews.as_view(), name='api_lds_facilitators'),
     path('admin/', LdsRsoViewsAdmin.as_view(), name='api_lds_rso_admin'),
-    path('idp/', LdsIDPViews.as_view(), name='api_lds_idp')
+    path('idp/', LdsIDPViews.as_view(), name='api_lds_idp'),
 ]

@@ -251,6 +251,15 @@ def training_details(request, pk):
 
 
 @login_required
+def print_qrtraining(request, pk):
+    obj = get_object_or_404(LdsRso, pk=pk)
+    context = {
+        'training': obj,
+    }
+    return render(request, 'frontend/lds/print_qrtraining.html', context)
+
+
+@login_required
 def upload_ld_attachment(request, pk):
     obj = get_object_or_404(LdsRso, pk=pk)
     form = UploadAttachmentFormLDS(request.POST, request.FILES, instance=obj)
