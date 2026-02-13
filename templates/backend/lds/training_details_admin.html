@@ -81,10 +81,21 @@
             <li class="nav-item"><a class="nav-link text-dark" data-toggle="tab" href="#facilitators">Facilitators</a></li>
             <li class="nav-item ml-auto">
                 <div class="d-flex justify-content-end mb-2">
-                    <a class="btn btn-outline-primary d-flex align-items-end gap-2" target="_blank" href="{% url 'print_qrtraining' training.id %}">
-                        <img src="{% static 'svg/qr-code.svg' %}">
-                        Generate QR
-                    </a>
+                    {% if training.rrso_status == -1 or training.rso_status == -1 %}
+                        <span class="text-danger">Cannot generate QR if training is rejected.</span>
+                    {% else %}
+                        <a
+                            id="lds-generate-qr-btn-admin"
+                            class="btn btn-outline-primary d-flex align-items-end gap-2"
+                            target="_blank"
+                            href="{% url 'print_qrtraining' training.id %}"
+                            data-start="{{ training.start_date|date:'Y-m-d' }}"
+                            data-end="{{ training.end_date|date:'Y-m-d' }}"
+                        >
+                            <img src="{% static 'svg/qr-code.svg' %}">
+                            Generate QR
+                        </a>
+                    {% endif %}
                 </div>
             </li>
         </ul>
@@ -380,6 +391,28 @@
 $(document).ready(function(){
     var trainingId = {{ training.id }};
     var trainingTitleId = {{ training.training_id }};
+
+    (function(){
+        var $btn = $('#lds-generate-qr-btn-admin');
+        if (!$btn.length){
+            return;
+        }
+
+        var startStr = ($btn.attr('data-start') || '').trim();
+        var endStr = ($btn.attr('data-end') || '').trim();
+        if (!startStr || !endStr){
+            $btn.addClass('disabled').attr('aria-disabled', 'true').css('pointer-events', 'none');
+            return;
+        }
+
+        var start = new Date(startStr + 'T00:00:00');
+        var end = new Date(endStr + 'T23:59:59');
+        var now = new Date();
+
+        if (!(now >= start && now <= end)){
+            $btn.addClass('disabled').attr('aria-disabled', 'true').css('pointer-events', 'none');
+        }
+    })();
 
     // Load LDI Plan when tab is clicked
     $('a[href="#ldi-plan"]').on('click', function(){
