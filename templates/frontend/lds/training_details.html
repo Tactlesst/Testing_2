@@ -136,22 +136,19 @@
 
                                 <div class="d-flex justify-content-end mb-2">
                                     {% if training.rrso_status == -1 or training.rso_status == -1 %}
-                                        <div class="text-danger">Cannot generate QR if training is rejected.</div>
+                                        <span class="text-danger">Cannot generate QR if training is rejected.</span>
                                     {% else %}
-                                        {% now "U" as now_ts %}
-                                        {% with start_ts=training.start_date|date:"U" end_ts=training.end_date|date:"U" %}
-                                            {% if start_ts and end_ts and start_ts <= now_ts and now_ts <= end_ts %}
-                                                <a class="btn btn-outline-primary d-flex align-items-end gap-2" target="_blank" href="{% url 'print_qrtraining' training.id %}">
-                                                    <img src="{% static 'svg/qr-code.svg' %}">
-                                                    Generate QR
-                                                </a>
-                                            {% else %}
-                                                <a class="btn btn-outline-primary d-flex align-items-end gap-2 disabled" tabindex="-1" aria-disabled="true">
-                                                    <img src="{% static 'svg/qr-code.svg' %}">
-                                                    Generate QR
-                                                </a>
-                                            {% endif %}
-                                        {% endwith %}
+                                        <a
+                                            id="lds-generate-qr-btn"
+                                            class="btn btn-outline-primary d-flex align-items-end gap-2"
+                                            target="_blank"
+                                            href="{% url 'print_qrtraining' training.id %}"
+                                            data-start="{{ training.start_date|date:'Y-m-d' }}"
+                                            data-end="{{ training.end_date|date:'Y-m-d' }}"
+                                        >
+                                            <img src="{% static 'svg/qr-code.svg' %}">
+                                            Generate QR
+                                        </a>
                                     {% endif %}
                                 </div>
 
@@ -278,6 +275,28 @@
 {% block script %}
 <script>
     $(document).ready(function(){
+        (function(){
+            var $btn = $('#lds-generate-qr-btn');
+            if (!$btn.length){
+                return;
+            }
+
+            var startStr = ($btn.attr('data-start') || '').trim();
+            var endStr = ($btn.attr('data-end') || '').trim();
+            if (!startStr || !endStr){
+                $btn.addClass('disabled').attr('aria-disabled', 'true').css('pointer-events', 'none');
+                return;
+            }
+
+            var start = new Date(startStr + 'T00:00:00');
+            var end = new Date(endStr + 'T23:59:59');
+            var now = new Date();
+
+            if (!(now >= start && now <= end)){
+                $btn.addClass('disabled').attr('aria-disabled', 'true').css('pointer-events', 'none');
+            }
+        })();
+
         // {# nazef working in this code start #}
         $('#training-id-update').select2({
             width: '100%',

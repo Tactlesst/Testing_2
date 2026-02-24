@@ -10,7 +10,6 @@ Added QR Code for Training (Part 1)
 - Implemented QR into the Admin as well
 
 
-
 Modify and Update Notifications to use ~~Websockets~~ SSE (Part 2)
 
 - Added Notifications now. Used SSE for Server to Client interaction.
@@ -21,3 +20,11 @@ Modify and Update Notifications to use ~~Websockets~~ SSE (Part 2)
     - Added "consumers.py" into "frontend/lds/"
 
 - Fires Notifications if "rrso" and "rso" are approved
+
+
+
+February 13, 2026
+- Update on Notifications
+    - Created a condition where QR Code would only generate if its currently the training days if not, the button wouldn't be available.
+    - If training is rejected, button is hidden and display that the QR code cannot be generated because training is rejected.
+
