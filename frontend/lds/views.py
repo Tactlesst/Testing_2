@@ -4,26 +4,35 @@ import os
 import re
 import threading
 from datetime import timedelta, datetime
+import logging
 
 from decimal import Decimal, InvalidOperation
 
 from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth import get_user_model
+from django.db import models
 from django.db import transaction
 from django.http import JsonResponse, Http404
 from django.shortcuts import render, get_object_or_404
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django_mysql.models.functions import SHA1
 from dotenv import load_dotenv
 
 from api.wiserv import send_notification
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from backend.models import Division, Designation, Empprofile, Section
 from backend.lds.models import LdsLdiPlan
 from frontend.lds.forms import UploadAttachmentFormLDS
 from frontend.lds.models import LdsRso, LdsParticipants, LdsFacilitator, LdsCertificateType, LdsIDP, LdsIDPType, \
     LdsIDPContent, LdsRsoBudgetBaseline
+from frontend.lds.models import LdsTrainingNotifications
 from frontend.models import Trainingtitle, PortalConfiguration
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 
 @permission_required('auth.training_requester')
@@ -90,8 +99,29 @@ def lds_rrso(request):
                     except (InvalidOperation, ValueError):
                         planned_budget_value = None
 
-            start_dt = f"{start_date} {time_start or '08:00'}" if start_date else None
-            end_dt = f"{end_date} {time_end or '17:00'}" if end_date else None
+            start_dt = None
+            end_dt = None
+            try:
+                if start_date:
+                    start_dt = datetime.strptime(
+                        f"{start_date} {time_start or '08:00'}",
+                        "%Y-%m-%d %H:%M",
+                    )
+                    if timezone.is_naive(start_dt) and timezone.is_aware(timezone.now()):
+                        start_dt = timezone.make_aware(start_dt)
+            except Exception:
+                return JsonResponse({'error': True, 'msg': 'Invalid start date/time.'}, status=400)
+
+            try:
+                if end_date:
+                    end_dt = datetime.strptime(
+                        f"{end_date} {time_end or '17:00'}",
+                        "%Y-%m-%d %H:%M",
+                    )
+                    if timezone.is_naive(end_dt) and timezone.is_aware(timezone.now()):
+                        end_dt = timezone.make_aware(end_dt)
+            except Exception:
+                return JsonResponse({'error': True, 'msg': 'Invalid end date/time.'}, status=400)
 
             if check:
                 check.update(
@@ -139,6 +169,47 @@ def lds_rrso(request):
                         requested_participants=requested_participants_value,
                         requested_budget=requested_budget_value,
                     )
+
+                    try:
+                        UserModel = get_user_model()
+                        admin_user_ids = UserModel.objects.filter(
+                            models.Q(user_permissions__codename='ld_manager')
+                            | models.Q(groups__permissions__codename='ld_manager')
+                        ).values_list('id', flat=True).distinct()
+                        admin_emp_ids = list(
+                            Empprofile.objects.filter(pi__user_id__in=admin_user_ids).values_list('id', flat=True)
+                        )
+
+                        if admin_emp_ids:
+                            channel_layer = get_channel_layer()
+                            requester_name = ''
+                            try:
+                                requester_name = rso_obj.created_by.pi.user.get_fullname if rso_obj.created_by_id and rso_obj.created_by and rso_obj.created_by.pi_id else ''
+                            except Exception:
+                                requester_name = ''
+
+                            for admin_id in admin_emp_ids:
+                                notif = LdsTrainingNotifications.objects.create(
+                                    training_id=rso_obj.id,
+                                    requestedBy_id=rso_obj.created_by_id,
+                                    personnel_id_id=admin_id,
+                                    status=LdsTrainingNotifications.Status.REQUEST,
+                                    is_read=False,
+                                )
+
+                                if channel_layer:
+                                    async_to_sync(channel_layer.group_send)(f"lds_user_{admin_id}", {
+                                        'type': 'lds_notification',
+                                        'data': {
+                                            'event': 'training_requested',
+                                            'notif_id': notif.id,
+                                            'training_id': rso_obj.id,
+                                            'training_title': rso_obj.training.tt_name if rso_obj.training_id and rso_obj.training else '',
+                                            'requested_from': requester_name,
+                                        }
+                                    })
+                    except Exception:
+                        logger.exception('Failed creating LDS training request notifications')
 
                 return JsonResponse({'data': 'success', 'msg': 'You have successfully created an training'})
         return JsonResponse({'error': True, 'msg': 'Unauthorized transaction'})

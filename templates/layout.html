@@ -43,8 +43,6 @@
         th {
             vertical-align: middle !important;
         }
-
-        
     </style>
     {% block style %}{% endblock %}
 </head>
@@ -113,15 +111,19 @@
                         <img src="{% static 'svg/bell.svg' %}" width="22" height="22" alt="Notifications">
                         <!-- Optional: unread badge -->
                         <!-- Increases if there are New Trainings that were added -->
-                        <span class="badge badge-danger badge-pill ml-1" id="lds-notif-badge" style="display:none;">0</span>
+                        <span class="badge badge-danger badge-pill ml-1" id="lds-notif-badge"
+                            style="display:none;">0</span>
                     </a>
 
                     <!-- Dropdown menu -->
                     <div class="dropdown-menu dropdown-menu-right p-2" aria-labelledby="notificationDropdown"
                         style="min-width: 300px; max-height: 300px; overflow-y: auto;">
 
-                        <div class="border-bottom border-dark mb-3 p-1">
+                        <div
+                            class="border-bottom border-dark mb-3 p-1 d-flex justify-content-between align-items-center">
                             <strong class="">Notifications</strong>
+                            <button type="button" class="btn btn-link btn-sm p-0" id="lds-notif-mark-all">Mark all as
+                                read</button>
                         </div>
 
                         <div id="lds-notif-items"></div>
@@ -157,15 +159,7 @@
         </nav>
         <!-- /.navbar -->
 
-        <div class="px-3 pt-2" id="global-training-approved-alert-container" style="display: none;">
-            <div class="alert alert-success alert-dismissible fade show mb-0" role="alert"
-                id="global-training-approved-alert">
-                A new training has been approved, check your Dashboard
-                <button type="button" class="close" aria-label="Close" id="global-training-approved-alert-close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        </div>
+
 
         <!-- Content Wrapper. Contains page content -->
         <div class="content-wrapper">
@@ -504,13 +498,14 @@
             }, 500);
         });
 
-        '{% if user|check_permission:'payroll' or user|check_permission:'superadmin'%}'
+        {% if user|check_permission:'payroll' or user|check_permission:'superadmin'%}
         $(".filter_employee").typeahead({
             source: function (query, process) {
                 return $.get({
                     url: '{% url "filter_employee" %}',
                     data: { query: query },
                     datatype: 'json',
+
                     success: function (data) {
                         return process(data);
                     }
@@ -518,7 +513,7 @@
             },
             highlight: true,
         });
-        '{% endif %}'
+        {% endif %}
 
         $(document).ready(function () {
             $('.filter-search').on('input', function () {
@@ -554,237 +549,9 @@
             });
         });
 
-        (function () {
-            var endpointUrl = '/api/learning-and-development/latest-approved-training/';
-            var notifEndpointUrl = '/api/learning-and-development/latest-approved-training-notification/';
-            var storageKey = 'latest_approved_training_id_seen';
-            var autoCloseTimer = null;
-            var pollTimer = null;
-            var pollDelayMs = 5000;
-            var pollDelayMinMs = 5000;
-            var pollDelayMaxMs = 60000;
-
-            function setNotifBadge(count) {
-                var $badge = $('#lds-notif-badge');
-                if (!$badge.length) {
-                    return;
-                }
-
-                var val = parseInt(count || 0, 10);
-                if (isNaN(val) || val <= 0) {
-                    $badge.hide().text('0');
-                    return;
-                }
-
-                $badge.text(String(val)).show();
-            }
-
-            function prependNotifItem(title, message) {
-                var $wrap = $('#lds-notif-items');
-                if (!$wrap.length) {
-                    return;
-                }
-
-                var safeTitle = title || 'Training';
-                var safeMsg = message || 'has been approved, make sure to check your Dashboard.';
-
-                var html = '';
-                html += '<div class="alert alert-info mb-2 p-2" role="alert">';
-                html += '<strong>' + $('<div>').text(safeTitle).html() + '</strong> ' + $('<div>').text(safeMsg).html();
-                html += '</div>';
-
-                $wrap.prepend(html);
-
-                var maxItems = 5;
-                var $items = $wrap.children('.alert');
-                if ($items.length > maxItems) {
-                    $items.slice(maxItems).remove();
-                }
-            }
-
-            function loadLatestNotification() {
-                $.ajax({
-                    url: notifEndpointUrl,
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function (data) {
-                        if (!data || !data.has_notification || !data.notification) {
-                            return;
-                        }
-                        var n = data.notification;
-                        if (!n || !n.training_title) {
-                            return;
-                        }
-                        prependNotifItem(n.training_title, 'has been approved, make sure to check your Dashboard.');
-                        setNotifBadge(1);
-                    }
-                });
-            }
-
-            function connectLdsNotifWebSocket() {
-                if (!('EventSource' in window)) {
-                    return;
-                }
-
-                var esUrl = '/api/learning-and-development/notifications/stream/';
-                var es = null;
-                try {
-                    es = new EventSource(esUrl, { withCredentials: true });
-                } catch (e) {
-                    es = null;
-                }
-
-                if (!es) {
-                    return;
-                }
-
-                es.onmessage = function (event) {
-                    var payload = null;
-                    try {
-                        payload = JSON.parse(event.data);
-                    } catch (e) {
-                        payload = null;
-                    }
-
-                    if (!payload || payload.event !== 'training_approved') {
-                        return;
-                    }
-
-                    prependNotifItem(payload.training_title || 'Training', 'has been approved, make sure to check your Dashboard.');
-
-                    var $badge = $('#lds-notif-badge');
-                    var current = 0;
-                    try {
-                        current = parseInt(($badge.text() || '0'), 10);
-                    } catch (e) {
-                        current = 0;
-                    }
-                    if (isNaN(current)) {
-                        current = 0;
-                    }
-                    setNotifBadge(current + 1);
-
-                    showApprovedTrainingAlert();
-                };
-
-                es.onerror = function () {
-                    try {
-                        es.close();
-                    } catch (e) { }
-                    setTimeout(function () {
-                        connectLdsNotifWebSocket();
-                    }, 5000);
-                };
-            }
-
-            function showApprovedTrainingAlert() {
-                $('#global-training-approved-alert-container').stop(true, true).fadeIn(150);
-
-                if (autoCloseTimer) {
-                    clearTimeout(autoCloseTimer);
-                    autoCloseTimer = null;
-                }
-                autoCloseTimer = setTimeout(function () {
-                    hideApprovedTrainingAlert();
-                }, 10000);
-            }
-
-            function hideApprovedTrainingAlert() {
-                $('#global-training-approved-alert-container').stop(true, true).fadeOut(150);
-            }
-
-            $(document).on('click', '#global-training-approved-alert-close', function () {
-                hideApprovedTrainingAlert();
-            });
-
-            function clearPollTimer() {
-                if (pollTimer) {
-                    clearTimeout(pollTimer);
-                    pollTimer = null;
-                }
-            }
-
-            function scheduleNextPoll(delayMs) {
-                clearPollTimer();
-                pollTimer = setTimeout(function () {
-                    pollLatestApprovedTraining();
-                }, delayMs);
-            }
-
-            function isPageVisible() {
-                return document.visibilityState === 'visible';
-            }
-
-            function pollLatestApprovedTraining() {
-                if (!isPageVisible()) {
-                    scheduleNextPoll(pollDelayMaxMs);
-                    return;
-                }
-                $.ajax({
-                    url: endpointUrl,
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function (data) {
-                        var foundNew = false;
-                        if (!data || !data.has_latest) {
-                            pollDelayMs = Math.min(pollDelayMaxMs, pollDelayMs * 2);
-                            scheduleNextPoll(pollDelayMs);
-                            return;
-                        }
-
-                        var latestId = data.id;
-                        if (!latestId) {
-                            pollDelayMs = Math.min(pollDelayMaxMs, pollDelayMs * 2);
-                            scheduleNextPoll(pollDelayMs);
-                            return;
-                        }
-
-                        var seenId = null;
-                        try {
-                            seenId = localStorage.getItem(storageKey);
-                        } catch (e) {
-                            seenId = null;
-                        }
-
-                        if (seenId && String(seenId) === String(latestId)) {
-                            pollDelayMs = Math.min(pollDelayMaxMs, pollDelayMs * 2);
-                            scheduleNextPoll(pollDelayMs);
-                            return;
-                        }
-
-                        try {
-                            localStorage.setItem(storageKey, String(latestId));
-                        } catch (e) { }
-
-                        showApprovedTrainingAlert();
-                        foundNew = true;
-
-                        if (foundNew) {
-                            pollDelayMs = pollDelayMinMs;
-                        }
-                        scheduleNextPoll(pollDelayMs);
-                    }
-                }).fail(function () {
-                    pollDelayMs = Math.min(pollDelayMaxMs, pollDelayMs * 2);
-                    scheduleNextPoll(pollDelayMs);
-                });
-            }
-
-            $(document).ready(function () {
-                loadLatestNotification();
-                connectLdsNotifWebSocket();
-                pollDelayMs = pollDelayMinMs;
-                pollLatestApprovedTraining();
-
-                document.addEventListener('visibilitychange', function () {
-                    if (isPageVisible()) {
-                        pollDelayMs = pollDelayMinMs;
-                        pollLatestApprovedTraining();
-                    }
-                });
-            });
-        })();
+        
     </script>
+
     <script type="text/javascript" for="contact-tracing">
         $('#contacts-search').on('submit', function (e) {
             e.preventDefault();
@@ -819,6 +586,11 @@
             });
         });
     </script>
+
+    <script>
+        const eyeIconURL = "{% static 'svg/eye.svg' %}"
+    </script>
+    <script src="{% static 'js/training-notifications.js' %}"></script>
     {% block script %}{% endblock %}
 </body>
 

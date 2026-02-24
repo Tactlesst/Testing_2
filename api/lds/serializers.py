@@ -164,9 +164,23 @@ class LdsLdiPlanSerializer(serializers.ModelSerializer):
 
 class LdsTrainingNotificationsSerializer(serializers.ModelSerializer):
     training_title = serializers.CharField(source='training.training.tt_name', read_only=True)
-    approved_by = serializers.CharField(source='approvedBy.pi.user.get_fullname', read_only=True)
+    requested_from = serializers.CharField(source='requestedBy.pi.user.get_fullname', read_only=True)
+    personnel = serializers.CharField(source='personnel_id.pi.user.get_fullname', read_only=True)
     date_approved = serializers.DateTimeField(source='training.date_approved', format="%b %d, %Y %H:%M:%S %p", read_only=True)
+    event = serializers.CharField(read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+
 
     class Meta:
         model = LdsTrainingNotifications
-        fields = ['id', 'training_id', 'training_title', 'approved_by', 'date_approved']
+        fields = [
+            'id', 
+            'training_id', 
+            'training_title', 
+            'requested_from', 
+            'is_read', 
+            'personnel', 
+            'date_approved',
+            'status_display',
+            'event'
+            ]

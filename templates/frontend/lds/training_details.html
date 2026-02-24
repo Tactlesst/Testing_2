@@ -124,17 +124,6 @@
                             <a href="{{ training.attachment.url }}" target="_blank">{{ training.attachment }}</a>
                         {% endif %}
                     {% endif %}
-                    {% if user|check_permission:'ld_manager' or user|check_permission:'superadmin'%}
-                        {% if training.rrso_status %}
-                            {% if not training.rso_status %}
-                                <hr style="margin-right:-15px; margin-left:-15px; margin-top:25px;">
-                                <button type="button" class="btn btn-success" id="bypass-approval-rso">Approve RSO</button>
-                            {% endif %}
-                        {% else %}
-                            <hr style="margin-right:-15px; margin-left:-15px; margin-top:25px;">
-                            <button type="button" class="btn btn-info" id="bypass-approval">Approve Training</button>
-                        {% endif %}
-                    {% endif %}
                 </div>
             </div>
             <div id="participants" class="tab-pane">
@@ -146,10 +135,24 @@
                                 {% csrf_token %}
 
                                 <div class="d-flex justify-content-end mb-2">
-                                    <a class="btn btn-outline-primary d-flex align-items-end gap-2" target="_blank" href="{% url 'print_qrtraining' training.id %}">
-                                        <img src="{% static 'svg/qr-code.svg' %}">
-                                        Generate QR
-                                    </a>
+                                    {% if training.rrso_status == -1 or training.rso_status == -1 %}
+                                        <div class="text-danger">Cannot generate QR if training is rejected.</div>
+                                    {% else %}
+                                        {% now "U" as now_ts %}
+                                        {% with start_ts=training.start_date|date:"U" end_ts=training.end_date|date:"U" %}
+                                            {% if start_ts and end_ts and start_ts <= now_ts and now_ts <= end_ts %}
+                                                <a class="btn btn-outline-primary d-flex align-items-end gap-2" target="_blank" href="{% url 'print_qrtraining' training.id %}">
+                                                    <img src="{% static 'svg/qr-code.svg' %}">
+                                                    Generate QR
+                                                </a>
+                                            {% else %}
+                                                <a class="btn btn-outline-primary d-flex align-items-end gap-2 disabled" tabindex="-1" aria-disabled="true">
+                                                    <img src="{% static 'svg/qr-code.svg' %}">
+                                                    Generate QR
+                                                </a>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% endif %}
                                 </div>
 
                                 <div class="input-group">

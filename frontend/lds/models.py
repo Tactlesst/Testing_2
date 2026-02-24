@@ -8,11 +8,27 @@ from frontend.models import Trainingtitle
 
 
 class LdsTrainingNotifications(models.Model):
+    class Status(models.IntegerChoices):
+        REQUEST = 1,'Request'
+        APPROVED = 2,'Approved'
+        REJECTED = 3,'Rejected'
+
     training = models.ForeignKey('LdsRso', on_delete=models.CASCADE, db_column='training_rso')
-    approvedBy = models.ForeignKey(Empprofile, models.DO_NOTHING, db_column='approved_by')
+    requestedBy = models.ForeignKey(Empprofile, models.DO_NOTHING, db_column='requested_by')
+    personnel_id = models.ForeignKey(Empprofile, models.CASCADE, db_column='personnel_id')
+    status = models.IntegerField(db_column='training_status', default=Status.REQUEST, choices=Status.choices)
+    is_read = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'lds_training_notifications'
+
+    @property
+    def event(self):
+        if self.status == self.Status.APPROVED:
+            return "training_approved"
+        elif self.status == self.Status.REJECTED:
+            return "training_rejected"
+        return "training_requested"
 
 
 class LdsCertificateType(models.Model):
@@ -62,7 +78,7 @@ class LdsRso(models.Model):
     rrso_status = models.IntegerField(blank=True, null=True)
     rso_status = models.IntegerField(blank=True, null=True)
     date_approved = models.DateTimeField(blank=True, null=True)
-    attachment = models.FileField(upload_to='lds/')
+    attachment = models.FileField(upload_to='lds/', blank=True, null=True)
     date_added = models.DateTimeField(default=timezone.now)
     created_by = models.ForeignKey(Empprofile, models.DO_NOTHING)
     is_online_platform = models.IntegerField(blank=True, null=True)

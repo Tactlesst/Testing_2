@@ -31,9 +31,9 @@ urlpatterns = [
     # nazef working in this code end
     #end added paths for LDI plan by Nazef
 
-    path('details/<int:pk>/', training_details_admin, name='training_details_admin'),
-    path('details/<int:pk>/reject/', reject_training, name='reject_training'),
+    path('details/<int:pk>/', training_details_admin, name='training_details_admin'), 
+    path('details/<int:pk>/reject/', reject_training, name='reject_training'), #Target Fix
     path('rrso/bypass-approval/<int:pk>', bypass_lds_rrso_approval, name='bypass_lds_rrso_approval'),
-    path('rso/bypass-approval/<int:pk>', bypass_lds_rso_approval, name='bypass_lds_rso_approval'),
+    path('rso/bypass-approval/<int:pk>', bypass_lds_rso_approval, name='bypass_lds_rso_approval'), #Target Fix
     path('generate/rso/', generate_drn_for_rso, name='generate_drn_for_rso'),
 ]
