@@ -1,0 +1,34 @@
+
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row px-3 pt-3">
+        <div class="col-lg-8">
+            <h1 class="font-weight-bold">{{ tab_title }}</h1>
+            <ol class="breadcrumb bg-transparent p-0">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'backend-dashboard' %}">Home</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <strong>{{ tab_parent }}</strong>
+                </li>
+                <li class="breadcrumb-item active">
+                    <strong>{{ tab_title }}</strong>
+                </li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+<div class="content-wrapper p-4 ml-0">
+    <div id="lds-notif-history-root" data-lds-notif-history="1"></div>
+    <div class="card">
+        <div class="card-body p-2">
+            <div id="lds-notif-history-items"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

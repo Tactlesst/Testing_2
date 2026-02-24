@@ -187,6 +187,14 @@
             $('#training_details').modal('show').find('#details-content').load('/backend/learning-and-development/details/' + id);
         });
 
+        try {
+            var params = new URLSearchParams(window.location.search);
+            var openId = params.get('open_training_id');
+            if (openId && /^\d+$/.test(String(openId))) {
+                $('#training_details').modal('show').find('#details-content').load('/backend/learning-and-development/details/' + String(openId));
+            }
+        } catch (e) { }
+
         var openRsoDetailsRow = null;
 
         function closeRsoDetails() {

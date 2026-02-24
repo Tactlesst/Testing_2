@@ -32,6 +32,14 @@
     <link href="{% static 'css/rating.css' %}" rel="stylesheet">
     <script src="{% static 'ajax/jquery/1.9.1/jquery.min.js' %}"></script>
     <style>
+        .lds-notif-row:hover {
+            background-color: #f2f2f2;
+        }
+
+        .lds-notif-row {
+            transition: background-color 0.15s ease;
+        }
+
         .invalid-feedback {
             color: #fb4347;
         }
@@ -107,7 +115,11 @@
                 <li class="nav-item dropdown">
                     <!-- Bell icon trigger -->
                     <a class="nav-link d-flex align-items-center" href="#" id="notificationDropdown" role="button"
-                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                        data-lds-notif-is-admin="{{ user|check_permission:'superadmin'|yesno:'1,0' }}"
+                        data-lds-notif-is-ld-admin="{{ user|check_permission:'ld_manager'|yesno:'1,0' }}"
+                        data-lds-notif-admin-url="/backend/learning-and-development/"
+                        data-lds-notif-requester-details-url-template="/learning-and-development/details/__ID__">
                         <img src="{% static 'svg/bell.svg' %}" width="22" height="22" alt="Notifications">
                         <!-- Optional: unread badge -->
                         <!-- Increases if there are New Trainings that were added -->
@@ -127,6 +139,10 @@
                         </div>
 
                         <div id="lds-notif-items"></div>
+
+                        <div class="pt-2">
+                            <a class="btn btn-light btn-block btn-sm" href="/learning-and-development/notifications/" id="lds-notif-see-all">See All Notifications</a>
+                        </div>
                     </div>
                 </li>
 
@@ -498,7 +514,7 @@
             }, 500);
         });
 
-        {% if user|check_permission:'payroll' or user|check_permission:'superadmin'%}
+        {% if user|check_permission:'payroll' or user|check_permission:'superadmin' %}
         $(".filter_employee").typeahead({
             source: function (query, process) {
                 return $.get({
@@ -549,7 +565,7 @@
             });
         });
 
-        
+
     </script>
 
     <script type="text/javascript" for="contact-tracing">

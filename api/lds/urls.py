@@ -4,7 +4,7 @@ from api.lds.views import LdsRsoViews, LdsRsoViewsAdmin, LdsParticipantsViews, L
 LdsIDPViews, LdsTrainingTitlesDataTableViews, LdsLdiPlansByTrainingViews, \
 LdsApprovedTrainingsDashboardDataTableViews, LdsTrainingNotificationView, \
 LdsLatestApprovedTrainingView, LdsLatestApprovedTrainingNotificationView, \
-LdsUnreadTrainingNotificationsView, LdsMarkTrainingNotificationsReadView
+LdsUnreadTrainingNotificationsView, LdsMarkTrainingNotificationsReadView, LdsAllTrainingNotificationsView
 # lds_training_notifications_sse
 
 urlpatterns = [
@@ -16,6 +16,7 @@ urlpatterns = [
     path('latest-approved-training/', LdsLatestApprovedTrainingView.as_view(), name='api_lds_latest_approved_training'),
     path('latest-approved-training-notification/', LdsLatestApprovedTrainingNotificationView.as_view(), name='api_lds_latest_approved_training_notification'),
     path('notifications/unread/', LdsUnreadTrainingNotificationsView.as_view(), name='api_lds_training_notifications_unread'),
+    path('notifications/all/', LdsAllTrainingNotificationsView.as_view(), name='api_lds_training_notifications_all'),
     path('notifications/mark-read/', LdsMarkTrainingNotificationsReadView.as_view(), name='api_lds_training_notifications_mark_read'),
     # path('notifications/stream/', lds_training_notifications_sse, name='api_lds_training_notifications_sse'),
     path('training-notification/', LdsTrainingNotificationView.as_view(), name='api_lds_training_notification'),

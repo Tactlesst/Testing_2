@@ -12,7 +12,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.db import transaction
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse, Http404, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
@@ -33,6 +33,15 @@ from frontend.models import Trainingtitle, PortalConfiguration
 load_dotenv()
 
 logger = logging.getLogger(__name__)
+
+
+@login_required
+def notification_history(request):
+    context = {
+        'tab_parent': 'Learning and Development',
+        'tab_title': 'Notifications',
+    }
+    return render(request, 'frontend/notification_page.html', context)
 
 
 @permission_required('auth.training_requester')
@@ -312,6 +321,15 @@ def lds_trainingtitle_search(request):
 
 def training_details(request, pk):
     obj = get_object_or_404(LdsRso, pk=pk)
+
+    try:
+        emp_id = request.session.get('emp_id')
+    except Exception:
+        emp_id = None
+
+    if emp_id and str(obj.created_by_id) != str(emp_id):
+        return HttpResponseForbidden('Forbidden')
+
     context = {
         'attachment_form': UploadAttachmentFormLDS(instance=obj),
         'training': LdsRso.objects.filter(id=pk).first(),

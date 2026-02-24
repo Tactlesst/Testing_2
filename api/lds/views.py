@@ -136,6 +136,50 @@ class LdsMarkTrainingNotificationsReadView(APIView):
         return Response({'updated': int(updated)})
 
 
+class LdsAllTrainingNotificationsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        emp = Empprofile.objects.filter(pi__user_id=request.user.id).first()
+        if not emp:
+            return Response({'count': 0, 'notifications': []})
+
+        is_admin = False
+        try:
+            is_admin = bool(check_permission(request.user, 'superadmin') or check_permission(request.user, 'ld_manager'))
+        except Exception:
+            is_admin = False
+
+        qs = (
+            LdsTrainingNotifications.objects
+            .select_related(
+                'training',
+                'training__training',
+                'requestedBy',
+                'requestedBy__pi__user',
+                'personnel_id',
+                'personnel_id__pi__user',
+            )
+            .order_by('-id')
+        )
+
+        if is_admin:
+            pass
+        else:
+            qs = qs.filter(requestedBy_id=emp.id)
+
+        try:
+            limit = int(str(request.query_params.get('limit') or '200').strip())
+        except Exception:
+            limit = 200
+        if limit < 1:
+            limit = 1
+        if limit > 500:
+            limit = 500
+
+        data = LdsTrainingNotificationsSerializer(qs[:limit], many=True).data
+        return Response({'count': qs.count(), 'notifications': data})
+
 
 # Run a Test before removing this code 
 # class LdsTrainingNotificationsSseView(APIView):
