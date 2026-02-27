@@ -1,3 +1,7 @@
+
+// This handles Notification from Layout
+// Note that the functions is also being used as well in notification page
+
 (function () {
     var endpointUrl = '/api/learning-and-development/latest-approved-training/';
     var unreadNotifsUrl = '/api/learning-and-development/notifications/unread/';
@@ -108,6 +112,11 @@
             return;
         }
 
+        if (val > 5) {
+            $badge.text('5+').show();
+            return;
+        }
+
         $badge.text(String(val)).show();
     }
 
@@ -116,6 +125,19 @@
             unreadCount = 0;
         }
         setNotifBadge(unreadCount);
+    }
+
+    function recomputeUnreadCountFromDropdownUi() {
+        try {
+            if (isHistoryPage()) {
+                return;
+            }
+            var $wrap = $('#lds-notif-items');
+            if (!$wrap.length) {
+                return;
+            }
+            unreadCount = $wrap.children('.lds-notif-row').length;
+        } catch (e) { }
     }
 
     function truncateText(text, maxLen) {
@@ -130,18 +152,8 @@
         return s.substring(0, max - 3) + '...';
     }
 
-    function alertClassForEvent(evt) {
-        switch (evt) {
-            case 'training_requested':
-                return 'alert-primary';
-
-            case 'training_approved':
-                return 'alert-success';
-            case 'training_rejected':
-                return 'alert-danger';
-            default:
-                return 'alert-info';
-        }
+    function textClassForEvent(evt) {
+        return 'text-dark';
     }
 
     function escapeHtml(s) {
@@ -228,7 +240,7 @@
                     return;
                 }
 
-                for (var i = 0; i < data.notifications.length; i++) {
+                for (var i = data.notifications.length - 1; i >= 0; i--) {
                     var n = data.notifications[i];
                     if (!n) {
                         continue;
@@ -256,7 +268,9 @@
                         n.id,
                         n.event,
                         n.training_id,
+                        n.date_requested,
                         n.date_approved,
+                        n.time_ago,
                         !n.is_read,
                         0
                     );
@@ -280,7 +294,7 @@
         return $('#lds-notif-items');
     }
 
-    function prependNotifItemTo($wrap, title, message, notifId, event, trainingId, dateApproved, isUnread, capItems) {
+    function prependNotifItemTo($wrap, title, message, notifId, event, trainingId, dateRequested, dateApproved, timeAgoText, isUnread, capItems) {
         if (!$wrap || !$wrap.length) {
             return;
         }
@@ -298,7 +312,7 @@
 
         var idAttr = (notifId) ? (' data-notif-id="' + String(notifId) + '" ') : '';
         var trAttr = (trainingId) ? (' data-training-id="' + String(trainingId) + '" ') : '';
-        var klass = alertClassForEvent(event);
+        var textKlass = textClassForEvent(event);
 
         var unreadFlag = (typeof isUnread === 'undefined' || isUnread === null) ? true : !!isUnread;
 
@@ -336,33 +350,21 @@
             return (yr + 'y');
         }
 
-        var timeAgo = timeAgoFromDateString(dateApproved);
-
-        var avatarUrl = null;
-        try {
-            var avatarName = (fullTitle || 'Training');
-            avatarUrl = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(String(avatarName)) + '&background=random&color=fff&size=64';
-        } catch (e) {
-            avatarUrl = null;
-        }
+        var timeAgo = (timeAgoText && String(timeAgoText).trim())
+            ? String(timeAgoText)
+            : timeAgoFromDateString(dateRequested || dateApproved);
 
         var html = '';
 
-        html += '<div class="d-flex align-items-start p-2 mb-1 rounded lds-notif-row position-relative ' + escapeHtml(klass) + '" ' + idAttr + trAttr + ' style="cursor:pointer;">';
+        html += '<div class="d-flex align-items-start p-2 mb-1 rounded lds-notif-row position-relative bg-white" ' + idAttr + trAttr + ' style="cursor:pointer; background-color:#fff;">';
 
         html += '  <a href="javascript:;" class="d-flex flex-grow-1 text-decoration-none text-dark lds-notif-item" ' + idAttr + trAttr + '>';
-
-        html += '    <!-- Avatar -->';
-        html += '    <div class="mr-2 flex-shrink-0">';
-        html += '      <img src="' + (avatarUrl || "https://via.placeholder.com/40") + '"';
-        html += '           class="rounded-circle" width="40" height="40">';
-        html += '    </div>';
 
         html += '    <!-- Content -->';
         html += '    <div class="flex-grow-1" style="min-width:0;">';
         html += '      <div class="small">';
-        html += '        <span class="font-weight-bold">' + escapeHtml(safeTitle) + '</span> ';
-        html += '        <span>' + escapeHtml(safeMsg) + '</span>';
+        html += '        <span class="font-weight-bold ' + escapeHtml(textKlass) + '">' + escapeHtml(safeTitle) + '</span> ';
+        html += '        <span class="' + escapeHtml(textKlass) + '">' + escapeHtml(safeMsg) + '</span>';
         html += '      </div>';
         html += '      <div class="text-muted small">' + timeAgo + '</div>';
         html += '    </div>';
@@ -374,9 +376,6 @@
         html += '    <button type="button" class="btn btn-sm btn-light rounded-circle p-1 lds-notif-mark-seen" ' + idAttr + trAttr + '>';
         html += '      <img src="' + escapeHtml((typeof eyeIconURL !== "undefined") ? eyeIconURL : "") + '" width="14">';
         html += '    </button>';
-
-        html += '    <!-- Unread blue dot -->';
-        html += '    ' + (unreadFlag ? '<span class="bg-primary rounded-circle mt-1 lds-notif-unread-dot" style="width:8px;height:8px;display:inline-block;"></span>' : '<span class="lds-notif-unread-dot" style="display:none;"></span>') + '';
         html += '  </div>';
 
         html += '</div>';
@@ -392,9 +391,9 @@
         }
     }
 
-    function prependNotifItem(title, message, notifId, event, trainingId, dateApproved) {
+    function prependNotifItem(title, message, notifId, event, trainingId, dateRequested, dateApproved, timeAgoText) {
         var $wrap = getNotifWrap();
-        prependNotifItemTo($wrap, title, message, notifId, event, trainingId, dateApproved, true, 5);
+        prependNotifItemTo($wrap, title, message, notifId, event, trainingId, dateRequested, dateApproved, timeAgoText, true, 5);
     }
 
     function markHistoryRowRead(notifId) {
@@ -435,14 +434,23 @@
         }
 
         var $el = $('.lds-notif-item[data-notif-id="' + String(notifId) + '"]');
+        var removed = false;
         if ($el.length) {
             $el.closest('.lds-notif-row').remove();
+            removed = true;
         }
 
-        if (unreadCount === null || typeof unreadCount === 'undefined') {
-            unreadCount = 0;
+        if (removed) {
+            if (unreadCount === null || typeof unreadCount === 'undefined') {
+                recomputeUnreadCountFromDropdownUi();
+            } else {
+                unreadCount = Math.max(0, unreadCount - 1);
+            }
+        } else {
+            if (unreadCount === null || typeof unreadCount === 'undefined') {
+                unreadCount = 0;
+            }
         }
-        unreadCount = Math.max(0, unreadCount - 1);
 
         if ($('#lds-notif-items').children('.lds-notif-row').length === 0) {
             renderEmptyState(false);
@@ -479,7 +487,7 @@
                     unreadCount = 0;
                 }
 
-                for (var i = 0; i < data.notifications.length; i++) {
+                for (var i = data.notifications.length - 1; i >= 0; i--) {
                     var n = data.notifications[i];
                     if (!n) {
                         continue;
@@ -493,11 +501,11 @@
                             break;
 
                         case "training_approved":
-                            msg = (n.requested_from || 'An admin') + " has approved the training.";
+                            msg = " has been approved for training.";
                             break;
 
                         case "training_rejected":
-                            msg = (n.requested_from || 'An admin') + " has rejected the training.";
+                            msg = " has been rejected for training.";
                             break;
 
                         default:
@@ -510,7 +518,9 @@
                         n.id,
                         n.event,
                         n.training_id,
-                        n.date_approved
+                        n.date_requested,
+                        n.date_approved,
+                        n.time_ago
                     );
                 }
                 syncBadge();
@@ -578,7 +588,7 @@
                             unreadCount = 0;
                         }
                         unreadCount = unreadCount + 1;
-                        prependNotifItem(payload.training_title || 'Training', msg, payload.notif_id, payload.event, payload.training_id, payload.date_approved);
+                        prependNotifItem(payload.training_title || 'Training', msg, payload.notif_id, payload.event, payload.training_id, payload.date_requested || null, payload.date_approved || null, payload.time_ago || null);
                         syncBadge();
                         break;
 
@@ -588,7 +598,7 @@
                             unreadCount = 0;
                         }
                         unreadCount = unreadCount + 1;
-                        prependNotifItem(payload.training_title || 'Training', msg, payload.notif_id, payload.event, payload.training_id, payload.date_approved);
+                        prependNotifItem(payload.training_title || 'Training', msg, payload.notif_id, payload.event, payload.training_id, payload.date_requested || null, payload.date_approved || null, payload.time_ago || null);
                         syncBadge();
                         if (typeof showApprovedTrainingAlert === 'function') {
                             showApprovedTrainingAlert();
@@ -601,7 +611,7 @@
                             unreadCount = 0;
                         }
                         unreadCount = unreadCount + 1;
-                        prependNotifItem(payload.training_title || 'Training', msg, payload.notif_id, payload.event, payload.training_id, payload.date_approved);
+                        prependNotifItem(payload.training_title || 'Training', msg, payload.notif_id, payload.event, payload.training_id, payload.date_requested || null, payload.date_approved || null, payload.time_ago || null);
                         syncBadge();
                         break;
 
@@ -609,7 +619,6 @@
                         try {
                             removeNotifFromUi(payload.notif_id, true);
                         } catch (e) { }
-                        break;
                 }
             };
 
@@ -743,14 +752,18 @@
             removeNotifFromUi(id, true);
         }
 
-        markNotificationRead(id).fail(function () {
-            if (isHistoryPage()) {
-                loadAllNotificationsHistory();
-            } else {
-                loadUnreadNotifications();
-                broadcastNotifSync({ type: 'notif_refresh' });
-            }
-        });
+        markNotificationRead(id)
+            .always(function () {
+                if (!isHistoryPage()) {
+                    loadUnreadNotifications();
+                    broadcastNotifSync({ type: 'notif_refresh' });
+                }
+            })
+            .fail(function () {
+                if (isHistoryPage()) {
+                    loadAllNotificationsHistory();
+                }
+            });
     });
 
     $(document).on('click', '#lds-notif-mark-all', function (e) {

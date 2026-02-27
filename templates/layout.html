@@ -119,7 +119,7 @@
                         data-lds-notif-is-admin="{{ user|check_permission:'superadmin'|yesno:'1,0' }}"
                         data-lds-notif-is-ld-admin="{{ user|check_permission:'ld_manager'|yesno:'1,0' }}"
                         data-lds-notif-admin-url="/backend/learning-and-development/"
-                        data-lds-notif-requester-details-url-template="/learning-and-development/details/__ID__">
+                        data-lds-notif-requester-details-url-template="/learning-and-development/requests/?open_training_id=__ID__">
                         <img src="{% static 'svg/bell.svg' %}" width="22" height="22" alt="Notifications">
                         <!-- Optional: unread badge -->
                         <!-- Increases if there are New Trainings that were added -->
@@ -180,8 +180,6 @@
         <!-- Content Wrapper. Contains page content -->
         <div class="content-wrapper">
             {% block content %}{% endblock %}
-            {# <a class="btn btn-success position-fixed" href="javascript:" id="return-to-top"
-                style="bottom: 50px; right: 20px; display: none;"><i class="fas fa-chevron-up"></i></a>#}
         </div>
     </div>
 
@@ -500,20 +498,6 @@
             };
         })(jQuery);
 
-        $(window).scroll(function () {
-            if ($(this).scrollTop() >= 50) {        // If page is scrolled more than 50px
-                $('#return-to-top').fadeIn(200);    // Fade in the arrow
-            } else {
-                $('#return-to-top').fadeOut(200);   // Else fade out the arrow
-            }
-        });
-
-        $('#return-to-top').click(function () {      // When arrow is clicked
-            $('body,html').animate({
-                scrollTop: 0                       // Scroll to top of body
-            }, 500);
-        });
-
         {% if user|check_permission:'payroll' or user|check_permission:'superadmin' %}
         $(".filter_employee").typeahead({
             source: function (query, process) {
@@ -606,7 +590,7 @@
     <script>
         const eyeIconURL = "{% static 'svg/eye.svg' %}"
     </script>
-    <script src="{% static 'js/training-notifications.js' %}"></script>
+    <script src="{% static 'js/notification/training-notifications.js' %}?v=3"></script>
     {% block script %}{% endblock %}
 </body>
 

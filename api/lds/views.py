@@ -1,7 +1,6 @@
 from datetime import datetime, time, timedelta
 from django_mysql.models.functions import SHA1
 from django.db.models import Count, OuterRef, Subquery, Q
-from django.http import StreamingHttpResponse
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from rest_framework import generics, permissions
@@ -13,7 +12,6 @@ from api.lds.serializers import LdsRsoSerializer, LdsParticipantsSerializer, Lds
 LdsIDPSerializer, LdsTrainingTitleListSerializer, LdsLdiPlanSerializer, LdsApprovedTrainingsDashboardSerializer, \
 LdsTrainingNotificationsSerializer
 
-from api.lds.sse import lds_notifications_broker
 from backend.templatetags.tags import check_permission
 from frontend.lds.models import LdsRso, LdsParticipants, LdsFacilitator, LdsIDP, LdsTrainingNotifications
 from backend.lds.models import LdsLdiPlan
@@ -55,16 +53,21 @@ class LdsLatestApprovedTrainingNotificationView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
+        emp = Empprofile.objects.filter(pi__user_id=request.user.id).first()
+        if not emp:
+            return Response({'has_notification': False})
+
         latest = (
             LdsTrainingNotifications.objects
             .select_related(
                 'training',
                 'training__training',
-                'requestedBy',
-                'requestedBy__pi__user',
+                'training__created_by',
+                'training__created_by__pi__user',
                 'personnel_id',
                 'personnel_id__pi__user',
             )
+            .filter(personnel_id=emp.id)
             .order_by('-id')
             .first()
         )
@@ -91,8 +94,8 @@ class LdsUnreadTrainingNotificationsView(APIView):
             .select_related(
                 'training',
                 'training__training',
-                'requestedBy',
-                'requestedBy__pi__user',
+                'training__created_by',
+                'training__created_by__pi__user',
                 'personnel_id',
                 'personnel_id__pi__user',
             )
@@ -155,18 +158,15 @@ class LdsAllTrainingNotificationsView(APIView):
             .select_related(
                 'training',
                 'training__training',
-                'requestedBy',
-                'requestedBy__pi__user',
+                'training__created_by',
+                'training__created_by__pi__user',
                 'personnel_id',
                 'personnel_id__pi__user',
             )
             .order_by('-id')
         )
 
-        if is_admin:
-            pass
-        else:
-            qs = qs.filter(requestedBy_id=emp.id)
+        qs = qs.filter(personnel_id=emp.id)
 
         try:
             limit = int(str(request.query_params.get('limit') or '200').strip())
@@ -179,46 +179,7 @@ class LdsAllTrainingNotificationsView(APIView):
 
         data = LdsTrainingNotificationsSerializer(qs[:limit], many=True).data
         return Response({'count': qs.count(), 'notifications': data})
-
-
-# Run a Test before removing this code 
-# class LdsTrainingNotificationsSseView(APIView):
-#     permission_classes = [IsAuthenticated]
-
-#     def get(self, request, *args, **kwargs):
-#         q = lds_notifications_broker.subscribe()
-
-#         def gen():
-#             try:
-#                 yield ": stream-start\n\n"
-#                 for chunk in lds_notifications_broker.event_stream(q):
-#                     yield chunk
-#             finally:
-#                 lds_notifications_broker.unsubscribe(q)
-
-#         resp = StreamingHttpResponse(gen(), content_type='text/event-stream')
-#         resp['Cache-Control'] = 'no-cache'
-#         resp['X-Accel-Buffering'] = 'no'
-#         return resp
-
-
-# @login_required
-# def lds_training_notifications_sse(request):
-#     q = lds_notifications_broker.subscribe()
-
-#     def gen():
-#         try:
-#             yield ": stream-start\n\n"
-#             for chunk in lds_notifications_broker.event_stream(q):
-#                 yield chunk
-#         finally:
-#             lds_notifications_broker.unsubscribe(q)
-
-#     resp = StreamingHttpResponse(gen(), content_type='text/event-stream')
-#     resp['Cache-Control'] = 'no-cache'
-#     resp['X-Accel-Buffering'] = 'no'
-#     return resp
-
+        
 
 class LdsRsoViews(generics.ListAPIView):
     serializer_class = LdsRsoSerializer

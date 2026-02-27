@@ -185,6 +185,12 @@
         $(document).on('click', 'a[data-role=details]', function () {
             var id = $(this).data('id');
             $('#training_details').modal('show').find('#details-content').load('/backend/learning-and-development/details/' + id);
+
+            try {
+                var url = new URL(window.location.href);
+                url.searchParams.set('open_training_id', String(id));
+                window.history.replaceState({}, '', url.toString());
+            } catch (e) { }
         });
 
         try {
@@ -194,6 +200,14 @@
                 $('#training_details').modal('show').find('#details-content').load('/backend/learning-and-development/details/' + String(openId));
             }
         } catch (e) { }
+
+        $('#training_details').on('hidden.bs.modal', function () {
+            try {
+                var url = new URL(window.location.href);
+                url.searchParams.delete('open_training_id');
+                window.history.replaceState({}, '', url.toString());
+            } catch (e) { }
+        });
 
         var openRsoDetailsRow = null;
 

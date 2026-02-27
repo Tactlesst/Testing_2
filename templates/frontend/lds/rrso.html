@@ -569,8 +569,10 @@
         $('#lds-rso-table').DataTable().ajax.reload();
     });
 
-    $(document).on('click', 'a[data-role=details]', function () {
-        var id = $(this).data('id');
+    function openTrainingDetails(id) {
+        if (!id) {
+            return;
+        }
         $('#training_details').modal('show').find('#details-content').load('/learning-and-development/details/' + id, function () {
             // Set min date for date inputs in the loaded content
             var today = new Date().toISOString().split('T')[0];
@@ -594,7 +596,20 @@
                 }
             }
         });
+    }
+
+    $(document).on('click', 'a[data-role=details]', function () {
+        var id = $(this).data('id');
+        openTrainingDetails(id);
     });
+
+    try {
+        var params = new URLSearchParams(window.location.search);
+        var openId = params.get('open_training_id');
+        if (openId && /^\d+$/.test(String(openId))) {
+            openTrainingDetails(String(openId));
+        }
+    } catch (e) { }
     });
 </script>
 {% endblock %}

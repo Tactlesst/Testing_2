@@ -200,7 +200,6 @@ def lds_rrso(request):
                             for admin_id in admin_emp_ids:
                                 notif = LdsTrainingNotifications.objects.create(
                                     training_id=rso_obj.id,
-                                    requestedBy_id=rso_obj.created_by_id,
                                     personnel_id_id=admin_id,
                                     status=LdsTrainingNotifications.Status.REQUEST,
                                     is_read=False,
@@ -319,8 +318,18 @@ def lds_trainingtitle_search(request):
 # nazef working in this code end
 
 
+@login_required
 def training_details(request, pk):
     obj = get_object_or_404(LdsRso, pk=pk)
+
+    if request.user.has_perm('auth.ld_manager'):
+        context = {
+            'training': obj,
+            'participants': LdsParticipants.objects.filter(rso_id=pk).order_by('emp__pi__user__last_name'),
+            'facilitators': LdsFacilitator.objects.filter(rso_id=pk).order_by('emp__pi__user__last_name'),
+            'is_admin': True,
+        }
+        return render(request, 'backend/lds/training_details_admin.html', context)
 
     try:
         emp_id = request.session.get('emp_id')
@@ -330,9 +339,12 @@ def training_details(request, pk):
     if emp_id and str(obj.created_by_id) != str(emp_id):
         return HttpResponseForbidden('Forbidden')
 
+    if not (request.user.has_perm('auth.training_requester') or (emp_id and str(obj.created_by_id) == str(emp_id))):
+        return HttpResponseForbidden('Forbidden')
+
     context = {
         'attachment_form': UploadAttachmentFormLDS(instance=obj),
-        'training': LdsRso.objects.filter(id=pk).first(),
+        'training': obj,
         'participants': LdsParticipants.objects.filter(rso_id=pk).order_by('emp__pi__user__last_name'),
         'facilitators': LdsFacilitator.objects.filter(rso_id=pk).order_by('emp__pi__user__last_name'),
     }

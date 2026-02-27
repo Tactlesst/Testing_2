@@ -14,7 +14,6 @@ class LdsTrainingNotifications(models.Model):
         REJECTED = 3,'Rejected'
 
     training = models.ForeignKey('LdsRso', on_delete=models.CASCADE, db_column='training_rso')
-    requestedBy = models.ForeignKey(Empprofile, models.DO_NOTHING, db_column='requested_by')
     personnel_id = models.ForeignKey(Empprofile, models.CASCADE, db_column='personnel_id')
     status = models.IntegerField(db_column='training_status', default=Status.REQUEST, choices=Status.choices)
     is_read = models.BooleanField(default=False)
