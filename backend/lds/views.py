@@ -1,52 +1,35 @@
 import math
-
 import json
-
 from datetime import datetime, time
-
 from decimal import Decimal, InvalidOperation
 
-
+# For Training QR Code
+from dotenv import load_dotenv
+import qrcode
+from django.contrib.staticfiles import finders
+from PIL import Image
+from django.http import HttpResponse
 
 from django.contrib.auth.decorators import login_required, permission_required
-
 from django.http import JsonResponse
-
 from django.shortcuts import render, get_object_or_404
-
 from django.db import IntegrityError, transaction
-
 from django.db.models import Count
-
 from django.db.models import OuterRef, Subquery
-
 from django.db.models import Q
-
 from django.views.decorators.csrf import csrf_exempt
-
 from django.utils import timezone
-
 from django.urls import reverse
 
 
-
 from backend.documents.models import DtsDocument, DtsDrn, DtsTransaction, DtsDivisionCc
-
 from backend.models import Designation, Empprofile, DRNTracker
-
 from backend.lds.models import LdsLdiPlan, LdsCategory
-
 from backend.views import generate_serial_string
-
 from frontend.lds.models import LdsFacilitator, LdsParticipants, LdsRso, LdsTrainingNotifications
-
 from frontend.models import PortalConfiguration, Trainingtitle
-
 from frontend.templatetags.tags import generateDRN, gamify
-
 from api.wiserv import send_notification
-
-
 
 try:
 
@@ -1805,27 +1788,16 @@ def ldi_plan(request, plan_id):
 
 
     return render(request, 'backend/lds/ldi_plan.html', {
-
         'categories': categories,
-
         'plan_id': plan_id,
-
         'plan': plan,
-
         'message': message,
-
         'today': str(timezone.now().date()),
-
         'current_year': timezone.now().year,
-
         'tab_title': 'Learning and Development',
-
         'management': True,
-
         'title': 'ld_admin',
-
         'sub_title': 'ldi_plan',
-
     })
 
 
@@ -2478,3 +2450,52 @@ def reject_training(request, pk):
         except Exception as e:
 
             return JsonResponse({'error': True, 'msg': str(e)}, status=500)
+
+
+@login_required
+def genrQRTraining(request, pk):
+    obj = get_object_or_404(LdsRso, id=pk)
+
+    current_date_str = datetime.now().strftime('%B %d, %Y')
+    training_title = getattr(obj.training, 'tt_name', str(obj.training))
+
+    start_date_str = obj.start_date.strftime('%B %d, %Y') if obj.start_date else ''
+    end_date_str = obj.end_date.strftime('%B %d, %Y') if obj.end_date else ''
+
+    payload = (
+        f"Current Date: {current_date_str}\n"
+        f"Training Title: {training_title}\n"
+        f"Training Start Date: {start_date_str}\n"
+        f"Training End Date: {end_date_str}"
+    )
+
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(payload)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white").convert('RGBA')
+
+    logo_path = finders.find('image/dswd.png')
+    if logo_path:
+        logo = Image.open(logo_path).convert('RGBA')
+
+        qr_width, qr_height = img.size
+        logo_target_width = int(qr_width * 0.22)
+        logo_target_height = int(qr_height * 0.22)
+        logo.thumbnail((logo_target_width, logo_target_height), Image.LANCZOS)
+
+        x = (qr_width - logo.size[0]) // 2
+        y = (qr_height - logo.size[1]) // 2
+
+        img.alpha_composite(logo, (x, y))
+
+    response = HttpResponse(content_type='image/png')
+    img.convert('RGB').save(response, format='PNG')
+    return response
+
+load_dotenv()
