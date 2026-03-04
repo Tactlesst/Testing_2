@@ -525,6 +525,7 @@
         'deferRender': true,
         'order': [[6, 'desc']],
         'lengthMenu': [25, 50, 100],
+
         'ajax': {
             'url': '/api/learning-and-development/?format=datatables&pk=' + '{% getHash request.session.emp_id as employee_id %}{{ employee_id }}',
             'type': 'GET',
@@ -565,7 +566,22 @@
         ],
     });
 
+    function clearOpenTrainingIdFromUrl() {
+        try {
+            var url = new URL(window.location.href);
+            if (!url.searchParams.has('open_training_id')) {
+                return;
+            }
+            url.searchParams.delete('open_training_id');
+            history.replaceState(null, document.title, url.pathname + (url.search ? url.search : '') + url.hash);
+        } catch (e) { }
+    }
+
     $('#training_details').on('hidden.bs.modal', function () {
+        clearOpenTrainingIdFromUrl();
+        try {
+            $('#details-content').empty();
+        } catch (e) { }
         $('#lds-rso-table').DataTable().ajax.reload();
     });
 
@@ -608,6 +624,7 @@
         var openId = params.get('open_training_id');
         if (openId && /^\d+$/.test(String(openId))) {
             openTrainingDetails(String(openId));
+            clearOpenTrainingIdFromUrl
         }
     } catch (e) { }
     });

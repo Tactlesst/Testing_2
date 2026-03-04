@@ -31,29 +31,21 @@ from frontend.models import PortalConfiguration, Trainingtitle
 from frontend.templatetags.tags import generateDRN, gamify
 from api.wiserv import send_notification
 
-try:
-
-    from asgiref.sync import async_to_sync
-
-except Exception:
-
-    async_to_sync = None
-
-
-
-try:
-
-    from channels.layers import get_channel_layer
-
-except Exception:
-
-    get_channel_layer = None
+from django.core.exceptions import PermissionDenied
+from backend.templatetags.tags import check_permission
 
 
 
 @login_required
-
 def ld_admin(request):
+
+    try:
+        is_allowed = bool(check_permission(request.user, 'superadmin') or check_permission(request.user, 'ld_manager'))
+    except Exception:
+        is_allowed = False
+
+    if not is_allowed:
+        raise PermissionDenied
 
     categories = LdsCategory.objects.filter(approve=1).order_by('category_name')
 
@@ -190,123 +182,73 @@ def lds_training_list_search(request):
 @login_required
 
 def lds_training_list_ajax(request):
-
     date_from = (request.GET.get('date_from') or '').strip()
-
     date_to = (request.GET.get('date_to') or '').strip()
 
 
-
     latest_rso = LdsRso.objects.filter(training_id=OuterRef('pk')).order_by('-date_added', '-id')
-
     latest_ldi = LdsLdiPlan.objects.filter(training_id=OuterRef('pk')).order_by('-date_created', '-id')
 
 
-
     qs = Trainingtitle.objects.select_related('pi__user').annotate(
-
         requests_count=Count('ldsrso', distinct=True),
-
         trainees_count=Count('ldsrso__ldsparticipants', distinct=True),
-
         facilitators_count=Count('ldsrso__ldsfacilitator', distinct=True),
-
         latest_venue=Subquery(latest_ldi.values('venue')[:1]),
-
         latest_date_added=Subquery(latest_rso.values('date_added')[:1]),
-
         latest_is_online_platform=Subquery(latest_rso.values('is_online_platform')[:1]),
-
         latest_ldi_date_created=Subquery(latest_ldi.values('date_created')[:1]),
-
         latest_ldi_platform=Subquery(latest_ldi.values('platform')[:1]),
-
     ).all()
 
 
 
     if date_from:
-
         try:
-
             df = datetime.strptime(date_from, '%Y-%m-%d').date()
-
             qs = qs.filter(ldsrso__date_added__date__gte=df)
-
         except ValueError:
-
             return JsonResponse({'error': True, 'msg': 'Invalid date_from.'}, status=400)
 
-
-
     if date_to:
-
         try:
-
             dt = datetime.strptime(date_to, '%Y-%m-%d').date()
-
             qs = qs.filter(ldsrso__date_added__date__lte=dt)
-
         except ValueError:
-
             return JsonResponse({'error': True, 'msg': 'Invalid date_to.'}, status=400)
-
 
 
     qs = qs.distinct().order_by('-id')
 
 
-
     data = []
-
     for row in qs:
-
         platform = ''
-
         try:
-
             if row.latest_is_online_platform is not None:
-
                 platform = 'Online' if int(row.latest_is_online_platform) == 1 else 'Face-to-Face'
-
         except Exception:
-
             platform = ''
 
 
-
         if not platform:
-
             platform = row.latest_ldi_platform or ''
-
 
 
         effective_date_added = row.latest_date_added or row.latest_ldi_date_created
 
 
-
         data.append({
-
             'id': row.id,
-
             'tt_name': row.tt_name,
-
             'tt_status': row.tt_status,
-
             'added_by': row.pi.user.get_fullname if row.pi_id and row.pi and row.pi.user_id else '',
-
             'requests_count': row.requests_count,
-
             'trainees_count': row.trainees_count,
-
             'facilitators_count': row.facilitators_count,
-
             'latest_venue': row.latest_venue or '',
-
             'latest_date_added': effective_date_added.strftime('%Y-%m-%d') if effective_date_added else '',
-
             'latest_platform': platform,
-
         })
 
 
@@ -2177,278 +2119,162 @@ def bypass_lds_rrso_approval(request, pk):
     LdsRso.objects.filter(id=pk).update(rrso_status=1)
     return JsonResponse({'data': 'success', 'msg': 'You have successfully approved the Request for Issuance of Regional Special Order'})
 
+
+
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
+# Needs to get fixed
 @login_required
 @csrf_exempt
 @permission_required('auth.ld_manager')
 def bypass_lds_rso_approval(request, pk):
-    obj = LdsRso.objects.select_related('created_by__pi__user', 'training').filter(id=pk).first()
+
+    obj =LdsRso.objects.select_related(
+            'created_by__pi__user', 'training'
+        ).filter(id=pk).first()
+
     if not obj:
-        return JsonResponse({'error': True, 'msg': 'Training request not found.'}, status=404)
+        return JsonResponse({'error': True, 'msg': ' Training Request not Found'}, status=404)
 
     if obj.rrso_status != 1:
-        return JsonResponse({'error': True, 'msg': 'RRSO must be approved before approving the Regional Special Order.'}, status=400)
+        return JsonResponse({'error': True, 'msg': ' RRSO has not yet been Approved'}, status=400)
 
-    LdsRso.objects.filter(id=pk).update(rso_status=1)
+    # 2️⃣ Update status
+        LdsRso.objects.filter(id=pk).update(rso_status=1)
 
+    admin_emp_id = request.session.get('emp_id')
 
+    # 3️⃣ Fetch approver safely
+    approver_emp = Empprofile.objects.filter(id=admin_emp_id).first() if admin_emp_id else None
 
-    try:
-        approver_emp = Empprofile.objects.filter(id=request.session.get('emp_id')).first()
-    except Exception:
-        approver_emp = None
+    channel_layer = get_channel_layer()
 
-    if approver_emp:
-        try:
-            admin_emp_id = request.session.get('emp_id')
-            if admin_emp_id:
-                req_notif = (
-                    LdsTrainingNotifications.objects
-                    .filter(
-                        training_id=obj.id,
-                        personnel_id_id=admin_emp_id,
-                        status=LdsTrainingNotifications.Status.REQUEST,
-                        is_read=False,
-                    )
-                    .order_by('-id')
-                    .first()
-                )
-                if req_notif:
-                    LdsTrainingNotifications.objects.filter(id=req_notif.id).update(is_read=True)
-                    try:
-                        channel_layer = get_channel_layer()
-                        if channel_layer and async_to_sync:
-                            async_to_sync(channel_layer.group_send)(f"lds_user_{admin_emp_id}", {
-                                'type': 'lds_notification',
-                                'data': {
-                                    'event': 'training_request_resolved',
-                                    'notif_id': req_notif.id,
-                                    'training_id': obj.id,
-                                    'status': 'approved',
-                                }
-                            })
-                    except Exception:
-                        pass
-        except Exception:
-            pass
+    if admin_emp_id:
 
-        try:
-            notif = LdsTrainingNotifications.objects.create(
+        req_notif = LdsTrainingNotifications.objects.filter(
                 training_id=obj.id,
-                personnel_id_id=obj.created_by_id,
-                status=LdsTrainingNotifications.Status.APPROVED,
+                personnel_id_id=admin_emp_id,
+                status=LdsTrainingNotifications.Status.REQUEST,
                 is_read=False,
-            )
-            try:
-                channel_layer = get_channel_layer()
-                if channel_layer and async_to_sync:
-                    async_to_sync(channel_layer.group_send)(f"lds_user_{obj.created_by_id}", {
+            ).order_by('-id').first()
+
+        if req_notif:
+                LdsTrainingNotifications.objects.filter(id=req_notif.id).update(is_read=True)
+                async_to_sync(channel_layer.group_send)(
+                    f"lds_user_{admin_emp_id}",
+                    {
                         'type': 'lds_notification',
                         'data': {
-                            'event': notif.event,
-                            'notif_id': notif.id,
+                            'event': 'training_request_resolved',
+                            'notif_id': req_notif.id,
                             'training_id': obj.id,
-                            'training_title': obj.training.tt_name if obj.training_id and obj.training else '',
-                            'requested_from': approver_emp.pi.user.get_fullname if approver_emp.pi_id else '',
+                            'status': 'approved',
                         }
+                    }
+                )
 
-                    })
+    notif = LdsTrainingNotifications.objects.create(
+        training_id=obj.id,
+        personnel_id_id=obj.created_by_id,
+        status=LdsTrainingNotifications.Status.APPROVED,
+        is_read=False,
+    )
 
-            except Exception:
+    async_to_sync(channel_layer.group_send)(
+        f"lds_user_{obj.created_by_id}",
+        {
+            'type': 'lds_notification',
+            'data': {
+                'event': notif.event,
+                'notif_id': notif.id,
+                'training_id': obj.id,
+                'training_title': obj.training.tt_name if obj.training else '',
+            }
+        }
+    )
 
-                pass
-
-        except Exception:
-
-            pass
-
-
-
-    contact_number = ''
-
-    try:
-
-        contact_number = obj.created_by.pi.mobile_no if obj.created_by_id and obj.created_by and obj.created_by.pi_id else ''
-
-    except Exception:
-
-        contact_number = ''
-
-
-
-    if contact_number:
-
-        title = obj.training.tt_name if obj.training_id and obj.training else ''
-
-        send_notification(
-
-            f"RSO for training '{title}' has been approved.",
-
-            contact_number,
-
-            request.session.get('emp_id'),
-
-            receiver_id=obj.created_by_id,
-
-        )
-
-
-
-    return JsonResponse({'data': 'success', 'msg': 'You have successfully approved the Regional Special Order'})
+    return JsonResponse({'success': True, 'msg': 'Training Request has been Approved'})
 
 
 
 @login_required
-
 @csrf_exempt
-
 @permission_required('auth.ld_manager')
-
 def reject_training(request, pk):
-
     """Handle training rejection - sets status to -1"""
-
     if request.method == "POST":
-
         try:
-
             training = get_object_or_404(LdsRso, pk=pk)
 
-            
-
             # Mark as rejected by setting status to -1
-
             training.rrso_status = -1
-
             training.rso_status = -1
-
             training.save()
 
-
-
             try:
-
                 admin_emp_id = request.session.get('emp_id')
-
                 if admin_emp_id:
-
                     req_notif = (
-
                         LdsTrainingNotifications.objects
-
                         .filter(
-
                             training_id=training.id,
-
                             personnel_id_id=admin_emp_id,
-
                             status=LdsTrainingNotifications.Status.REQUEST,
-
                             is_read=False,
-
                         )
-
                         .order_by('-id')
-
                         .first()
-
                     )
 
                     if req_notif:
-
                         LdsTrainingNotifications.objects.filter(id=req_notif.id).update(is_read=True)
-
                         try:
-
                             channel_layer = get_channel_layer()
-
                             if channel_layer and async_to_sync:
-
                                 async_to_sync(channel_layer.group_send)(f"lds_user_{admin_emp_id}", {
-
                                     'type': 'lds_notification',
-
                                     'data': {
-
                                         'event': 'training_request_resolved',
-
                                         'notif_id': req_notif.id,
-
                                         'training_id': training.id,
-
                                         'status': 'rejected',
-
                                     }
-
                                 })
-
                         except Exception:
-
                             pass
-
             except Exception:
-
                 pass
-
-
 
             try:
-
                 admin_emp = Empprofile.objects.filter(id=request.session.get('emp_id')).select_related('pi__user').first()
-
                 if admin_emp:
-
                     notif = LdsTrainingNotifications.objects.create(
-
                         training_id=training.id,
-
                         personnel_id_id=training.created_by_id,
-
                         status=LdsTrainingNotifications.Status.REJECTED,
-
                         is_read=False,
-
                     )
-
                     try:
-
                         channel_layer = get_channel_layer()
-
                         if channel_layer and async_to_sync:
-
                             async_to_sync(channel_layer.group_send)(f"lds_user_{training.created_by_id}", {
-
                                 'type': 'lds_notification',
-
                                 'data': {
-
                                     'event': notif.event,
-
                                     'notif_id': notif.id,
-
                                     'training_id': training.id,
-
                                     'training_title': training.training.tt_name if training.training_id and training.training else '',
-
                                     'requested_from': admin_emp.pi.user.get_fullname if admin_emp.pi_id else '',
-
                                 }
-
                             })
-
                     except Exception:
-
                         pass
-
             except Exception:
-
                 pass
 
-
-
             return JsonResponse({'data': 'success', 'msg': 'Training has been rejected successfully.'})
-
         except Exception as e:
-
             return JsonResponse({'error': True, 'msg': str(e)}, status=500)
 
 
