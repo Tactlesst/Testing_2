@@ -2141,7 +2141,7 @@ def bypass_lds_rso_approval(request, pk):
         return JsonResponse({'error': True, 'msg': ' RRSO has not yet been Approved'}, status=400)
 
     # 2️⃣ Update status
-        LdsRso.objects.filter(id=pk).update(rso_status=1)
+    LdsRso.objects.filter(id=pk).update(rso_status=1)
 
     admin_emp_id = request.session.get('emp_id')
 
