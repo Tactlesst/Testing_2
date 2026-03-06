@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.utils.timesince import timesince
 
 from frontend.lds.models import LdsRso, LdsParticipants, LdsFacilitator, LdsIDP, \
+    LdsTrainingNotifications
     
 from backend.lds.models import LdsLdiPlan, LdsCategory
 
@@ -235,7 +236,7 @@ class LdsLdiPlanSerializer(serializers.ModelSerializer):
         ]
 
 
-class Serializer(serializers.ModelSerializer):
+class LdsTrainingNotificationsSerializer(serializers.ModelSerializer):
     training_title = serializers.CharField(source='training.training.tt_name', read_only=True)
     requested_from = serializers.CharField(source='training.created_by.pi.user.get_fullname', read_only=True)
     personnel = serializers.CharField(source='personnel_id.pi.user.get_fullname', read_only=True)
@@ -247,7 +248,7 @@ class Serializer(serializers.ModelSerializer):
 
 
     class Meta:
-        model = 
+        model = LdsTrainingNotifications
         fields = [
             'id', 
             'training_id', 
