@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from backend.lds.views import ld_admin, generate_drn_for_rso, bypass_lds_rso_approval, \
     bypass_lds_rrso_approval, training_details_admin, reject_training
+    
 
 urlpatterns = [
     path('', ld_admin, name='ld_admin'),

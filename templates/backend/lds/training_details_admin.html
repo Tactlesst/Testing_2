@@ -145,6 +145,7 @@
 
 
                     <!-- Admin Action Buttons Only -->
+                    {% if user|check_permission:'ld_manager' or user|check_permission:'superadmin' or training.rrso_status == 0 or training.created_by_id == request.session.emp_id %}
                     <div class="ibox">
                         <div class="ibox-title bg-primary">
                             <h5>ADMIN ACTIONS</h5>
@@ -205,6 +206,8 @@
                             </div>
                         </div>
                     </div>
+                    {% endif %}
+
 
 
                     <!-- Additional Info Section -->

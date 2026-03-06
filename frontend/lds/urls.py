@@ -1,6 +1,8 @@
 from django.urls import path
 
 from backend.lds.views import print_rso, genrQRTraining
+from frontend.lds.views import lds_rrso, training_details, print_rrso, print_qrtraining, add_training_participant
+from backend.lds.views import print_rso, genrQRTraining
 from frontend.lds.views import lds_rrso, training_details, print_rrso, print_qrtraining, add_training_participant, \
     add_training_facilitator, generate_certificate_participants, generate_certificate_facilitators, \
     tag_as_resource_person, remove_tag_as_resource_person, upload_ld_attachment, print_ld_attendance, \
@@ -23,6 +25,7 @@ urlpatterns = [
 
     path('details/<int:pk>', training_details, name='training_details'),
     path('training/qr/print/<int:pk>', print_qrtraining, name='print_qrtraining'),
+    path('training/qr/print/<int:pk>', print_qrtraining, name='print_qrtraining'),
     path('attachment/uploading/<int:pk>', upload_ld_attachment, name='upload_ld_attachment'),
     path('rso/print/<int:pk>', print_rso, name='print_rso'),
     path('rrso/print/<int:pk>', print_rrso, name='print_rrso'),
@@ -43,6 +46,10 @@ urlpatterns = [
     path('individual-development-plan/view/<int:pk>', view_idp_contents, name='view_idp_contents'),
     path('individual-development-plan/update/<int:pk>', update_idp_contents, name='update_idp_contents'),
     path('individual-development-plan/delete/', remove_idp, name='remove_idp'),
+
+
+    path('learning-and-development/qr/training/<int:pk>/', genrQRTraining, name='genr_qr_training'),
+
 
 
     path('learning-and-development/qr/training/<int:pk>/', genrQRTraining, name='genr_qr_training'),

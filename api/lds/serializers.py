@@ -1,41 +1,25 @@
 from rest_framework import serializers
-
 from django.utils import timezone
-
 from django.utils.timesince import timesince
 
-
-
-from frontend.lds.models import LdsRso, LdsParticipants, LdsFacilitator, LdsIDP, LdsTrainingNotifications
-
+from frontend.lds.models import LdsRso, LdsParticipants, LdsFacilitator, LdsIDP, \
+    
 from backend.lds.models import LdsLdiPlan, LdsCategory
 
 from frontend.models import Trainingtitle
 
 
-
-
-
 class LdsRsoSerializer(serializers.ModelSerializer):
-
     training_title = serializers.CharField(source='training.tt_name', read_only=True)
-
     inclusive_dates = serializers.CharField(source='get_inclusive_dates', read_only=True)
-
     time_range = serializers.CharField(source='get_time_range', read_only=True)
-
     date_added = serializers.DateTimeField(format="%b %d, %Y %H:%M:%S %p", read_only=True)
-
     status = serializers.CharField(source='get_status', read_only=True)
-
     created_by = serializers.CharField(source='created_by.pi.user.get_fullname', read_only=True)
 
 
-
     class Meta:
-
         model = LdsRso
-
         fields = ['id', 'training_title', 'inclusive_dates', 'date_added', 'status', 'venue', 'created_by', 'time_range']
 
 
@@ -43,71 +27,38 @@ class LdsRsoSerializer(serializers.ModelSerializer):
 
 
 class LdsParticipantsSerializer(serializers.ModelSerializer):
-
     full_name = serializers.CharField(source='emp.pi.user.get_fullname', read_only=True)
-
     position = serializers.CharField(source='emp.position.name', read_only=True)
-
     type = serializers.CharField(source='get_participant_type', read_only=True)
 
-
-
     class Meta:
-
         model = LdsParticipants
-
         fields = ['id', 'rso_id', 'full_name', 'type', 'position', 'participants_name']
 
 
 
-
-
 class LdsFacilitatorSerializer(serializers.ModelSerializer):
-
     full_name = serializers.CharField(source='emp.pi.user.get_fullname', read_only=True)
-
     position = serializers.CharField(source='emp.position.name', read_only=True)
 
-
-
     class Meta:
-
         model = LdsFacilitator
-
         fields = ['id', 'rso_id', 'full_name', 'is_resource_person', 'position', 'emp_id', 'rp_name', 'is_group']
 
 
-
-
-
 class LdsIDPSerializer(serializers.ModelSerializer):
-
     date_created = serializers.DateTimeField(format="%b %d, %Y %H:%M:%S %p", read_only=True)
-
     date_updated = serializers.DateTimeField(format="%b %d, %Y %H:%M:%S %p", read_only=True)
 
-
-
     class Meta:
-
         model = LdsIDP
-
         fields = '__all__'
 
 
-
-
-
 class LdsCategorySerializer(serializers.ModelSerializer):
-
     class Meta:
-
         model = LdsCategory
-
         fields = ['id', 'category_name', 'approve']
-
-
-
 
 
 class TrainingtitleSerializer(serializers.ModelSerializer):
@@ -135,14 +86,7 @@ class LdsApprovedTrainingsDashboardSerializer(serializers.ModelSerializer):
         model = LdsRso
 
         fields = ['id', 'training_title', 'date_added']
-
-
-
-
-
-# nazef added
-
-
+#nazef added
 
 class LdsTrainingTitleListSerializer(serializers.ModelSerializer):
 
@@ -206,13 +150,9 @@ class LdsTrainingTitleListSerializer(serializers.ModelSerializer):
 
         return ''
 
-
-
     def get_latest_venue(self, obj):
 
         return getattr(obj, 'latest_venue', None) or ''
-
-
 
     def get_latest_date_added(self, obj):
 
@@ -229,8 +169,6 @@ class LdsTrainingTitleListSerializer(serializers.ModelSerializer):
         except Exception:
 
             return str(effective)
-
-
 
     def get_latest_platform(self, obj):
 
@@ -255,12 +193,7 @@ class LdsTrainingTitleListSerializer(serializers.ModelSerializer):
             platform = getattr(obj, 'latest_ldi_platform', None) or ''
 
         return platform
-
-# nazef end
-
-
-
-
+#nazef end
 
 class LdsLdiPlanSerializer(serializers.ModelSerializer):
 
@@ -273,141 +206,73 @@ class LdsLdiPlanSerializer(serializers.ModelSerializer):
 
 
     training_category = serializers.CharField(source='category.category_name', read_only=True)
-
     category_id = serializers.IntegerField(required=False, allow_null=True)
-
     category = LdsCategorySerializer(read_only=True)
 
 
-
     class Meta:
-
         model = LdsLdiPlan
-
         fields = [
-
             'id',
-
             'training_id',
-
             'training_title',
-
             'training',
-
             'category_id',
-
             'training_category',
-
             'category',
-
             'quarter',
-
             'platform',
-
             'proposed_ldi_activity',
-
             'proposed_date',
-
             'target_participants',
-
             'budgetary_requirements',
-
             'target_competencies',
-
             'venue',
-
             'status',
-
             'date_created',
-
             'date_updated',
-
             'date_approved',
-
         ]
 
 
-
-
-
-class LdsTrainingNotificationsSerializer(serializers.ModelSerializer):
-
+class Serializer(serializers.ModelSerializer):
     training_title = serializers.CharField(source='training.training.tt_name', read_only=True)
-
     requested_from = serializers.CharField(source='training.created_by.pi.user.get_fullname', read_only=True)
-
     personnel = serializers.CharField(source='personnel_id.pi.user.get_fullname', read_only=True)
-
     date_requested = serializers.DateTimeField(source='training.date_added', format="%b %d, %Y %H:%M:%S %p", read_only=True)
-
     date_approved = serializers.DateTimeField(source='training.date_approved', format="%b %d, %Y %H:%M:%S %p", read_only=True)
-
     event = serializers.CharField(read_only=True)
-
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-
     time_ago = serializers.SerializerMethodField(read_only=True)
 
 
-
-
-
     class Meta:
-
-        model = LdsTrainingNotifications
-
+        model = 
         fields = [
-
             'id', 
-
             'training_id', 
-
             'training_title', 
-
             'requested_from', 
-
             'is_read', 
-
             'personnel',
-
             'date_requested',
-
             'date_approved',
-
             'time_ago',
-
             'status_display',
-
             'event'
-
             ]
-
     
-
     def get_time_ago(self, obj):
-
         try:
-
             dt = obj.training.date_added
-
         except Exception:
-
             dt = None
 
-
-
         if not dt:
-
             return ''
 
-
-
         diff_seconds = (timezone.now() - dt).total_seconds()
-
         if diff_seconds < 60:
-
             return 'Just now'
-
-
 
         return timesince(dt) + ' ago'
