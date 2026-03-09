@@ -43,6 +43,8 @@ from api.wiserv import send_notification
 from django.core.exceptions import PermissionDenied
 from backend.templatetags.tags import check_permission
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 
 @login_required
@@ -3038,18 +3040,7 @@ def bypass_lds_rrso_approval(request, pk):
 
     LdsRso.objects.filter(id=pk).update(rrso_status=1)
     return JsonResponse({'data': 'success', 'msg': 'You have successfully approved the Request for Issuance of Regional Special Order'})
-    return JsonResponse({'data': 'success', 'msg': 'You have successfully approved the Request for Issuance of Regional Special Order'})
 
-
-
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
-
-# Needs to get fixed
-
-
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 
 # Needs to get fixed
 @login_required
@@ -3061,21 +3052,12 @@ def bypass_lds_rso_approval(request, pk):
             'created_by__pi__user', 'training'
         ).filter(id=pk).first()
 
-
-    obj =LdsRso.objects.select_related(
-            'created_by__pi__user', 'training'
-        ).filter(id=pk).first()
-
     if not obj:
         return JsonResponse({'error': True, 'msg': ' Training Request not Found'}, status=404)
-        return JsonResponse({'error': True, 'msg': ' Training Request not Found'}, status=404)
 
     if obj.rrso_status != 1:
         return JsonResponse({'error': True, 'msg': ' RRSO has not yet been Approved'}, status=400)
 
-    # 2️⃣ Update status
-    if obj.rrso_status != 1:
-        return JsonResponse({'error': True, 'msg': ' RRSO has not yet been Approved'}, status=400)
 
     # 2️⃣ Update status
     LdsRso.objects.filter(id=pk).update(rso_status=1)

@@ -90,87 +90,48 @@ class LdsApprovedTrainingsDashboardSerializer(serializers.ModelSerializer):
 #nazef added
 
 class LdsTrainingTitleListSerializer(serializers.ModelSerializer):
-
     added_by = serializers.SerializerMethodField()
-
     latest_venue = serializers.SerializerMethodField()
-
     latest_date_added = serializers.SerializerMethodField()
-
     latest_platform = serializers.SerializerMethodField()
-
     requests_count = serializers.IntegerField(read_only=True)
-
     trainees_count = serializers.IntegerField(read_only=True)
-
     facilitators_count = serializers.IntegerField(read_only=True)
 
-
-
     class Meta:
-
         model = Trainingtitle
-
         fields = [
-
             'id',
-
             'tt_name',
-
             'tt_status',
-
             'added_by',
-
             'latest_venue',
-
             'latest_date_added',
-
             'latest_platform',
-
             'requests_count',
-
             'trainees_count',
-
             'facilitators_count',
-
         ]
 
-
-
     def get_added_by(self, obj):
-
         try:
-
             if obj.pi_id and getattr(obj, 'pi', None) and getattr(obj.pi, 'user', None):
-
                 return obj.pi.user.get_fullname
-
         except Exception:
-
             return ''
-
         return ''
-
+    
     def get_latest_venue(self, obj):
-
         return getattr(obj, 'latest_venue', None) or ''
-
     def get_latest_date_added(self, obj):
-
         effective = getattr(obj, 'latest_date_added', None) or getattr(obj, 'latest_ldi_date_created', None)
-
         if not effective:
-
             return ''
-
         try:
-
             return effective.strftime('%Y-%m-%d')
-
         except Exception:
-
             return str(effective)
-
+        
     def get_latest_platform(self, obj):
 
         platform = ''
@@ -196,20 +157,14 @@ class LdsTrainingTitleListSerializer(serializers.ModelSerializer):
         return platform
 #nazef end
 
+
 class LdsLdiPlanSerializer(serializers.ModelSerializer):
-
     training_title = serializers.CharField(source='training.tt_name', read_only=True)
-
     training_id = serializers.IntegerField(required=False, allow_null=True)
-
     training = TrainingtitleSerializer(read_only=True)
-
-
-
     training_category = serializers.CharField(source='category.category_name', read_only=True)
     category_id = serializers.IntegerField(required=False, allow_null=True)
     category = LdsCategorySerializer(read_only=True)
-
 
     class Meta:
         model = LdsLdiPlan

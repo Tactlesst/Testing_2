@@ -28,7 +28,6 @@ from api.wiserv import send_notification
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 from backend.models import Division, Designation, Empprofile, Section
 from backend.lds.models import LdsLdiPlan
 from frontend.lds.forms import UploadAttachmentFormLDS
@@ -209,46 +208,6 @@ def lds_rrso(request):
                         requested_participants=requested_participants_value,
                         requested_budget=requested_budget_value,
                     )
-
-                    try:
-                        UserModel = get_user_model()
-                        admin_user_ids = UserModel.objects.filter(
-                            models.Q(user_permissions__codename='ld_manager')
-                            | models.Q(groups__permissions__codename='ld_manager')
-                        ).values_list('id', flat=True).distinct()
-                        admin_emp_ids = list(
-                            Empprofile.objects.filter(pi__user_id__in=admin_user_ids).values_list('id', flat=True)
-                        )
-
-                        if admin_emp_ids:
-                            channel_layer = get_channel_layer()
-                            requester_name = ''
-                            try:
-                                requester_name = rso_obj.created_by.pi.user.get_fullname if rso_obj.created_by_id and rso_obj.created_by and rso_obj.created_by.pi_id else ''
-                            except Exception:
-                                requester_name = ''
-
-                            for admin_id in admin_emp_ids:
-                                notif = LdsTrainingNotifications.objects.create(
-                                    training_id=rso_obj.id,
-                                    personnel_id_id=admin_id,
-                                    status=LdsTrainingNotifications.Status.REQUEST,
-                                    is_read=False,
-                                )
-
-                                if channel_layer:
-                                    async_to_sync(channel_layer.group_send)(f"lds_user_{admin_id}", {
-                                        'type': 'lds_notification',
-                                        'data': {
-                                            'event': 'training_requested',
-                                            'notif_id': notif.id,
-                                            'training_id': rso_obj.id,
-                                            'training_title': rso_obj.training.tt_name if rso_obj.training_id and rso_obj.training else '',
-                                            'requested_from': requester_name,
-                                        }
-                                    })
-                    except Exception:
-                        logger.exception('Failed creating LDS training request notifications')
 
                     try:
                         UserModel = get_user_model()
